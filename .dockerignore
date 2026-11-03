@@ -1,0 +1,12 @@
+# Keep the Docker build small and never copy secrets or local files into it
+.git
+.github
+.idea
+.claude
+docs
+Tattoo Studio website design
+**/node_modules
+client/dist
+server/target
+**/secrets.properties
+*.bat

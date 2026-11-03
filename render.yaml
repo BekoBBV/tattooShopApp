@@ -1,0 +1,33 @@
+# Render Blueprint: Render > New > Blueprint > pick this repository. It builds the Dockerfile and
+# asks for the values marked "sync: false" (they are never stored in Git).
+services:
+  - type: web
+    name: tattoo-studio
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # The Atlas connection string, with the database name before the "?"
+      - key: MONGODB_URI
+        sync: false
+      # Password for the "admin" login (used when the database has no admin yet)
+      - key: APP_ADMIN_PASSWORD
+        sync: false
+      # The public address, used in email links, e.g. https://tattoo-studio.onrender.com
+      - key: APP_SHOP_WEBSITE_URL
+        sync: false
+      # Signs the login tokens; Render makes a random one
+      - key: APP_JWT_SECRET
+        generateValue: true
+      # Render's proxy reaches the app from inside the machine (::1) or its private network: trust it,
+      # so the sign-in and booking limits see each visitor's real IP instead of the proxy's
+      # Render sits behind Cloudflare, which puts the visitor's address in CF-Connecting-IP and
+      # overwrites anything a visitor sends in it (X-Forwarded-For is passed on as sent, so it can be faked)
+      - key: SERVER_TOMCAT_REMOTEIP_REMOTE_IP_HEADER
+        value: CF-Connecting-IP
+      - key: SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES
+        value: '0:0:0:0:0:0:0:1|::1|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}'

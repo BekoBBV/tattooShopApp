@@ -1,0 +1,10 @@
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Design exports (e.g. Figma Make) stay out of Git; only what the site needs is copied into client/
+/design-export*/
+
+# Claude Code settings for this computer (local paths)
+/.claude/
