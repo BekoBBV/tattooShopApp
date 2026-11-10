@@ -39,7 +39,15 @@ export function depositStamp(b: StaffBooking): { label: string; tone: "paid" | "
 
 /** The title of a booking on the calendar and in the panel. */
 export const bookingTitle = (b: StaffBooking) =>
-  b.title ?? (b.type === "CONSULTATION" ? b.consultation?.idea?.split(/[.,\n]/)[0]?.slice(0, 60) || "Consultation" : typeLabel[b.type])
+  b.title ?? (b.type === "CONSULTATION" ? shorten(b.consultation?.idea?.split(/[.,\n]/)[0]?.trim() ?? "", 60) || "Consultation" : typeLabel[b.type])
+
+/** `text` cut to at most `max` characters at a word break, with "…" when something was left out. */
+export function shorten(text: string, max: number) {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max - 1)
+  const space = cut.lastIndexOf(" ")
+  return `${(space > max / 2 ? cut.slice(0, space) : cut).replace(/[\s;:–-]+$/, "")}…`
+}
 
 /** The details panel's rows: what the booking is about. */
 export function aboutRows(b: StaffBooking): [string, string][] {

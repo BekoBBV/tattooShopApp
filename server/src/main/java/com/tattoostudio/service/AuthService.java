@@ -245,13 +245,16 @@ public class AuthService {
         if (user.getArtistId() != null) {
             claims.claim("artistId", user.getArtistId());
         }
-        if (user.getName() != null) {
-            claims.claim("name", user.getName());
+        // An artist's login has no name of its own: show the artist's name (the staff area greets them by it)
+        String name = user.getName() != null || user.getArtistId() == null ? user.getName()
+                : artists.findById(user.getArtistId()).map(a -> a.getName()).orElse(null);
+        if (name != null) {
+            claims.claim("name", name);
         }
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();
         return new LoginResponse(token, expires,
-                new AuthUserDto(user.getUsername(), user.getRole(), user.getArtistId(), user.getName()));
+                new AuthUserDto(user.getUsername(), user.getRole(), user.getArtistId(), name));
     }
 
     /** Deactivated logins, and logins of deactivated artists, cannot sign in. */

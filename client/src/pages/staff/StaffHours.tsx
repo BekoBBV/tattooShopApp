@@ -100,7 +100,8 @@ function HoursForm({ saved }: { saved: Schedule }) {
               <div key={day} className={`hours-row${d.off ? " is-off" : ""}`}>
                 <strong>{DAY_NAMES[day]}</strong>
                 <label className="day-off-check">
-                  <input type="checkbox" className="visually-hidden" checked={d.off} onChange={(e) => setDay(day, { off: e.target.checked })} />
+                  <input type="checkbox" className="visually-hidden" checked={d.off} onChange={(e) => setDay(day, { off: e.target.checked })}
+                    aria-label={`${DAY_NAMES[day]} day off`} />
                   <span className={`night-check${d.off ? " is-on" : ""}`} aria-hidden="true">
                     {d.off && <Check className="icon" size={16} aria-hidden="true" />}
                   </span>

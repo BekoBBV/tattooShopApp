@@ -188,6 +188,8 @@ Built beyond the drawings, because the server can do it and staff need it:
 Deliberate differences from the drawings:
 
 - **Tablets use the phone's top bar** (the seal, the name, sign out, and the pages as scrolling tabs). The drawn tablet layout stacks the whole sidebar above the page, which put about 500px of navigation before any content.
+- **Weekly hours keep one line per day on tablets** (two on phones). The drawing stacks the day-off box and both times under each day below 1024px, which made the week about three screens tall.
+- **An artist's login shows the artist's name** in the top bar (Kai, not the username kai).
 - **Reset password** sets a new password that the admin passes on, as the server does; the drawing's "Password reset sent" note implied an email the server doesn't send.
 - Every confirmation that loses something starts with the safe choice focused, like the customer site.
 
@@ -195,5 +197,5 @@ Deliberate differences from the drawings:
 
 - The image credits list the paintings' author, source and licence as "To be confirmed" until the final images are chosen.
 - Flash designs, artist work and signature pieces are still empty frames in Figma too.
-- The admin pages have been tried against the real server; the artist pages (calendar, hours, flash and work) only in sample-data mode so far, since that needs an artist login.
+- Every staff page has been tried against the real server: the admin pages, and the artist pages (calendar and Reserve time, hours and days off with the conflicts note, flash designs with pictures, portfolio photos). The signature piece upload was left out there, as it has no remove button; it is covered by the server tests and sample-data mode.
 - In Figma the header and footer are frames in each screen, not components, and the faint wave pattern behind the footer is left out.

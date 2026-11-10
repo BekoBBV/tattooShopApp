@@ -30,12 +30,15 @@ class AuthApiTest extends ApiTest {
     }
 
     @Test
-    void artistTokenCarriesTheirArtistId() throws Exception {
+    void artistTokenCarriesTheirArtistIdAndName() throws Exception {
         createArtistLogin("test-nika", "Nika");
         login("test-nika", "artist-password")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.role").value("ARTIST"))
-                .andExpect(jsonPath("$.user.artistId").value(artist("Nika").getId()));
+                .andExpect(jsonPath("$.user.artistId").value(artist("Nika").getId()))
+                .andExpect(jsonPath("$.user.name").value("Nika")); // the login has no name: the artist's is shown
+        mvc.perform(get("/api/auth/me").header("Authorization", bearer("test-nika", "artist-password")))
+                .andExpect(jsonPath("$.name").value("Nika"));
     }
 
     @Test

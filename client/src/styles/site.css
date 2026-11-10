@@ -250,3 +250,11 @@ button.staff-sign-out { border: 0; background: none; font: inherit; cursor: poin
   .staff-section-heading { flex-wrap: wrap; }
   .admin-artist-list article > .staff-switch { justify-self: start; }
 }
+
+/* Weekly hours: one line per day on tablets (the design stacks every control under the day), two on phones */
+@media (max-width: 1023px) {
+  .hours-row { grid-template-columns: 120px auto auto auto; justify-content: start; gap: 8px 24px; }
+}
+@media (max-width: 599px) {
+  .hours-row { grid-template-columns: auto auto; justify-content: space-between; gap: 4px 16px; }
+}
