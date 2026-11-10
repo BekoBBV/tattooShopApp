@@ -35,7 +35,10 @@ class SpaConfigTest extends ApiTest {
     void pagesAndApiAnswersCarryTheContentSecurityPolicy() throws Exception {
         mvc.perform(get("/book/time"))
                 .andExpect(header().string("Content-Security-Policy", SecurityConfig.CONTENT_SECURITY_POLICY))
-                .andExpect(header().string("X-Frame-Options", "DENY"));
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("Referrer-Policy", "same-origin"))
+                .andExpect(header().string("Permissions-Policy", SecurityConfig.PERMISSIONS_POLICY));
         mvc.perform(get("/api/flash"))
                 .andExpect(header().string("Content-Security-Policy", containsString("script-src 'self'")));
     }

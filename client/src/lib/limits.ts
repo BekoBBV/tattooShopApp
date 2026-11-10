@@ -19,7 +19,7 @@ export const limits = {
   "account.phone": 30,
   "account.email": 120,
   "account.passwordMin": 8,
-  "account.password": 200,
+  "account.password": 72,
   // Sign in
   "login.username": 120,
   "login.password": 200,
@@ -43,7 +43,7 @@ export const limits = {
   "user.email": 120,
   "user.phone": 30,
   "user.passwordMin": 8,
-  "user.password": 200,
+  "user.password": 72,
   // Artist hours: note on a day off / special day
   "exception.note": 100,
   // Lists

@@ -15,5 +15,5 @@ public record RegisterRequest(
         @NotBlank @Size(max = 30) @Schema(example = "0888 123 456") String phone,
         @NotBlank @Email @Size(max = 120) @Schema(example = "mira@example.com") String email,
         @NotNull @Past @Schema(example = "1998-03-12") LocalDate dateOfBirth,
-        @NotBlank @Size(min = 8, max = 200, message = "must be at least 8 characters") String password) {
+        @NotBlank @Size(min = 8, max = 72, message = "must be 8 to 72 characters") String password) {
 }

@@ -16,6 +16,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -41,6 +43,8 @@ public class SecurityConfig {
             + "img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; "
             + "base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 
+    static final String PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=()";
+
     /** Where BookingController reads the customer's token itself (see bearerTokenResolver). */
     static final java.util.Set<String> BOOKING_ENDPOINTS = java.util.Set.of("/api/bookings/flash", "/api/bookings/consultation");
 
@@ -52,7 +56,11 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // The site loads scripts, styles and fonts only from itself, so injected script can't run
                 // and steal a sign-in token; pictures may come from Cloudinary (https) or be previews of chosen files (blob:)
-                .headers(h -> h.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)))
+                // Booking codes travel in page addresses (/manage?code=…), so other sites never see the address,
+                // and the site asks for no camera, microphone or location
+                .headers(h -> h.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY))
+                        .referrerPolicy(r -> r.policy(ReferrerPolicy.SAME_ORIGIN))
+                        .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy", PERMISSIONS_POLICY)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/**").authenticated()

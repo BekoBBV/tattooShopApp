@@ -15,7 +15,7 @@ import jakarta.validation.constraints.Size;
 public record AdminUserRequest(
         @NotNull Role role,
         @Schema(description = "Staff only: the sign-in name") @Size(max = 30) String username,
-        @Schema(description = "New logins only") @Size(min = 8, max = 200, message = "must be at least 8 characters") String password,
+        @Schema(description = "New logins only") @Size(min = 8, max = 72, message = "must be 8 to 72 characters") String password,
         @Schema(description = "PUT: false blocks the login") Boolean active,
         @Size(max = 60) String name,
         @Email @Size(max = 120) String email,

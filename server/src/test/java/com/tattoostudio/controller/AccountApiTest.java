@@ -292,6 +292,20 @@ class AccountApiTest extends ApiTest {
                 .andExpect(jsonPath("$.code").value("UNDER_AGE"));
     }
 
+    /** BCrypt reads at most 72 bytes: longer passwords are turned down with a 400, never a server error. */
+    @Test
+    void overLongPasswordsAreTurnedDownNotAServerError() throws Exception {
+        register("Mira", "0888 123 456", "test-long@example.com", "a".repeat(73))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.password").value("must be 8 to 72 characters"));
+        // 40 Cyrillic letters fit the 72-character limit but take 80 bytes
+        register("Mira", "0888 123 456", "test-long@example.com", "Ж".repeat(40))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        register("Mira", "0888 123 456", "test-long@example.com", "a".repeat(72)).andExpect(status().isCreated());
+        login("test-long@example.com", "a".repeat(150)).andExpect(status().isUnauthorized());
+    }
+
     @Test
     void failedSignUpsDoNotUseUpTheLimit() throws Exception {
         customer("test-taken@example.com");
