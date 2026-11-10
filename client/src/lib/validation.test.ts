@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest"
+import { ageOn, countdown, euros, hours, longDate, parseTypedDate } from "./format"
 import {
-  checkBooking,
+  birthDateProblem,
+  checkDetails,
   checkLookup,
   checkMessage,
   checkRegister,
@@ -9,13 +11,9 @@ import {
   isBookingCode,
   isEmail,
   isPhone,
+  passwordRules,
+  type DetailsForm,
 } from "./validation"
-
-const form = (fields: Record<string, string>) => {
-  const data = new FormData()
-  for (const [name, value] of Object.entries(fields)) data.set(name, value)
-  return data
-}
 
 describe("phone numbers (same rules as the server's PhoneNumbers)", () => {
   it("accepts the usual Bulgarian and international forms", () => {
@@ -23,103 +21,123 @@ describe("phone numbers (same rules as the server's PhoneNumbers)", () => {
       expect(isPhone(phone), phone).toBe(true)
   })
   it("rejects things that are not phone numbers", () => {
-    for (const phone of ["", "12", "hello", "0888 1", "+0 888 123 456"])
-      expect(isPhone(phone), phone).toBe(false)
+    for (const phone of ["", "12", "hello", "0888 1", "+0 888 123 456"]) expect(isPhone(phone), phone).toBe(false)
   })
 })
 
 describe("emails and booking codes", () => {
   it("checks emails loosely", () => {
-    expect(isEmail("ivan@example.com")).toBe(true)
-    expect(isEmail(" ivan@example.com ")).toBe(true)
-    expect(isEmail("ivan@example")).toBe(false)
+    expect(isEmail("mira@example.com")).toBe(true)
+    expect(isEmail(" mira@example.com ")).toBe(true)
+    expect(isEmail("mira@example")).toBe(false)
     expect(isEmail("not an email")).toBe(false)
   })
-  it("accepts codes with or without the FS- prefix and dash, in any case", () => {
-    for (const code of ["FS-7K3QXM", "fs-7k3qxm", "FS7K3QXM", "7K3QXM", " 7k3 qxm "])
-      expect(isBookingCode(code), code).toBe(true)
+  it("accepts codes like K7Q2-M9 with or without the dash, in any case", () => {
+    for (const code of ["K7Q2-M9", "k7q2-m9", "K7Q2M9", " k7q2 m9 "]) expect(isBookingCode(code), code).toBe(true)
   })
   it("rejects codes with look-alike characters or the wrong length", () => {
-    for (const code of ["FS-7K3QX", "FS-7K3QXMM", "FS-0O1I2Z"])
-      expect(isBookingCode(code), code).toBe(false)
+    for (const code of ["K7Q2-M", "K7Q2-M99", "O1I0-L2", "FS-7K3QXM"]) expect(isBookingCode(code), code).toBe(false)
   })
 })
 
-describe("form checks", () => {
-  const customer = { name: "Ivan", phone: "0888 123 456", email: "", notes: "" }
+describe("dates of birth (18 or older on the day)", () => {
+  it("reads what people type", () => {
+    expect(parseTypedDate("14.06.1998")).toBe("1998-06-14")
+    expect(parseTypedDate("4/6/1998")).toBe("1998-06-04")
+    expect(parseTypedDate("31.02.1998")).toBeNull()
+    expect(parseTypedDate("1998-06-14")).toBeNull()
+  })
+  it("counts whole years up to the appointment", () => {
+    expect(ageOn("2008-11-20", "2026-11-19")).toBe(17)
+    expect(ageOn("2008-11-20", "2026-11-20")).toBe(18)
+  })
+  it("explains each problem", () => {
+    expect(birthDateProblem("", "2026-11-20")).toBe("Please enter your date of birth.")
+    expect(birthDateProblem("14 June 1998", "2026-11-20")).toBe("Write it like 14.06.1998.")
+    expect(birthDateProblem("21.11.2008", "2026-11-20")).toBe("You need to be 18 or older to get tattooed.")
+    expect(birthDateProblem("20.11.2008", "2026-11-20")).toBeUndefined()
+  })
+})
 
-  it("a complete booking form has no errors", () => {
-    expect(checkBooking(customer)).toEqual({})
+describe("the booking details step", () => {
+  const complete: DetailsForm = {
+    customerName: "Mira Petrova",
+    phone: "0888 123 456",
+    email: "mira@example.com",
+    dateOfBirth: "12.03.1998",
+    notes: "",
+    idea: "A koi swimming up through waves",
+    sizeCm: "18",
+    adult: true,
+    consentForm: true,
+    depositPolicy: true,
+  }
+  it("a complete form has no errors", () => {
+    expect(checkDetails(complete, "flash", "2026-11-20")).toEqual({})
+    expect(checkDetails(complete, "consultation", "2026-11-20")).toEqual({})
   })
-  it("reports each booking problem under the server's field name", () => {
-    expect(
-      checkBooking({ name: " ", phone: "12", email: "nope", notes: "x".repeat(301) }),
-    ).toEqual({
-      customerName: "Please enter your name.",
-      phone: "Enter a phone number, e.g. 0888 123 456.",
-      email: "That email doesn't look right.",
-      notes: "Keep it under 300 characters.",
-    })
-  })
-  it("email is optional", () => {
-    expect(checkBooking({ ...customer, email: "" }).email).toBeUndefined()
-  })
-  it("reviews need a name, 1–5 stars and text", () => {
-    expect(checkReview(form({ name: "Ana", rating: "5", text: "Great" }))).toEqual({})
-    expect(Object.keys(checkReview(form({ name: "", rating: "6", text: "" })))).toEqual(["name", "rating", "text"])
-  })
-  it("messages need an email or a phone number to reply to", () => {
-    expect(checkMessage(form({ name: "Ana", contact: "ana@example.com", text: "Hi" }))).toEqual({})
-    expect(checkMessage(form({ name: "Ana", contact: "0888 123 456", text: "Hi" }))).toEqual({})
-    expect(checkMessage(form({ name: "Ana", contact: "hello", text: "Hi" })).contact).toBe(
-      "Enter an email address or a phone number.",
+  it("reports each problem under the server's field name", () => {
+    const errors = checkDetails(
+      { ...complete, customerName: " ", phone: "12", email: "", adult: false, consentForm: false, depositPolicy: false },
+      "flash",
+      "2026-11-20",
     )
+    expect(Object.keys(errors).sort()).toEqual(["adult", "consentForm", "customerName", "depositPolicy", "email", "phone"])
+  })
+  it("only flash bookings need the deposit policy, only consultations the idea", () => {
+    expect(checkDetails({ ...complete, depositPolicy: false, idea: "" }, "consultation", "2026-11-20")).toEqual({ idea: expect.any(String) })
+    expect(checkDetails({ ...complete, depositPolicy: false, idea: "" }, "flash", "2026-11-20")).toEqual({ depositPolicy: expect.any(String) })
+  })
+  it("the size is optional, but 1 to 200 cm when given", () => {
+    expect(checkDetails({ ...complete, sizeCm: "" }, "consultation", "2026-11-20")).toEqual({})
+    expect(checkDetails({ ...complete, sizeCm: "0" }, "consultation", "2026-11-20").sizeCm).toBeTruthy()
+    expect(checkDetails({ ...complete, sizeCm: "12.5" }, "consultation", "2026-11-20").sizeCm).toBeTruthy()
+  })
+})
+
+describe("other forms", () => {
+  it("reviews need 1 to 5 and a few words", () => {
+    expect(checkReview({ rating: 5, text: "Bright and solid" })).toEqual({})
+    expect(Object.keys(checkReview({ rating: 0, text: " " })).sort()).toEqual(["rating", "text"])
+  })
+  it("messages need an email or a phone number to reply to, and at most 5 photos", () => {
+    expect(checkMessage({ name: "Vera", contact: "vera@example.com", text: "Hi" })).toEqual({})
+    expect(checkMessage({ name: "Vera", contact: "0888 123 456", text: "Hi" })).toEqual({})
+    expect(checkMessage({ name: "Vera", contact: "somewhere", text: "Hi" }).contact).toBeTruthy()
+    expect(checkMessage({ name: "Vera", contact: "vera@example.com", text: "Hi" }, 6).photos).toBeTruthy()
   })
   it("finding a booking needs a code and a phone", () => {
-    expect(checkLookup("FS-7K3QXM", "0888 123 456")).toEqual({})
-    expect(checkLookup("ABC", "")).toEqual({
-      code: "Booking codes look like FS-7K3QXM.",
-      phone: "Enter the phone number you booked with.",
-    })
+    expect(checkLookup("K7Q2-M9", "0888 123 456")).toEqual({})
+    expect(Object.keys(checkLookup("", "")).sort()).toEqual(["code", "phone"])
+    expect(checkLookup("FS-7K3QXM", "0888 123 456").code).toBe("Booking codes look like K7Q2-M9.")
+  })
+  it("signing in needs an email and a password", () => {
+    expect(checkSignIn({ email: "mira@example.com", password: "x" })).toEqual({})
+    expect(Object.keys(checkSignIn({ email: "", password: "" })).sort()).toEqual(["email", "password"])
+  })
+  it("signing up needs every field, 18+ and a password with all three rules", () => {
+    const ok = { name: "Mira", phone: "0888 123 456", email: "mira@example.com", dateOfBirth: "12.03.1998", password: "Koimaple2026" }
+    expect(checkRegister(ok, "2026-11-20")).toEqual({})
+    expect(checkRegister({ ...ok, password: "koimaple2026" }, "2026-11-20").password).toBeTruthy() // no uppercase letter
+    expect(checkRegister({ ...ok, dateOfBirth: "01.01.2010" }, "2026-11-20").dateOfBirth).toBe(
+      "You need to be 18 or older to create an account.",
+    )
+    expect(passwordRules("Ab1").map((r) => r.met)).toEqual([false, true, true])
   })
 })
 
-describe("customer account forms (same limits as the server)", () => {
-  it("accepts a complete sign-up", () => {
-    expect(
-      checkRegister({
-        name: "Alex Morgan",
-        phone: "0888 123 456",
-        email: "alex@example.com",
-        password: "12345678",
-      }),
-    ).toEqual({})
+describe("formatting", () => {
+  it("writes prices, times and dates like the design", () => {
+    expect(euros(180)).toBe("€180")
+    expect(euros(28.5)).toBe("€28.50")
+    expect(hours(60)).toBe("1 hour")
+    expect(hours(90)).toBe("1.5 hours")
+    expect(hours(30)).toBe("30 minutes")
+    expect(longDate("2026-11-05")).toBe("Thursday, 5 November 2026")
   })
-
-  it("explains every problem in a sign-up", () => {
-    expect(
-      checkRegister({ name: " ", phone: "12", email: "alex@", password: "short" }),
-    ).toEqual({
-      name: "Please enter your name.",
-      phone: "Enter a phone number, e.g. 0888 123 456.",
-      email: "That email doesn't look right.",
-      password: "Use at least 8 characters.",
-    })
-    expect(
-      checkRegister({
-        name: "x".repeat(61),
-        phone: "0888 123 456",
-        email: "alex@example.com",
-        password: "12345678",
-      }),
-    ).toEqual({ name: "Keep it under 60 characters." })
-  })
-
-  it("needs an email and a password to sign in", () => {
-    expect(checkSignIn({ email: "", password: "" })).toEqual({
-      email: "Enter the email you signed up with.",
-      password: "Enter your password.",
-    })
-    expect(checkSignIn({ email: "alex@example.com", password: "x" })).toEqual({})
+  it("counts down the deposit hold", () => {
+    const now = Date.UTC(2026, 10, 5, 12, 0, 0)
+    expect(countdown(new Date(now + (14 * 60 + 32) * 1000).toISOString(), now)).toBe("14:32")
+    expect(countdown(new Date(now - 1000).toISOString(), now)).toBeNull()
   })
 })

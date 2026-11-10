@@ -8,3 +8,6 @@ out/
 
 # Claude Code settings for this computer (local paths)
 /.claude/
+
+# Original images before they are resized for the site
+/assets-incoming/

@@ -15,29 +15,34 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
 
     Optional<Booking> findByCode(String code);
 
-    /** Bookings of one artist that overlap the time range [from, to). */
-    List<Booking> findByArtistIdAndStatusAndStartsAtLessThanAndEndsAtGreaterThan(
-            String artistId, BookingStatus status, Instant to, Instant from);
+    Optional<Booking> findByPaymentId(String paymentId);
 
-    /** Active bookings of the given artists that overlap [from, to): one query for a whole availability page. */
-    @Query("{ 'artistId': { $in: ?0 }, 'status': 'BOOKED', 'startsAt': { $lt: ?2 }, 'endsAt': { $gt: ?1 } }")
-    List<Booking> findActiveOverlapping(Collection<String> artistIds, Instant from, Instant to);
+    /**
+     * Bookings of these artists that hold their time and overlap [from, to), the break after them
+     * included (their last slot starts before {@code to}): one query for a whole availability page.
+     */
+    @Query("{ 'artistId': { $in: ?0 }, 'holdsTime': true, 'startsAt': { $lt: ?2 }, 'slots': { $gte: ?1 } }")
+    List<Booking> findHoldingTime(Collection<String> artistIds, Instant from, Instant to);
 
-    /** Upcoming bookings of one customer account, used for the per-account limit. */
-    long countByUserIdAndStatusAndStartsAtAfter(String userId, BookingStatus status, Instant after);
+    /** Upcoming bookings a customer made themselves (flash and consultations), for the per-phone limit. */
+    @Query(value = "{ 'phone': ?0, 'status': { $in: ['PENDING', 'BOOKED'] }, 'type': { $in: ['FLASH', 'CONSULTATION'] }, 'startsAt': { $gt: ?1 } }",
+            count = true)
+    long countUpcomingByPhone(String phone, Instant after);
 
-    /** Upcoming bookings of one customer, used for the per-phone limit. */
-    long countByPhoneAndStatusAndStartsAtAfter(String phone, BookingStatus status, Instant after);
+    /** The same for one customer account, whatever phone numbers it used. */
+    @Query(value = "{ 'userId': ?0, 'status': { $in: ['PENDING', 'BOOKED'] }, 'type': { $in: ['FLASH', 'CONSULTATION'] }, 'startsAt': { $gt: ?1 } }",
+            count = true)
+    long countUpcomingByUser(String userId, Instant after);
 
     /** The bookings of these artists with this status starting after {@code after}, earliest first. */
-    List<Booking> findByArtistIdInAndStatusAndStartsAtAfterOrderByStartsAtAsc(Collection<String> artistIds,
-            BookingStatus status, Instant after);
+    List<Booking> findByArtistIdInAndStatusInAndStartsAtAfterOrderByStartsAtAsc(Collection<String> artistIds,
+            Collection<BookingStatus> statuses, Instant after);
 
-    /** Bookings of an artist with this status that have not ended yet. */
-    long countByArtistIdAndStatusAndEndsAtAfter(String artistId, BookingStatus status, Instant after);
+    /** Bookings of an artist with one of these statuses that have not ended yet. */
+    long countByArtistIdAndStatusInAndEndsAtAfter(String artistId, Collection<BookingStatus> statuses, Instant after);
 
-    /** Bookings of a service with this status that have not ended yet. */
-    long countByServiceIdAndStatusAndEndsAtAfter(String serviceId, BookingStatus status, Instant after);
+    /** Bookings that still claim a flash design (held, booked or tattooed). */
+    List<Booking> findByFlashIdInAndClaimsFlashTrue(Collection<String> flashIds);
 
     /** Every booking an artist ever had (any status). */
     long countByArtistId(String artistId);

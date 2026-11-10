@@ -18,14 +18,16 @@ import org.springframework.stereotype.Component;
 import com.tattoostudio.config.BookingRules;
 import com.tattoostudio.config.ShopInfo;
 import com.tattoostudio.dto.BookingDto;
+import com.tattoostudio.model.BookingType;
+import com.tattoostudio.model.DepositStatus;
 
 /**
- * Emails customers their booking confirmation (with the booking code), a reminder the day before
- * (see ReminderJob) and cancellation notices.
+ * Emails customers their booking confirmation (with the booking code), the deposit to pay for a
+ * session the artist reserved, a reminder the day before (see ReminderJob) and cancellation notices.
  *
- * Sending happens in the background (@Async), so a slow or broken mail server never delays
- * or fails a booking. If no mail server is configured (spring.mail.host is empty), emails
- * are skipped and only logged.
+ * Sending happens in the background (@Async), so a slow or broken mail server never delays or fails
+ * a booking. If no mail server is configured (spring.mail.host is empty), emails are skipped and only
+ * logged.
  */
 @Component
 public class BookingMailer {
@@ -46,71 +48,134 @@ public class BookingMailer {
         this.from = from;
     }
 
+    /** A confirmed flash booking (deposit paid) or a booked consultation. */
     @Async
-    public void bookingConfirmed(BookingDto booking, String email) {
-        send(email, "Your " + shop.name() + " booking " + booking.code(), """
+    public void bookingConfirmed(BookingDto b, String email) {
+        if (email == null) {
+            return;
+        }
+        boolean consultation = b.type() == BookingType.CONSULTATION;
+        String what = consultation ? "Free consultation (30 minutes) with " + b.artistName()
+                : b.title() + " with " + b.artistName();
+        String money = consultation ? "" : """
+                  Price:         €%s
+                  Deposit paid:  €%s
+                  Pay in studio: €%s
+                """.formatted(euros(b.price()), euros(b.deposit().amount()), euros(b.leftToPay()));
+        String before = consultation
+                ? "Bring your ideas and any other references. Your artist will plan the piece and the sessions with you."
+                : """
+                Before you come: eat a proper meal, bring an ID, wear clothes that leave the placement free,
+                and don't drink alcohol the day before.""";
+        send(email, (consultation ? "Your consultation is booked: " : "You're booked: ") + b.code(), """
                 Hi %s,
 
-                Your chair is locked in. See you soon!
+                %s
 
                   Booking code:  %s
-                  When:          %s at %s
-                  Service:       %s with %s
-                  Price:         €%s (pay at the shop)
+                  When:          %s, %s to %s
+                  What:          %s
+                %s  Where:         %s
+
+                %s
+
+                %s
+                Keep your booking code and phone number: you need both to manage or cancel the booking at
+                %s/manage
+
+                %s, %s
+                """.formatted(firstName(b), consultation ? "Your consultation is booked." : "You're booked.", b.code(),
+                DATE.format(b.date()), b.time(), b.endTime(), what, money, shop.address(), before, cancelRule(b),
+                shop.websiteUrl(), shop.name(), shop.phone()));
+    }
+
+    /** The artist reserved a session: the customer pays the deposit online to secure it. */
+    @Async
+    public void sessionReserved(BookingDto b, String email) {
+        String deposit = b.deposit().status() == DepositStatus.WAITING
+                ? "Please pay the €" + euros(b.deposit().amount()) + " deposit to secure the session: open "
+                        + shop.websiteUrl() + "/manage and enter your booking code and phone number."
+                : "No deposit is needed for this session.";
+        send(email, b.artistName() + " reserved your session: " + b.code(), """
+                Hi %s,
+
+                %s reserved time for your tattoo.
+
+                  Booking code:  %s
+                  What:          %s
+                  When:          %s, %s to %s
+                  Price:         €%s
                   Where:         %s
 
-                Need to cancel? You can do it online until %d hours before your appointment:
-                %s/cancel
-                You'll need your booking code and the phone number you booked with.
+                %s
 
-                %s · %s
-                """.formatted(booking.customerName(), booking.code(), DATE.format(booking.date()), booking.time(),
-                booking.serviceName(), booking.artistName(), euros(booking.price()),
-                shop.address(), rules.cancelCutoff().toHours(), shop.websiteUrl(), shop.name(), shop.phone()));
+                %s
+
+                %s, %s
+                """.formatted(firstName(b), b.artistName(), b.code(), b.title(), DATE.format(b.date()), b.time(),
+                b.endTime(), euros(b.price()), shop.address(), deposit, cancelRule(b), shop.name(), shop.phone()));
     }
 
     /**
      * Sends the reminder right away (the reminder job already runs in the background) and returns
      * false if the mail server refused it, so the job can try again later.
      */
-    public boolean sendReminder(BookingDto booking, String email) {
-        return send(email, "Reminder: " + shop.name() + " on " + DATE.format(booking.date()) + " at " + booking.time(), """
+    public boolean sendReminder(BookingDto b, String email) {
+        String what = b.type() == BookingType.CONSULTATION ? "your consultation with " + b.artistName()
+                : b.title() + " with " + b.artistName();
+        return send(email, "Tomorrow at " + shop.name() + ": " + b.time(), """
                 Hi %s,
 
-                A quick reminder of your appointment:
+                A quick reminder: %s, %s at %s.
 
-                  When:          %s at %s
-                  Service:       %s with %s
-                  Price:         €%s (pay at the shop)
-                  Where:         %s
                   Booking code:  %s
+                  Where:         %s
 
-                Can't make it? Please cancel online until %d hours before, so someone else can take the chair:
-                %s/cancel
-                You'll need your booking code and the phone number you booked with.
+                Can't make it? Please let us know as soon as you can: %s/manage
+                %s
 
-                %s · %s
-                """.formatted(booking.customerName(), DATE.format(booking.date()), booking.time(),
-                booking.serviceName(), booking.artistName(), euros(booking.price()), shop.address(), booking.code(),
-                rules.cancelCutoff().toHours(), shop.websiteUrl(), shop.name(), shop.phone()));
+                %s, %s
+                """.formatted(firstName(b), what, DATE.format(b.date()), b.time(), b.code(), shop.address(),
+                shop.websiteUrl(), cancelRule(b), shop.name(), shop.phone()));
     }
 
     @Async
-    public void bookingCancelled(BookingDto booking, String email) {
-        send(email, "Cancelled: " + shop.name() + " booking " + booking.code(), """
+    public void bookingCancelled(BookingDto b, String email, boolean byStudio) {
+        String deposit = switch (b.deposit().status()) {
+            case REFUNDED -> "Your €" + euros(b.deposit().amount()) + " deposit will be refunded to your card.";
+            case KEPT -> "It was less than " + rules.refundCutoff().toHours() + " hours before the appointment, so the €"
+                    + euros(b.deposit().amount()) + " deposit can't be refunded.";
+            default -> "";
+        };
+        send(email, "Cancelled: " + shop.name() + " booking " + b.code(), """
                 Hi %s,
 
-                Your booking %s on %s at %s has been cancelled and the chair released.
+                %s %s on %s at %s has been cancelled. %s
 
-                Book a new time whenever you're ready: %s
+                Book again whenever you're ready: %s
 
-                %s · %s
-                """.formatted(booking.customerName(), booking.code(), DATE.format(booking.date()), booking.time(),
-                shop.websiteUrl(), shop.name(), shop.phone()));
+                %s, %s
+                """.formatted(firstName(b), byStudio ? "We're sorry: the studio had to cancel your booking" : "Your booking",
+                b.code(), DATE.format(b.date()), b.time(), deposit, shop.websiteUrl(), shop.name(), shop.phone()));
+    }
+
+    private String cancelRule(BookingDto b) {
+        if (b.deposit().amount() == null) {
+            return "Need to cancel? You can do it online until the appointment starts.";
+        }
+        return "Need to cancel? The deposit is refunded if you cancel at least " + rules.refundCutoff().toHours()
+                + " hours before the appointment, and kept if you cancel later.";
+    }
+
+    private static String firstName(BookingDto b) {
+        return BookingService.firstName(b.customerName());
     }
 
     /** 34 → "34", 28.5 → "28.50" */
-    static String euros(BigDecimal amount) {
+    public static String euros(BigDecimal amount) {
+        if (amount == null) {
+            return "0";
+        }
         BigDecimal plain = amount.stripTrailingZeros();
         return plain.scale() <= 0 ? plain.toPlainString() : amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }

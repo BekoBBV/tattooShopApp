@@ -38,8 +38,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 
     static final String CONTENT_SECURITY_POLICY = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-            + "img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; "
+            + "img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; "
             + "base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
+    /** Where BookingController reads the customer's token itself (see bearerTokenResolver). */
+    static final java.util.Set<String> BOOKING_ENDPOINTS = java.util.Set.of("/api/bookings/flash", "/api/bookings/consultation");
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -48,7 +51,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // The site loads scripts, styles and fonts only from itself, so injected script can't run
-                // and steal a sign-in token; artist photos may come from any https address
+                // and steal a sign-in token; pictures may come from Cloudinary (https) or be previews of chosen files (blob:)
                 .headers(h -> h.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
@@ -57,7 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/account/**").hasRole("USER")
                         // Searching, sorting and paging the public lists is for signed-in visitors (any role)
-                        .requestMatchers(HttpMethod.GET, "/api/services/search", "/api/artists/search", "/api/reviews/search")
+                        .requestMatchers(HttpMethod.GET, "/api/artists/search", "/api/reviews/search")
                         .authenticated()
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(rs -> rs
@@ -78,7 +81,7 @@ public class SecurityConfig {
     @Bean
     BearerTokenResolver bearerTokenResolver() {
         DefaultBearerTokenResolver standard = new DefaultBearerTokenResolver();
-        return request -> "POST".equals(request.getMethod()) && "/api/bookings".equals(request.getRequestURI())
+        return request -> "POST".equals(request.getMethod()) && BOOKING_ENDPOINTS.contains(request.getRequestURI())
                 ? null
                 : standard.resolve(request);
     }

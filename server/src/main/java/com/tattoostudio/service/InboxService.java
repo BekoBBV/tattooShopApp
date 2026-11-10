@@ -30,8 +30,12 @@ public class InboxService {
      * @param approved  true: shown on the site, false: waiting for approval, null: both
      * @param minRating only reviews with at least this many stars (null: any)
      */
-    public PageDto<Review> searchReviews(String text, Boolean approved, Integer minRating, ListQuery list) {
+    public PageDto<Review> searchReviews(String text, Boolean approved, Integer minRating, String artistId,
+            ListQuery list) {
         List<Criteria> filters = Paging.filters();
+        if (artistId != null && !artistId.isBlank()) {
+            filters.add(Criteria.where("artistId").is(artistId));
+        }
         if (approved != null) {
             filters.add(Criteria.where("approved").is(approved));
         }

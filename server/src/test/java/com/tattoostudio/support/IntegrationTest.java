@@ -17,18 +17,19 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.tattoostudio.model.Artist;
-import com.tattoostudio.model.ServiceItem;
+import com.tattoostudio.model.FlashDesign;
 import com.tattoostudio.repository.ArtistRepository;
 import com.tattoostudio.repository.BookingRepository;
+import com.tattoostudio.repository.FlashRepository;
 import com.tattoostudio.repository.MessageRepository;
 import com.tattoostudio.repository.ReviewRepository;
-import com.tattoostudio.repository.ServiceItemRepository;
+import com.tattoostudio.repository.WorkRepository;
 
 /**
  * Base for tests that need the full app and the test database (tattoo_studio_test).
- * Time is frozen at Monday 08:00 shop time in 2030, so "tomorrow" is always a Tuesday.
- * On Tuesdays the shop is open 10:00–20:00 and every artist works except Jax (his day off),
- * so Melo, Sol, Nia, Cruz and Rook have one-hour slots from 10:00 to 19:00 (see DataSeeder).
+ * Time is frozen at Monday 08:00 studio time in 2030, so "tomorrow" is always a Tuesday.
+ * The studio is closed on Mondays; Tuesday to Sunday Kai, Dario and Nika work 11:00–23:00 with a
+ * 30-minute break after each client (see DataSeeder).
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -39,6 +40,8 @@ public abstract class IntegrationTest {
     protected static final LocalDate MONDAY = LocalDate.of(2030, 1, 1).with(TemporalAdjusters.next(DayOfWeek.MONDAY));
     protected static final LocalDate TUESDAY = MONDAY.plusDays(1);
     protected static final Instant NOW = at(MONDAY, "08:00");
+    /** Names of flash designs tests add start with this, so they are removed again. */
+    protected static final String TEST_FLASH = "Test flash";
 
     @TestConfiguration
     static class TestClockConfig {
@@ -56,7 +59,9 @@ public abstract class IntegrationTest {
     @Autowired
     protected ArtistRepository artists;
     @Autowired
-    protected ServiceItemRepository services;
+    protected FlashRepository flash;
+    @Autowired
+    protected WorkRepository works;
     @Autowired
     protected ReviewRepository reviews;
     @Autowired
@@ -67,12 +72,23 @@ public abstract class IntegrationTest {
         clock.set(NOW);
         bookings.deleteAll();
         messages.deleteAll();
-        reviews.deleteAll(reviews.findAll().stream().filter(r -> !r.isApproved()).toList());
-        // Undo any day exceptions a previous test added
-        artists.findAll().forEach(b -> {
-            if (!b.getExceptions().isEmpty()) {
-                b.getExceptions().clear();
-                artists.save(b);
+        works.deleteAll();
+        reviews.deleteAll(reviews.findAll().stream().filter(r -> !r.isApproved() || r.getBookingId() != null).toList());
+        flash.deleteAll(flash.findAll().stream().filter(f -> f.getName().startsWith(TEST_FLASH)).toList());
+        flash.findAll().forEach(f -> {
+            if (!f.isAvailable()) {
+                f.setAvailable(true);
+                flash.save(f);
+            }
+        });
+        // Undo day exceptions, breaks and deactivations a previous test made
+        artists.findAll().forEach(a -> {
+            if (!a.getExceptions().isEmpty() || a.getBreakMinutes() != 30 || !a.isActive() || a.getSignaturePiece() != null) {
+                a.getExceptions().clear();
+                a.setBreakMinutes(30);
+                a.setActive(true);
+                a.setSignaturePiece(null);
+                artists.save(a);
             }
         });
     }
@@ -81,14 +97,15 @@ public abstract class IntegrationTest {
         return date.atTime(LocalTime.parse(time)).atZone(SHOP_ZONE).toInstant();
     }
 
-    /** Finds a seeded artist by first name, e.g. "Nia". */
-    protected Artist artist(String firstName) {
+    /** Finds a seeded artist by name, e.g. "Nika". */
+    protected Artist artist(String name) {
         return artists.findAll().stream()
-                .filter(b -> b.getName().split(" ")[0].equals(firstName))
+                .filter(a -> a.getName().split(" ")[0].equals(name))
                 .findFirst().orElseThrow();
     }
 
-    protected ServiceItem service(String name) {
-        return services.findAll().stream().filter(s -> s.getName().equals(name)).findFirst().orElseThrow();
+    /** Finds a seeded flash design by name, e.g. "Small dragon" (Kai, 2 hours, €180). */
+    protected FlashDesign flash(String name) {
+        return flash.findAll().stream().filter(f -> f.getName().equals(name)).findFirst().orElseThrow();
     }
 }

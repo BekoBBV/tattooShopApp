@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.tattoostudio.error.ErrorCode;
@@ -22,6 +24,26 @@ import com.tattoostudio.error.ErrorCode;
  */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+
+    /** A photo over the upload limit (10 MB each): same code as the other picture checks. */
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE,
+                "Photos can be up to 10 MB each, and up to 5 at a time");
+        problem.setProperty("code", ErrorCode.INVALID_FILE.name());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(problem);
+    }
+
+    /** A multipart request without its JSON part (e.g. "booking"). */
+    @Override
+    protected ResponseEntity<Object> handleMissingServletRequestPart(MissingServletRequestPartException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "The part \"" + ex.getRequestPartName() + "\" is missing");
+        problem.setProperty("code", ErrorCode.VALIDATION_FAILED.name());
+        return ResponseEntity.badRequest().body(problem);
+    }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,

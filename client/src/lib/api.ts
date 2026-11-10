@@ -21,7 +21,7 @@ export class ApiError extends Error {
   }
 }
 
-const sessionKey = "tattoo-studio-staff-session"
+const sessionKey = "blade-and-brush-staff-session"
 
 /** The signed-in staff member, if any (kept in this browser only). */
 export const getSession = (): LoginResponse | null => {
@@ -40,14 +40,24 @@ export const clearSession = () => {
   } catch {
     // Storage blocked: nothing to clear
   }
+  window.dispatchEvent(new Event(STAFF_CHANGED_EVENT))
 }
 
+/** Fired when a staff member signs in or out on this tab (lib/staff.ts listens). */
+export const STAFF_CHANGED_EVENT = "blade-and-brush-staff-changed"
+
 /** Fired when the staff token is missing or expired, so the dashboard can send the user to sign in. */
-export const SESSION_EXPIRED_EVENT = "tattoo-studio-session-expired"
+export const SESSION_EXPIRED_EVENT = "blade-and-brush-session-expired"
 
 /** True if the stored token has passed its expiry time. */
 export const isSessionExpired = (session: LoginResponse) =>
   !session.expiresAt || new Date(session.expiresAt).getTime() <= Date.now()
+
+/** True when an artist or admin is signed in on this browser. */
+export const staffSignedIn = () => {
+  const session = getSession()
+  return !!session && !isSessionExpired(session) && session.user.role !== "USER"
+}
 
 /** Saves a staff sign-in (customers use lib/customer.ts). */
 export const saveSession = (session: LoginResponse) => {
@@ -56,6 +66,7 @@ export const saveSession = (session: LoginResponse) => {
   } catch {
     // Storage blocked: the user stays signed in until the page reloads
   }
+  window.dispatchEvent(new Event(STAFF_CHANGED_EVENT))
 }
 
 export async function api<T>(
@@ -69,7 +80,8 @@ export async function api<T>(
       ...init,
       headers: {
         Accept: "application/json",
-        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        // A FormData body (pictures) sets its own multipart type with the boundary
+        ...(init.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
@@ -78,7 +90,7 @@ export async function api<T>(
     throw new ApiError({
       status: 0,
       title: "Network error",
-      detail: "Can't reach Tattoo Studio right now. Check your connection and try again.",
+      detail: "Can't reach Blade & Brush right now. Check your connection and try again.",
     })
   }
 

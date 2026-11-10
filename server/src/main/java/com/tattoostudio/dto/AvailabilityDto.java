@@ -8,16 +8,19 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * Free start times for a service over several days.
- * {@code artistId} is null when the customer chose "any artist".
+ * Free start times with one artist for a booking of {@code durationMinutes} (a flash design's time or
+ * a 30-minute consultation) over several days.
  */
-public record AvailabilityDto(String serviceId, String artistId, List<Day> days) {
+public record AvailabilityDto(String artistId, String flashId, int durationMinutes, List<Day> days) {
 
-    /** One date and its free times; {@code slots} is empty when the day is closed or fully booked. */
-    public record Day(LocalDate date, List<Slot> slots) {
+    /**
+     * One date and its free start times. {@code closed} means the artist doesn't work that day (e.g.
+     * Mondays); an open day with no times is fully booked.
+     */
+    public record Day(LocalDate date, boolean closed, List<Slot> slots) {
     }
 
-    /** One bookable start time; {@code freeArtists} is how many artists are free then. */
-    public record Slot(@JsonFormat(pattern = "HH:mm") LocalTime time, Instant startsAt, int freeArtists) {
+    /** One bookable start time. */
+    public record Slot(@JsonFormat(pattern = "HH:mm") LocalTime time, Instant startsAt) {
     }
 }

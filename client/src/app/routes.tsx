@@ -1,57 +1,75 @@
-import { createBrowserRouter } from "react-router"
+import type { ComponentType } from "react"
+import { createBrowserRouter, Navigate } from "react-router"
+import { BookingLayout, RootLayout, SiteLayout } from "../components/Layout"
+import Account from "../pages/Account"
+import Aftercare from "../pages/Aftercare"
+import ArtistPage from "../pages/ArtistPage"
+import Artists from "../pages/Artists"
+import { BookChoose, BookDeposit, BookDetails, BookTime } from "../pages/Booking"
+import BookingConfirmed from "../pages/BookingConfirmed"
+import Credits from "../pages/Credits"
+import FlashGallery from "../pages/FlashGallery"
 import Home from "../pages/Home"
-import { StaffLogin } from "../pages/staff/StaffLogin"
-import { AdminGuard, ArtistGuard } from "../pages/staff/StaffLayout"
-import { ArtistBookings, ArtistDashboard, StaffHours } from "../pages/staff/ArtistPages"
-import { AdminBookings, AdminOverview } from "../pages/staff/AdminDashboard"
-import { AdminServices } from "../pages/staff/AdminServices"
-import { AdminArtists } from "../pages/staff/AdminArtists"
-import { AdminMessages, AdminReviews } from "../pages/staff/AdminInbox"
-import { AdminUsers } from "../pages/staff/AdminUsers"
-import {
-  ArtistStep,
-  Confirmation,
-  DetailsStep,
-  ServiceStep,
-  TimeStep,
-} from "../pages/Booking"
-import { CancellationLookup } from "../pages/Manage"
-import { AccountRegister, AccountSignIn, MyBookings } from "../pages/Account"
-import { NotFound } from "../pages/NotFound"
+import Manage from "../pages/Manage"
+import NotFound from "../pages/NotFound"
+import { Register, SignIn } from "../pages/SignIn"
 
+/** A page that is only downloaded when someone opens it (the staff area, which customers never see). */
+const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({ Component: (await load()).default })
+
+/** Every page of the website: the customer site, the booking steps, and the artist and admin area. */
 export const router = createBrowserRouter([
-  { path: "/", Component: Home },
-  { path: "/book/service", Component: ServiceStep },
-  { path: "/book/artist", Component: ArtistStep },
-  { path: "/book/time", Component: TimeStep },
-  { path: "/book/details", Component: DetailsStep },
-  { path: "/booking/confirmed", Component: Confirmation },
-  { path: "/cancel", Component: CancellationLookup },
-  { path: "/account", Component: MyBookings },
-  { path: "/account/sign-in", Component: AccountSignIn },
-  { path: "/account/register", Component: AccountRegister },
-  { path: "/staff/login", Component: StaffLogin },
   {
-    path: "/staff",
-    Component: ArtistGuard,
+    Component: RootLayout,
     children: [
-      { index: true, Component: ArtistDashboard },
-      { path: "bookings", Component: ArtistBookings },
-      { path: "hours", Component: StaffHours },
+      // A page of its own, without the site's header and footer (as in the design)
+      { path: "/staff/sign-in", lazy: page(() => import("../pages/StaffSignIn")) },
+      {
+        // The artist area (/staff) and the admin area (/admin); StaffLayout signs people in and keeps each in their own
+        lazy: async () => ({ Component: (await import("../components/StaffUi")).StaffLayout }),
+        children: [
+          { path: "/staff", element: <Navigate to="/staff/calendar" replace /> },
+          { path: "/staff/calendar", lazy: page(() => import("../pages/staff/StaffCalendar")) },
+          { path: "/staff/hours", lazy: page(() => import("../pages/staff/StaffHours")) },
+          { path: "/staff/flash", lazy: page(() => import("../pages/staff/StaffFlash")) },
+          { path: "/staff/*", element: <Navigate to="/staff/calendar" replace /> },
+          { path: "/admin", element: <Navigate to="/admin/bookings" replace /> },
+          { path: "/admin/bookings", lazy: page(() => import("../pages/admin/AdminBookings")) },
+          { path: "/admin/flash", lazy: page(() => import("../pages/admin/AdminFlash")) },
+          { path: "/admin/artists", lazy: page(() => import("../pages/admin/AdminArtists")) },
+          { path: "/admin/reviews", lazy: page(() => import("../pages/admin/AdminReviews")) },
+          { path: "/admin/messages", lazy: page(() => import("../pages/admin/AdminMessages")) },
+          { path: "/admin/users", lazy: page(() => import("../pages/admin/AdminUsers")) },
+          { path: "/admin/*", element: <Navigate to="/admin/bookings" replace /> },
+        ],
+      },
+      {
+        Component: SiteLayout,
+        children: [
+          { path: "/", Component: Home },
+          { path: "/flash", Component: FlashGallery },
+          { path: "/artists", Component: Artists },
+          { path: "/artists/:slug", Component: ArtistPage },
+          { path: "/aftercare", Component: Aftercare },
+          { path: "/credits", Component: Credits },
+          { path: "/booking/confirmed", Component: BookingConfirmed },
+          { path: "/manage", Component: Manage },
+          { path: "/account", Component: Account },
+          { path: "/account/sign-in", Component: SignIn },
+          { path: "/account/register", Component: Register },
+          { path: "*", Component: NotFound },
+        ],
+      },
+      {
+        Component: BookingLayout,
+        children: [
+          { path: "/book", Component: BookChoose },
+          { path: "/book/choose", Component: BookChoose },
+          { path: "/book/time", Component: BookTime },
+          { path: "/book/details", Component: BookDetails },
+          { path: "/book/deposit", Component: BookDeposit },
+        ],
+      },
     ],
   },
-  {
-    path: "/admin",
-    Component: AdminGuard,
-    children: [
-      { index: true, Component: AdminOverview },
-      { path: "bookings", Component: AdminBookings },
-      { path: "services", Component: AdminServices },
-      { path: "artists", Component: AdminArtists },
-      { path: "reviews", Component: AdminReviews },
-      { path: "messages", Component: AdminMessages },
-      { path: "users", Component: AdminUsers },
-    ],
-  },
-  { path: "*", Component: NotFound },
 ])

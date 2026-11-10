@@ -1,0 +1,216 @@
+/* The artist and admin area, from the design's staff pages (the same block in every one of them).
+   Night ink colours, no paintings. Kept as in the design; additions for the live site are in site.css. */
+/* ===== Staff and admin (plain night) ===== */
+.staff-app { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; background: var(--sumi); }
+.staff-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 28px; padding: 24px 18px; border-right: 1px solid var(--rule-night); }
+.staff-sidebar-heading { display: flex; align-items: center; gap: 12px; padding: 0 8px 22px; border-bottom: 1px solid var(--rule-night); }
+.staff-sidebar-heading img { width: 48px; height: 48px; object-fit: contain; }
+.staff-sidebar-heading strong { display: block; font: 600 19px/1.2 'Zen Old Mincho', serif; }
+.staff-sidebar-heading span { display: block; color: var(--paper-on-sumi-soft); font-size: 14px; }
+.staff-sidebar nav { display: grid; gap: 4px; }
+.staff-sidebar nav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--paper-on-sumi-soft); text-decoration: none; }
+.staff-sidebar nav a:hover { color: var(--paper-on-sumi); background: rgba(245, 228, 210, .06); }
+.staff-sidebar nav a.is-active { background: var(--paper-light); color: var(--ink); font-weight: 700; }
+.staff-sign-out { margin-top: auto; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; color: var(--paper-on-sumi); }
+.staff-main { padding: 36px 44px 72px; min-width: 0; }
+.staff-page-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; margin-bottom: 28px; padding-bottom: 22px; border-bottom: 1px solid var(--rule-night); }
+.staff-page-header h1 { margin: 0; font-size: 40px; }
+.staff-page-header p { margin: 6px 0 0; color: var(--paper-on-sumi-soft); }
+.staff-compact { min-height: 44px; padding: 0 16px; }
+.staff-section { margin-top: 36px; }
+.staff-section > h2, .staff-section-heading h2 { margin: 0 0 16px; font-size: 26px; }
+.staff-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.staff-section-heading h2 { margin: 0; }
+.staff-switch { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; white-space: nowrap; }
+.staff-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch-track { width: 46px; height: 26px; display: flex; align-items: center; padding: 3px; border: 1.5px solid rgba(245, 228, 210, .55); }
+.switch-track i { width: 17px; height: 17px; background: var(--paper-on-sumi-soft); }
+.switch-track.is-on { justify-content: flex-end; background: var(--paper-light); border-color: var(--paper-light); }
+.switch-track.is-on i { background: var(--ink); }
+.staff-switch strong { font-weight: 500; font-size: 15px; }
+.on-paper .switch-track { border-color: var(--ink); }
+.on-paper .switch-track i { background: var(--mist); }
+.on-paper .switch-track.is-on { background: var(--ink); }
+.on-paper .switch-track.is-on i { background: var(--paper-light); }
+.staff-text-button { min-height: 44px; padding: 0; border: 0; background: none; color: var(--paper-on-sumi); font: 700 15px/1 'Zen Kaku Gothic New', sans-serif; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.staff-image { width: 72px; height: 72px; flex: none; border: 1px solid var(--mist); background: var(--paper-light); outline: 1px solid var(--mist); outline-offset: -7px; }
+
+/* Sign in */
+.staff-sign-in-page { min-height: 100vh; display: grid; place-items: center; padding: 48px 20px; background: var(--sumi); }
+.staff-sign-in-card { width: min(100%, 460px); display: grid; gap: 24px; }
+.staff-sign-in-card .lockup { display: inline-flex; align-items: center; gap: 13px; }
+.staff-sign-in-card .lockup img { width: 48px; height: 48px; }
+.staff-sign-in-card h1 { margin: 0 0 4px; font-size: 44px; }
+.staff-sign-in-card p { margin: 0; color: var(--paper-on-sumi-soft); }
+.staff-sign-in-card form { display: grid; gap: 18px; }
+.staff-sign-in-card .button-primary { width: 100%; }
+.staff-sign-in-card > a { color: var(--paper-on-sumi); justify-self: start; display: inline-flex; align-items: center; min-height: 44px; }
+
+/* Calendar */
+.calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+.segmented { display: inline-flex; border: 1.5px solid rgba(245, 228, 210, .45); }
+.segmented button { min-height: 44px; padding: 0 20px; border: 0; background: transparent; color: var(--paper-on-sumi); font: 500 15px/1 'Zen Kaku Gothic New', sans-serif; cursor: pointer; }
+.segmented button.is-active { background: var(--paper-on-sumi); color: var(--ink); }
+.date-control { display: inline-flex; align-items: center; gap: 6px; }
+.date-control strong { min-width: 200px; text-align: center; font-variant-numeric: tabular-nums; }
+.icon-square { width: 44px; height: 44px; display: grid; place-items: center; border: 1.5px solid rgba(245, 228, 210, .45); background: transparent; color: var(--paper-on-sumi); cursor: pointer; }
+.calendar-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--rule-night); border-left: 1px solid var(--rule-night); }
+.calendar-day { min-height: 520px; border-right: 1px solid var(--rule-night); border-bottom: 1px solid var(--rule-night); }
+.calendar-day header { padding: 12px 12px 10px; border-bottom: 1px solid var(--rule-night); }
+.calendar-day header strong { display: block; font: 600 18px/1.2 'Zen Old Mincho', serif; }
+.calendar-day header span { font-size: 14px; color: var(--paper-on-sumi-soft); font-variant-numeric: tabular-nums; }
+.calendar-day > div { display: grid; gap: 8px; padding: 10px; }
+.calendar-block { display: grid; gap: 2px; width: 100%; padding: 10px; text-align: left; border: 1.5px solid transparent; cursor: pointer; font-family: 'Zen Kaku Gothic New', sans-serif; }
+.calendar-block strong { font-size: 14px; font-variant-numeric: tabular-nums; }
+.calendar-block span { font: 600 17px/1.2 'Zen Old Mincho', serif; }
+.calendar-block small { font-size: 14px; }
+.block-flash { background: var(--paper-light); color: var(--ink); }
+.block-consultation { background: transparent; color: var(--paper-on-sumi); border-color: var(--paper-on-sumi); }
+.block-reserved { background: var(--red); color: var(--paper); }
+.block-off { min-height: 240px; align-content: start; color: var(--paper-on-sumi-soft); border: 1px solid var(--rule-night); cursor: default;
+  background: repeating-linear-gradient(135deg, rgba(140, 135, 124, .32) 0 2px, transparent 2px 10px); }
+.calendar-block.is-selected { outline: 2px solid var(--paper-on-sumi); outline-offset: 3px; }
+.calendar-free { margin: 6px 2px; color: var(--paper-on-sumi-soft); font-size: 14px; }
+.calendar-legend { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 18px; font-size: 14px; color: var(--paper-on-sumi-soft); }
+.calendar-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.calendar-legend i { width: 16px; height: 16px; display: inline-block; }
+.legend-flash { background: var(--paper-light); } .legend-consultation { border: 1.5px solid var(--paper-on-sumi); }
+.legend-reserved { background: var(--red); } .legend-off { background: repeating-linear-gradient(135deg, rgba(140, 135, 124, .6) 0 2px, transparent 2px 5px); border: 1px solid var(--rule-night); }
+.panel-backdrop { position: fixed; inset: 0; background: rgba(8, 7, 7, .62); z-index: 200; }
+.side-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 210; width: min(100%, 420px); overflow-y: auto; padding: 28px 28px 40px; background: var(--paper-light); color: var(--ink); border-left: 2px solid var(--ink); }
+.side-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.side-panel-heading h2 { margin: 0; font-size: 28px; }
+.side-panel .icon-square { border-color: var(--ink); color: var(--ink); }
+.reference-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.reference-row button { aspect-ratio: 1; display: grid; place-items: end start; padding: 8px; border: 1px solid var(--mist); background: var(--paper); color: var(--ink-soft); font-size: 14px; cursor: zoom-in; }
+.side-panel h3 { margin: 24px 0 10px; font-size: 20px; }
+
+/* Hours */
+.hours-table { display: grid; border-top: 1px solid var(--rule-night); max-width: 860px; }
+.hours-row { display: grid; grid-template-columns: 160px 140px minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: center; min-height: 64px; border-bottom: 1px solid var(--rule-night); }
+.hours-row > strong { font: 600 18px/1.2 'Zen Old Mincho', serif; }
+.hours-row.is-off { color: var(--paper-on-sumi-soft); }
+.day-off-check { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.night-check { width: 22px; height: 22px; display: grid; place-items: center; border: 1.5px solid rgba(245, 228, 210, .55); }
+.night-check.is-on { background: var(--paper-on-sumi); border-color: var(--paper-on-sumi); color: var(--ink); }
+.time-field { display: inline-flex; align-items: center; gap: 10px; color: var(--paper-on-sumi-soft); font-size: 14px; }
+.time-field input, .night-input { min-height: 44px; width: 120px; padding: 0 10px; background: var(--sumi); color: var(--paper-on-sumi); border: 1px solid rgba(245, 228, 210, .5);
+  font: 500 16px/1 'Zen Kaku Gothic New', sans-serif; font-variant-numeric: tabular-nums; }
+.time-field input:disabled { opacity: .35; }
+.days-off-list { display: grid; max-width: 860px; border-top: 1px solid var(--rule-night); }
+.days-off-list > div { display: grid; grid-template-columns: 200px minmax(0, 1fr) auto; gap: 18px; align-items: center; min-height: 60px; border-bottom: 1px solid var(--rule-night); }
+.days-off-list strong { font-variant-numeric: tabular-nums; }
+.days-off-list span { color: var(--paper-on-sumi-soft); }
+.break-setting { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; max-width: 860px; padding: 20px 0; border-top: 1px solid var(--rule-night); border-bottom: 1px solid var(--rule-night); }
+.break-setting label { font: 600 18px/1.2 'Zen Old Mincho', serif; }
+.break-setting .night-input { width: 96px; }
+.save-bar { display: flex; align-items: center; justify-content: flex-end; gap: 18px; max-width: 860px; margin-top: 30px; }
+.save-bar p { margin: 0; display: inline-flex; align-items: center; gap: 8px; color: var(--paper-on-sumi); }
+
+/* Flash and work */
+.staff-flash-list { display: grid; border-top: 1px solid var(--rule-night); }
+.staff-flash-list article { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--rule-night); }
+.staff-flash-list h3 { margin: 0 0 2px; font-size: 20px; }
+.staff-flash-list p { margin: 0; color: var(--paper-on-sumi-soft); font-size: 15px; font-variant-numeric: tabular-nums; }
+.staff-portfolio-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.staff-portfolio-grid figure { margin: 0; }
+.staff-portfolio-grid figure > div { aspect-ratio: 4 / 5; border: 1px solid var(--mist); background: var(--paper-light); outline: 1px solid var(--mist); outline-offset: -8px; }
+.staff-portfolio-grid figcaption { margin-top: 8px; font-size: 14px; }
+.staff-portfolio-grid .staff-text-button { min-height: 32px; font-size: 14px; color: var(--paper-on-sumi-soft); }
+
+/* Admin */
+.admin-filters { display: flex; flex-wrap: wrap; gap: 14px 18px; margin-bottom: 24px; }
+.admin-filters label { display: grid; gap: 6px; font-size: 14px; color: var(--paper-on-sumi-soft); }
+.admin-filters select, .admin-filters input { min-width: 180px; min-height: 44px; padding: 0 36px 0 12px; background: var(--sumi); color: var(--paper-on-sumi); border: 1px solid rgba(245, 228, 210, .5);
+  font: 500 15px/1 'Zen Kaku Gothic New', sans-serif; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23F5E4D2' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+.admin-filters input { background-image: none; padding-right: 12px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.admin-table th { text-align: left; padding: 0 14px 12px 0; font: 600 16px/1.3 'Zen Old Mincho', serif; border-bottom: 2px solid var(--paper-on-sumi); white-space: nowrap; }
+.admin-table td { padding: 14px 14px 14px 0; border-bottom: 1px solid var(--rule-night); vertical-align: middle; font-variant-numeric: tabular-nums; }
+.admin-table tr.is-expired td:first-child { box-shadow: inset 4px 0 0 var(--red); padding-left: 14px; }
+.admin-table small { display: block; margin-top: 4px; color: var(--paper-on-sumi); font-weight: 700; font-size: 14px; }
+.table-actions { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.night-stamp { display: inline-flex; align-items: center; min-height: 28px; padding: 0 9px; border: 1.5px solid rgba(245, 228, 210, .55); font-size: 13px; white-space: nowrap; }
+.night-stamp.is-paid { border-color: var(--red); color: var(--paper-on-sumi); box-shadow: inset 3px 0 0 var(--red); }
+.night-stamp.is-waiting { border-style: dashed; }
+.night-stamp.is-muted { color: var(--paper-on-sumi-soft); border-color: var(--rule-night); }
+.admin-flash-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.admin-flash-grid article { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--rule-night); }
+.admin-flash-grid .staff-image { width: 100%; height: auto; aspect-ratio: 1; }
+.admin-flash-grid h3 { margin: 0; font-size: 19px; }
+.admin-flash-grid p { margin: 2px 0 0; color: var(--paper-on-sumi-soft); font-size: 14px; }
+.admin-flash-grid .card-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--rule-night); padding-top: 4px; }
+.admin-artist-list { display: grid; border-top: 1px solid var(--rule-night); }
+.admin-artist-list article { display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1.3fr) auto; gap: 24px; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--rule-night); }
+.admin-artist-list h2 { margin: 0; font-size: 26px; }
+.admin-artist-list p { margin: 2px 0 0; color: var(--paper-on-sumi-soft); }
+.admin-artist-list dl { margin: 0; display: grid; gap: 4px; font-size: 15px; }
+.admin-artist-list dl div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; }
+.admin-artist-list dt { color: var(--paper-on-sumi-soft); }
+.admin-artist-list dd { margin: 0; font-variant-numeric: tabular-nums; }
+.admin-review-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.admin-review-list article { display: flex; flex-direction: column; gap: 12px; }
+.review-score { font: 900 30px/1 'Zen Old Mincho', serif; font-variant-numeric: tabular-nums; }
+.review-score span { font: 500 15px/1 'Zen Kaku Gothic New', sans-serif; color: var(--ink-soft); }
+.admin-review-list p { margin: 0; font-size: 18px; }
+.review-meta { display: flex; justify-content: space-between; gap: 10px; color: var(--ink-soft); font-size: 14px; padding-top: 10px; border-top: 1px solid var(--mist); margin-top: auto; }
+.admin-message-list { display: grid; gap: 18px; max-width: 900px; }
+.admin-message-list header { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.admin-message-list header strong { font-weight: 700; }
+.admin-message-list time { color: var(--ink-soft); font-size: 14px; }
+.admin-message-list p { margin: 0 0 16px; font-size: 18px; }
+.attachments { display: flex; gap: 10px; margin-bottom: 18px; }
+.attachments button { width: 96px; aspect-ratio: 1; display: grid; place-items: end start; padding: 8px; border: 1px solid var(--mist); background: var(--paper); color: var(--ink-soft); font-size: 14px; cursor: zoom-in; }
+.status-line { display: flex; align-items: center; gap: 8px; margin: 0 0 18px; padding: 12px 16px; border-left: 4px solid var(--paper-on-sumi); background: rgba(245, 228, 210, .06); }
+
+.panel-form { display: grid; gap: 16px; }
+.panel-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.search-input { position: relative; display: block; }
+.search-input .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-soft); }
+.search-input input { padding-left: 38px; }
+.panel-helper { margin: 0; color: var(--ink-soft); font-size: 15px; }
+.panel-form .button-primary { width: 100%; }
+
+@media (max-width: 1023px) {
+  .staff-app { grid-template-columns: minmax(0, 1fr); }
+  .staff-sidebar { position: static; height: auto; }
+  .calendar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-flash-grid, .admin-review-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-portfolio-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .admin-artist-list article, .hours-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+}
+
+@media (max-width: 767px) {
+  .staff-sidebar { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0 12px; padding: 10px 16px 0; border-right: 0; border-bottom: 1px solid var(--rule-night); }
+  .staff-sidebar-heading { flex: 1 1 auto; padding: 0; border-bottom: 0; }
+  .staff-sidebar-heading img { width: 40px; height: 40px; }
+  .staff-sign-out { margin-top: 0; padding: 0 4px; }
+  .staff-sidebar nav { order: 3; flex: 1 0 100%; display: flex; gap: 4px; overflow-x: auto; margin: 10px -16px 0; padding: 0 16px 10px; scrollbar-width: none; }
+  .staff-sidebar nav::-webkit-scrollbar { display: none; }
+  .staff-sidebar nav a { flex: none; white-space: nowrap; }
+  .staff-main { padding: 22px 16px 56px; }
+  .staff-page-header { flex-direction: column; align-items: stretch; margin-bottom: 20px; padding-bottom: 18px; }
+  .staff-page-header h1 { font-size: 32px; }
+  .staff-page-header .button { width: 100%; }
+
+  .calendar-toolbar { flex-direction: column; align-items: stretch; }
+  .segmented { display: grid; grid-template-columns: 1fr 1fr; }
+  .date-control { justify-content: space-between; }
+  .date-control strong { min-width: 0; }
+  .calendar-grid { grid-template-columns: minmax(0, 1fr); }
+  .calendar-day { min-height: 0; }
+  .calendar-day header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .block-off { min-height: 0; }
+  .calendar-legend { gap: 8px 20px; }
+
+  .side-panel { top: 56px; left: 0; width: 100%; padding: 22px 20px 32px; border-left: 0; border-top: 2px solid var(--ink); }
+  .side-panel-heading h2 { font-size: 24px; }
+
+  .staff-sign-in-page { place-items: start center; padding: 40px 20px; }
+  .staff-sign-in-card h1 { font-size: 36px; }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .staff-text-button { min-height: 44px; min-width: 44px; }
+}

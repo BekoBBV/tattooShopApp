@@ -31,17 +31,17 @@ class AuthApiTest extends ApiTest {
 
     @Test
     void artistTokenCarriesTheirArtistId() throws Exception {
-        createArtistLogin("test-nia", "Nia");
-        login("test-nia", "artist-password")
+        createArtistLogin("test-nika", "Nika");
+        login("test-nika", "artist-password")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.role").value("ARTIST"))
-                .andExpect(jsonPath("$.user.artistId").value(artist("Nia").getId()));
+                .andExpect(jsonPath("$.user.artistId").value(artist("Nika").getId()));
     }
 
     @Test
     void wrongPasswordAndUnknownUserGetTheSameAnswer() throws Exception {
-        createArtistLogin("test-sol", "Sol");
-        login("test-sol", "wrong-password")
+        createArtistLogin("test-dario", "Dario");
+        login("test-dario", "wrong-password")
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("INVALID_LOGIN"));
         login("test-nobody", "whatever-password")
@@ -51,49 +51,49 @@ class AuthApiTest extends ApiTest {
 
     @Test
     void deactivatedLoginCannotSignIn() throws Exception {
-        createArtistLogin("test-cruz", "Cruz");
-        User user = users.findByUsername("test-cruz").orElseThrow();
+        createArtistLogin("test-kai", "Kai");
+        User user = users.findByUsername("test-kai").orElseThrow();
         user.setActive(false);
         users.save(user);
-        login("test-cruz", "artist-password").andExpect(status().isUnauthorized());
+        login("test-kai", "artist-password").andExpect(status().isUnauthorized());
     }
 
     @Test
     void fiveWrongPasswordsBlockTheUsernameFor5Minutes() throws Exception {
-        createArtistLogin("test-rook", "Rook");
+        createArtistLogin("test-lock", "Nika");
         for (int i = 0; i < 5; i++) {
-            login("test-rook", "wrong-password").andExpect(status().isUnauthorized());
+            login("test-lock", "wrong-password").andExpect(status().isUnauthorized());
         }
         // Even the right password is refused while blocked
-        login("test-rook", "artist-password")
+        login("test-lock", "artist-password")
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.code").value("TOO_MANY_ATTEMPTS"));
 
         // The block is per username, not per device: someone else is refused too...
-        loginFrom("10.9.9.9", "test-rook", "artist-password").andExpect(status().isTooManyRequests());
+        loginFrom("10.9.9.9", "test-lock", "artist-password").andExpect(status().isTooManyRequests());
         // ...but only for 5 minutes
         clock.advance(Duration.ofMinutes(4));
-        login("test-rook", "artist-password").andExpect(status().isTooManyRequests());
+        login("test-lock", "artist-password").andExpect(status().isTooManyRequests());
         clock.advance(Duration.ofMinutes(2));
-        login("test-rook", "artist-password").andExpect(status().isOk());
+        login("test-lock", "artist-password").andExpect(status().isOk());
     }
 
     @Test
     void tenFailedSignInsFromOneDeviceBlockItFor15Minutes() throws Exception {
-        createArtistLogin("test-jax", "Jax");
+        createArtistLogin("test-device", "Kai");
         // Trying one password on many usernames (never 5 on the same one)
         for (int i = 0; i < 10; i++) {
             login("test-guess-" + (i % 3), "wrong-password").andExpect(status().isUnauthorized());
         }
-        login("test-jax", "artist-password")
+        login("test-device", "artist-password")
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.code").value("TOO_MANY_ATTEMPTS"))
                 .andExpect(jsonPath("$.detail").value("Too many failed sign-ins from this device. Please wait 15 minutes and try again."));
         // Other devices can still sign in
-        loginFrom("10.9.9.8", "test-jax", "artist-password").andExpect(status().isOk());
+        loginFrom("10.9.9.8", "test-device", "artist-password").andExpect(status().isOk());
 
         clock.advance(Duration.ofMinutes(16));
-        login("test-jax", "artist-password").andExpect(status().isOk());
+        login("test-device", "artist-password").andExpect(status().isOk());
     }
 
     @Test
@@ -120,8 +120,8 @@ class AuthApiTest extends ApiTest {
 
     @Test
     void artistsCannotUseAdminRoutes() throws Exception {
-        createArtistLogin("test-melo", "Melo");
-        String token = bearer("test-melo", "artist-password");
+        createArtistLogin("test-dario", "Dario");
+        String token = bearer("test-dario", "artist-password");
         mvc.perform(get("/api/admin/stats").header("Authorization", token))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
@@ -129,6 +129,6 @@ class AuthApiTest extends ApiTest {
 
     @Test
     void publicSiteStaysOpen() throws Exception {
-        mvc.perform(get("/api/services")).andExpect(status().isOk());
+        mvc.perform(get("/api/flash")).andExpect(status().isOk());
     }
 }

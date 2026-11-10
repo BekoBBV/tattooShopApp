@@ -36,13 +36,13 @@ class SpaConfigTest extends ApiTest {
         mvc.perform(get("/book/time"))
                 .andExpect(header().string("Content-Security-Policy", SecurityConfig.CONTENT_SECURITY_POLICY))
                 .andExpect(header().string("X-Frame-Options", "DENY"));
-        mvc.perform(get("/api/services"))
+        mvc.perform(get("/api/flash"))
                 .andExpect(header().string("Content-Security-Policy", containsString("script-src 'self'")));
     }
 
     @Test
     void theApiStillWins() throws Exception {
-        mvc.perform(get("/api/services")).andExpect(status().isOk())
+        mvc.perform(get("/api/flash")).andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"));
     }
 }

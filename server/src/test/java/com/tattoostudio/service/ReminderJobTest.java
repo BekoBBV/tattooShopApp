@@ -32,7 +32,7 @@ class ReminderJobTest extends ApiTest {
 
     @Test
     void remindsOnceADayBefore() {
-        Booking booking = booking("Nia", TUESDAY, "10:00", BookingStatus.BOOKED); // booked 26 h ahead
+        Booking booking = booking("Nika", TUESDAY, "10:00", BookingStatus.BOOKED); // booked 26 h ahead
 
         assertThat(reminders.sendDueReminders()).isZero(); // more than 24 h to go
 
@@ -41,9 +41,9 @@ class ReminderJobTest extends ApiTest {
         ArgumentCaptor<SimpleMailMessage> sent = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(mailSender, timeout(2000)).send(sent.capture());
         assertThat(sent.getValue().getTo()).containsExactly("ivan@example.com");
-        assertThat(sent.getValue().getSubject()).startsWith("Reminder:").contains("at 10:00");
+        assertThat(sent.getValue().getSubject()).startsWith("Tomorrow at").contains("10:00");
         assertThat(sent.getValue().getText())
-                .contains("Hi Ivan Petrov", booking.getCode(), "Street Cut with Nia Banks", "/cancel", "2 hours");
+                .contains("Hi Ivan", booking.getCode(), "Test session with Nika", "/manage");
         assertThat(bookings.findById(booking.getId()).orElseThrow().getReminderSentAt()).isNotNull();
 
         clock.advance(Duration.ofMinutes(10));
@@ -52,7 +52,7 @@ class ReminderJobTest extends ApiTest {
 
     @Test
     void aFailedReminderIsTriedAgainNextRun() {
-        Booking booking = booking("Nia", TUESDAY, "10:00", BookingStatus.BOOKED);
+        Booking booking = booking("Nika", TUESDAY, "10:00", BookingStatus.BOOKED);
         clock.set(at(MONDAY, "10:30"));
         doThrow(new MailSendException("SMTP down")).doNothing().when(mailSender).send(any(SimpleMailMessage.class));
 
@@ -66,13 +66,13 @@ class ReminderJobTest extends ApiTest {
 
     @Test
     void noReminderWithoutEmailOrWhenCancelledOrBookedLastMinute() {
-        Booking noEmail = booking("Nia", TUESDAY, "10:00", BookingStatus.BOOKED);
+        Booking noEmail = booking("Nika", TUESDAY, "10:00", BookingStatus.BOOKED);
         noEmail.setEmail(null);
         bookings.save(noEmail);
-        booking("Sol", TUESDAY, "10:00", BookingStatus.CANCELLED);
+        booking("Dario", TUESDAY, "10:00", BookingStatus.CANCELLED);
 
         clock.set(at(MONDAY, "12:00"));
-        booking("Melo", TUESDAY, "11:00", BookingStatus.BOOKED); // booked 23 h ahead: confirmation is enough
+        booking("Kai", TUESDAY, "11:00", BookingStatus.BOOKED); // booked 23 h ahead: confirmation is enough
 
         clock.set(at(MONDAY, "18:00"));
         assertThat(reminders.sendDueReminders()).isZero();

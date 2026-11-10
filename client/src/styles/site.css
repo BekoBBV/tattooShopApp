@@ -1,0 +1,252 @@
+/* Additions for the live site: states the static design pages didn't need (pictures, loading,
+   errors, real checkboxes and file inputs, the photo viewer). Same colours and rules as Night ink. */
+
+/* The design pages ran Tailwind's older reset after their own CSS, which sets the body's line
+   height back to the page default of 1.5; the approved pages were drawn that way, so match it. */
+body { line-height: 1.5; }
+
+/* Uploaded pictures inside the design's frames */
+.art-image { display: block; width: 100%; height: 100%; }
+.art-image.is-contain { object-fit: contain; }
+.art-image.is-cover { object-fit: cover; }
+.scroll-signature .art-image { padding: 12px; border: 1px solid var(--mist); background: var(--paper-light); }
+.portfolio-grid img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border: 1px solid var(--mist); }
+.reference-grid figure > img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--mist); }
+
+/* A card that links through its title: the whole card is clickable */
+.flash-card.is-linked { position: relative; }
+.card-link { color: inherit; text-decoration: none; }
+.card-link::after { content: ''; position: absolute; inset: 0; }
+.flash-card.is-linked:hover h3 { color: var(--red); }
+
+/* Reference photos on the confirmation and in My account */
+.consultation-thumbnails img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border: 1px solid var(--mist); }
+
+/* The password rules in the change-password dialog (the sign-up form's spacing comes from its grid) */
+.dialog .password-rules { margin: -10px 0 24px; }
+
+/* A sent form */
+.form-sent { margin: 0 0 18px; padding: 12px 16px; border-left: 3px solid var(--pine); background: rgba(46, 58, 51, .12); }
+
+/* Real checkboxes and file inputs under the drawn ones */
+.consent-check input:focus-visible + .check-mark { outline: 2px solid var(--ink); outline-offset: 3px; }
+.consent-error { margin: -4px 0 8px 36px; }
+.file-button { position: relative; cursor: pointer; }
+.file-button input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.file-button:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* Problems with a whole form or page */
+.form-error { margin: 0 0 22px; padding: 12px 16px; border-left: 3px solid var(--red); background: rgba(185, 36, 35, .1); color: inherit; }
+.page-body > .form-error, .booking-body > .form-error { color: var(--paper-on-sumi); background: rgba(185, 36, 35, .2); }
+
+/* Loading and empty lists */
+.state-note { margin: 0; padding: 32px 0; color: var(--paper-on-sumi-soft); }
+.on-paper .state-note, .slip .state-note { color: var(--ink-soft); }
+.button[aria-disabled="true"], .button:disabled { opacity: .55; cursor: not-allowed; }
+
+/* The photo viewer on an artist's page */
+.lightbox { position: fixed; inset: 0; z-index: 300; display: grid; grid-template-rows: auto 1fr auto; gap: 16px; padding: 20px;
+  background: rgba(8, 7, 7, .94); color: var(--paper-on-sumi); }
+.lightbox-top, .lightbox-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lightbox-top p { margin: 0; }
+.lightbox figure { margin: 0; display: grid; place-items: center; min-height: 0; }
+.lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.lightbox button { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; border: 1.5px solid rgba(245, 228, 210, .5);
+  background: transparent; color: var(--paper-on-sumi); cursor: pointer; }
+.lightbox button:hover { border-color: var(--paper-on-sumi); }
+
+/* The katana cut on the home page (components/KatanaCut.tsx) */
+.katana-stage { position: relative; }
+.katana-stage.is-cutting .hero-image::before,
+.katana-stage.is-cutting .hero-image::after {
+  content: ''; position: absolute; inset: 0; z-index: 3;
+  background: url('/images/footer-night.jpg') 50% 60% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 85%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 85%, transparent 100%);
+}
+.katana-stage.is-cutting .hero-image::before { clip-path: polygon(0 0, 100% 0, 0 100%); animation: cut-upper .55s .15s cubic-bezier(.5, 0, .75, 0) forwards; }
+.katana-stage.is-cutting .hero-image::after { clip-path: polygon(100% 0, 100% 100%, 0 100%); animation: cut-lower .55s .15s cubic-bezier(.5, 0, .75, 0) forwards; }
+.katana-stage.is-cutting .hero-picture { visibility: hidden; }
+.katana-stage.is-cutting .hero-copy { animation: fade-away .5s .15s forwards; }
+.katana-overlay { position: absolute; left: 0; right: 0; top: 0; height: var(--cut-height); z-index: 20; overflow: hidden; pointer-events: none; }
+.katana-slash { position: absolute; left: 50%; top: 50%; width: var(--cut-length); height: 4px; margin-left: calc(var(--cut-length) / -2); margin-top: -2px;
+  background: #FFF8EE; box-shadow: 0 0 0 1px rgba(185, 36, 35, .7), 0 0 14px 2px rgba(255, 248, 238, .8);
+  transform: rotate(var(--cut-angle)) scaleX(0); transform-origin: 100% 50%; animation: slash .15s ease-out forwards, fade-away .3s .45s forwards; }
+.katana-petal { position: absolute; width: 11px; height: 7px; border-radius: 70% 0 70% 0; background: #E6A1AE; opacity: 0;
+  animation: petal-fall 1.05s ease-out forwards; }
+.katana-stage.is-fading { animation: fade-away .2s forwards; }
+@keyframes slash { to { transform: rotate(var(--cut-angle)) scaleX(1); } }
+@keyframes cut-upper { to { transform: translate(-7%, -14%); opacity: 0; } }
+@keyframes cut-lower { to { transform: translate(7%, 14%); opacity: 0; } }
+@keyframes fade-away { to { opacity: 0; } }
+@keyframes petal-fall {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  100% { opacity: 0; transform: translate(var(--dx), 140px) rotate(var(--turn)); }
+}
+
+/* The seal stamp on the booking confirmation: presses down once, then stays fully opaque */
+.confirmation-seal img { animation: seal-stamp .35s cubic-bezier(.3, 1.4, .6, 1) both; }
+.confirmation-seal::before { animation: ink-spread .5s .2s ease-out both; }
+@keyframes seal-stamp {
+  from { opacity: 0; transform: rotate(-9deg) scale(1.3); }
+  to { opacity: 1; transform: rotate(-3deg) scale(1); }
+}
+@keyframes ink-spread {
+  from { opacity: 0; transform: rotate(-6deg) scale(.9); }
+  to { opacity: .14; transform: rotate(-6deg) scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confirmation-seal img, .confirmation-seal::before { animation: none; }
+}
+
+/* Keyboard users can jump past the header */
+.skip-link { position: absolute; left: 12px; top: -60px; z-index: 400; padding: 10px 14px; background: var(--paper); color: var(--ink); }
+.skip-link:focus { top: 12px; }
+
+/* The design's home page didn't load the flash gallery's card rules; in one stylesheet they reach
+   the home cards too, so the home grid gets its own title row back (desktop and tablet, then phones) */
+.flash-grid .flash-card .flash-title-row { margin-top: 13px; min-height: 52px; }
+.flash-grid .flash-card .flash-title-row h3 { font-size: 20px; }
+@media (max-width: 767px) {
+  .flash-grid .flash-card .flash-title-row { margin-top: 0; min-height: 0; }
+  .flash-grid .flash-card .flash-title-row h3 { font-size: 18px; }
+}
+
+
+/* The staff sign-in's seal and name link home */
+.staff-sign-in-card a.lockup { color: var(--paper-on-sumi); text-decoration: none; justify-self: start; }
+
+/* ===== The artist and admin area: what the static staff pages didn't need ===== */
+button.staff-sign-out { border: 0; background: none; font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.staff-home-link { display: inline-flex; flex: none; }
+.staff-switch:focus-within .switch-track { outline: 2px solid var(--paper-on-sumi); outline-offset: 3px; }
+.on-paper .staff-switch:focus-within .switch-track { outline-color: var(--ink); }
+.staff-switch { position: relative; }
+.staff-switch.is-disabled { opacity: .5; cursor: not-allowed; }
+.staff-text-button:disabled { opacity: .45; cursor: not-allowed; text-decoration: none; }
+.on-paper .staff-text-button { color: var(--ink); }
+.on-paper .night-stamp { color: var(--ink); border-color: var(--ink); }
+.staff-note { margin: 12px 0; color: var(--paper-on-sumi-soft); }
+.status-line.is-error { border-left-color: var(--red); }
+.staff-pager { display: flex; align-items: center; gap: 18px; margin-top: 20px; color: var(--paper-on-sumi-soft); font-size: 15px; }
+
+/* Tablets and phones: the top bar keeps its height on short pages */
+@media (max-width: 1023px) {
+  .staff-app { grid-template-rows: auto 1fr; }
+}
+
+/* Tablets: the phone's compact top bar with scrolling tabs, instead of the whole sidebar stacked
+   above the page (503px before any content) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .staff-sidebar { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0 16px; padding: 12px 32px 0; border-right: 0; border-bottom: 1px solid var(--rule-night); }
+  .staff-sidebar-heading { flex: 1 1 auto; padding: 0; border-bottom: 0; }
+  .staff-sign-out { margin-top: 0; }
+  .staff-sidebar nav { order: 3; flex: 1 0 100%; display: flex; gap: 4px; overflow-x: auto; margin: 12px -32px 0; padding: 0 32px 12px; scrollbar-width: none; }
+  .staff-sidebar nav a { flex: none; white-space: nowrap; }
+}
+
+/* Calendar: as many columns as days shown (a week of working days, or one day) */
+@media (min-width: 1024px) {
+  .calendar-grid { grid-template-columns: repeat(var(--days, 6), minmax(0, 1fr)); }
+}
+.calendar-day.is-today header { background: rgba(245, 228, 210, .08); box-shadow: inset 0 3px 0 var(--paper-on-sumi); }
+.calendar-block .block-note { font-weight: 700; }
+.calendar-block.needs-attention { box-shadow: inset 4px 0 0 var(--red); }
+.block-reserved.needs-attention { box-shadow: inset 4px 0 0 var(--paper); }
+
+/* The details and reserve panels */
+.side-panel .slip-list dd a { color: var(--ink); }
+.side-panel .slip-list .night-stamp { white-space: normal; }
+.panel-warning { display: block; margin-top: 4px; font-weight: 700; color: var(--red); }
+.panel-callout { margin: 0 0 16px; padding: 12px 14px; border-left: 4px solid var(--red); background: var(--paper); font-weight: 700; }
+.reference-row button { overflow: hidden; padding: 0; }
+.reference-row button img { width: 100%; height: 100%; object-fit: cover; }
+.panel-actions { display: grid; gap: 10px; justify-items: start; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--mist); }
+.panel-actions > .button { width: 100%; }
+.panel-action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.customer-options { list-style: none; margin: 6px 0 0; padding: 0; display: grid; border-top: 1px solid var(--mist); }
+.customer-options button { width: 100%; min-height: 44px; display: grid; gap: 2px; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--mist); background: none;
+  color: var(--ink); text-align: left; font: 400 16px/1.35 'Zen Kaku Gothic New', sans-serif; cursor: pointer; }
+.customer-options button:hover { background: var(--paper); }
+.customer-options small, .chosen-customer small { color: var(--ink-soft); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.customer-none { padding: 10px 4px; color: var(--ink-soft); font-size: 15px; }
+.chosen-customer { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 6px 12px;
+  border: 1.5px solid var(--ink); background: var(--paper); font-weight: 400; }
+.chosen-customer > span { display: grid; min-width: 0; }
+
+/* Staff forms on black: selects look like the design's time inputs */
+.time-field select, select.night-input { min-height: 44px; width: 120px; padding: 0 10px; background: var(--sumi); color: var(--paper-on-sumi);
+  border: 1px solid rgba(245, 228, 210, .5); font: 500 16px/1 'Zen Kaku Gothic New', sans-serif; font-variant-numeric: tabular-nums; }
+.time-field select:disabled { opacity: .35; }
+.admin-filters input[type="date"], .time-field select, select.night-input { color-scheme: dark; }
+.admin-filters input[type="search"] { min-width: 220px; }
+.staff-section.conflicts { max-width: 860px; padding: 16px 20px; border-left: 4px solid var(--red); background: rgba(245, 228, 210, .05); }
+.staff-section.conflicts h2 { font-size: 22px; margin-bottom: 8px; }
+.staff-section.conflicts p { margin: 0 0 8px; color: var(--paper-on-sumi-soft); }
+.staff-section.conflicts ul { margin: 0; padding-left: 20px; }
+.save-bar .save-problem { color: var(--paper-on-sumi); font-weight: 700; border-left: 4px solid var(--red); padding-left: 10px; }
+.stats-line { margin: -12px 0 20px; color: var(--paper-on-sumi-soft); font-variant-numeric: tabular-nums; }
+.stats-line strong { color: var(--paper-on-sumi); }
+
+/* Pictures in the staff lists and dialogs */
+.staff-image { overflow: hidden; }
+.staff-image img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+.flash-state { font-weight: 700; color: var(--paper-on-sumi) !important; }
+.flash-row-actions { display: flex; align-items: center; gap: 18px; }
+.portfolio-open { display: block; width: 100%; padding: 0; border: 1px solid var(--mist); background: var(--paper-light); cursor: zoom-in; aspect-ratio: 4 / 5; overflow: hidden; }
+.portfolio-open img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.signature-setting { display: flex; align-items: center; gap: 18px; max-width: 700px; }
+.signature-setting .staff-image { width: 96px; height: 120px; }
+.signature-setting p { margin: 0; color: var(--paper-on-sumi-soft); }
+.attachments button { overflow: hidden; padding: 0; }
+.attachments button img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Dialogs of the staff area */
+.dialog-row { margin-bottom: 0; }
+.dialog-row .field { margin-bottom: 22px; }
+.dialog-hint { margin: 0 0 18px; color: var(--ink-soft); font-size: 15px; }
+.dialog-picture { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+.dialog-picture .staff-image { width: 88px; height: 88px; }
+.dialog-picture > div:last-child { display: grid; gap: 6px; justify-items: start; }
+.dialog-picture .helper { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.dialog .staff-switch { margin-bottom: 18px; }
+.dialog-actions .dialog-delete { margin-left: auto; }
+.upload-list { display: grid; gap: 12px; margin-bottom: 20px; max-height: 50vh; overflow-y: auto; }
+.upload-item { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; margin: 0 !important; }
+.upload-item > span:last-child { display: grid; gap: 6px; }
+.upload-thumb { width: 64px; height: 64px; border: 1px solid var(--mist); background: var(--paper); overflow: hidden; }
+.upload-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.upload-item.is-sent { opacity: .55; }
+
+/* Admin lists */
+.table-scroll { overflow-x: auto; }
+.table-link { padding: 0; border: 0; background: none; color: var(--paper-on-sumi); font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; min-height: 32px; }
+.admin-artist-list article.is-inactive h2, .admin-artist-list article.is-inactive p { opacity: .6; }
+.artist-actions { margin-top: 6px; }
+.artist-warning { font-weight: 700; }
+.review-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; }
+.admin-message-list .message-note { margin: -4px 0 10px; font-size: 14px; color: var(--ink-soft); }
+.admin-message-list article.is-handled { opacity: .78; }
+.message-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.message-handled { color: var(--ink-soft); font-size: 14px; }
+@media (max-width: 767px) {
+  .admin-filters label, .admin-filters select, .admin-filters input { width: 100%; min-width: 0; }
+  .admin-filters input[type="search"] { min-width: 0; }
+  .admin-filters { display: grid; grid-template-columns: 1fr 1fr; }
+  .admin-table { min-width: 720px; }
+  .admin-flash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .admin-flash-grid article { padding: 10px; }
+  .admin-flash-grid .card-actions { flex-wrap: wrap; }
+  .admin-review-list { grid-template-columns: minmax(0, 1fr); }
+  .staff-portfolio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-flash-list article { grid-template-columns: 56px minmax(0, 1fr); }
+  .staff-flash-list .staff-image { width: 56px; height: 56px; }
+  .flash-row-actions { grid-column: 1 / -1; justify-content: space-between; }
+  .hours-row { padding: 10px 0; }
+  .days-off-list > div { grid-template-columns: minmax(0, 1fr) auto; padding: 10px 0; }
+  .days-off-list > div > span { grid-column: 1; grid-row: 2; }
+  .days-off-list > div > button { grid-column: 2; grid-row: 1 / span 2; }
+  .save-bar { flex-direction: column; align-items: stretch; }
+  .staff-section-heading { flex-wrap: wrap; }
+  .admin-artist-list article > .staff-switch { justify-self: start; }
+}

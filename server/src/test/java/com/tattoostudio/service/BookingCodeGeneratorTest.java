@@ -14,7 +14,7 @@ class BookingCodeGeneratorTest {
     @Test
     void codesHaveTheRightShapeAndNoLookAlikeCharacters() {
         for (int i = 0; i < 1000; i++) {
-            assertThat(generator.next()).matches("FS-[A-Z2-9]{6}").doesNotContainPattern("[01OIL]");
+            assertThat(generator.next()).matches("[A-Z2-9]{4}-[A-Z2-9]{2}").doesNotContainPattern("[01OIL]");
         }
     }
 
@@ -29,9 +29,9 @@ class BookingCodeGeneratorTest {
 
     @Test
     void normalizesWhatCustomersType() {
-        assertThat(BookingCodeGenerator.normalize(" fs-7k3qxm ")).isEqualTo("FS-7K3QXM");
-        assertThat(BookingCodeGenerator.normalize("7K3QXM")).isEqualTo("FS-7K3QXM");
-        assertThat(BookingCodeGenerator.normalize("fs7k3qxm")).isEqualTo("FS-7K3QXM"); // without the dash
-        assertThat(BookingCodeGenerator.normalize("FSAB12")).isEqualTo("FS-FSAB12"); // a code that starts with FS
+        assertThat(BookingCodeGenerator.normalize(" k7q2-m9 ")).isEqualTo("K7Q2-M9");
+        assertThat(BookingCodeGenerator.normalize("K7Q2M9")).isEqualTo("K7Q2-M9"); // without the dash
+        assertThat(BookingCodeGenerator.normalize("k7 q2 m9")).isEqualTo("K7Q2-M9");
+        assertThat(BookingCodeGenerator.normalize("K7Q2-M")).isEqualTo("K7Q2M"); // too short: never matches a code
     }
 }

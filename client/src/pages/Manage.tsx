@@ -1,232 +1,200 @@
 import { useState, type FormEvent } from "react"
-import {
-  CalendarX,
-  Check,
-  Clock3,
-  KeyRound,
-  MapPin,
-  ShieldAlert,
-} from "lucide-react"
-import { useLocation } from "react-router"
-import { SprayDisc } from "../components/brand"
-import {
-  AppLink,
-  Button,
-  Eyebrow,
-  Heading,
-  Input,
-  StatusBadge,
-} from "../components/ui"
-import { ApiError, api } from "../lib/api"
-import { formatAppointment, formatMoney, shop } from "../lib/data"
-import type { Booking } from "../lib/types"
+import { Link, useSearchParams } from "react-router"
+import { CancelDialog, ReviewDialog } from "../components/BookingDialogs"
+import { PageIntro } from "../components/Layout"
+import { FormError, Stamp, TextField } from "../components/Studio"
+import { api } from "../lib/api"
+import { getDraft } from "../lib/bookingDraft"
+import { cancelledNote, statusOf, titleOf } from "../lib/bookingText"
+import { euros, longDate, placementLabel } from "../lib/format"
+import { limits } from "../lib/limits"
+import type { Booking, PaymentStart } from "../lib/types"
 import { usePageTitle } from "../lib/usePageTitle"
 import { checkLookup, useFieldChecks } from "../lib/validation"
-import { limits } from "../lib/limits"
 
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-
-export function CancellationLookup() {
-  usePageTitle("Find your booking")
-  // The confirmation page hands the code over in navigation state, so it never appears in the URL
-  const location = useLocation()
-  const [code, setCode] = useState(
-    (location.state as { code?: string } | null)?.code ?? "",
-  )
-  const [phone, setPhone] = useState("")
+/** Find a booking with its code and phone number: see it, pay a waiting deposit, cancel it or review it. */
+export default function Manage() {
+  usePageTitle("Manage a booking")
+  const [params] = useSearchParams()
+  const draft = getDraft()
+  const linkCode = params.get("code") ?? ""
+  const [code, setCode] = useState(linkCode)
+  const [phone, setPhone] = useState(linkCode && draft.code === linkCode ? (draft.phone ?? "") : "")
   const [booking, setBooking] = useState<Booking | null>(null)
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [confirming, setConfirming] = useState(false)
-  const checks = useFieldChecks(checkLookup(code, phone))
-  async function lookup(event: FormEvent<HTMLFormElement>) {
+  const [found, setFound] = useState<{ code: string; phone: string } | null>(null)
+  const [problem, setProblem] = useState("")
+  const [note, setNote] = useState(params.get("refunded") ? "The payment came in after the 15-minute hold had run out and the time was taken, so your deposit is refunded." : "")
+  const [busy, setBusy] = useState(false)
+  const [dialog, setDialog] = useState<"cancel" | "review" | null>(null)
+  const errors = checkLookup(code, phone)
+  const checks = useFieldChecks(errors)
+
+  async function find(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!checks.canSubmit(event.currentTarget)) return
-    setLoading(true)
-    setError("")
+    setBusy(true)
+    setProblem("")
     try {
-      setBooking(
-        await api<Booking>("/bookings/lookup", {
-          method: "POST",
-          body: JSON.stringify({ code: code.trim().toUpperCase(), phone }),
-        }),
-      )
+      const b = await api<Booking>("/bookings/lookup", { method: "POST", body: JSON.stringify({ code, phone }) })
+      setBooking(b)
+      setFound({ code: b.code, phone })
     } catch (reason) {
-      if (reason instanceof ApiError && reason.code === "TOO_MANY_ATTEMPTS")
-        setError("Too many attempts. Try again in 15 minutes.")
-      else
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "No booking found for this code and phone number",
-        )
+      setBooking(null)
+      setProblem(reason instanceof Error ? reason.message : "Something went wrong. Please try again.")
     } finally {
-      setLoading(false)
+      setBusy(false)
     }
   }
-  async function cancel() {
-    setLoading(true)
-    setError("")
+
+  async function pay() {
+    if (!found) return
+    setBusy(true)
+    setProblem("")
     try {
-      setBooking(
-        await api<Booking>("/bookings/cancel", {
-          method: "POST",
-          body: JSON.stringify({ code, phone }),
-        }),
-      )
-      setConfirming(false)
+      const start = await api<PaymentStart>("/bookings/deposit", { method: "POST", body: JSON.stringify(found) })
+      window.location.assign(start.checkoutUrl)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not cancel.")
-    } finally {
-      setLoading(false)
+      setBusy(false)
+      setProblem(reason instanceof Error ? reason.message : "Something went wrong. Please try again.")
     }
   }
-  if (booking) {
-    return (
-      <main className="result-page">
-        <div className="result-card manage-card">
-          {booking.status === "CANCELLED" ? (
-            <div className="cancelled-mark">
-              <CalendarX />
-            </div>
-          ) : (
-            <SprayDisc initials={initials(booking.artistName)} size="lg" />
-          )}
-          <Eyebrow>Manage booking</Eyebrow>
-          <Heading level={1}>
-            {booking.status === "CANCELLED"
-              ? "Your chair is released."
-              : "Your chair is waiting."}
-          </Heading>
-          <StatusBadge status={booking.status} />
-          <div className="receipt">
-            <div>
-              <Clock3 />
-              <span>
-                <small>Date & time</small>
-                {formatAppointment(booking.startsAt)}
-              </span>
-            </div>
-            <div>
-              <SprayDisc initials={initials(booking.artistName)} size="sm" />
-              <span>
-                <small>Service</small>
-                {booking.serviceName} with {booking.artistName} ·{" "}
-                {formatMoney(booking.price)}
-              </span>
-            </div>
-            <div>
-              <MapPin />
-              <span>
-                <small>Location</small>
-                {shop.address}
-              </span>
-            </div>
-          </div>
-          {booking.cancellable && !confirming ? (
-            <Button variant="danger" onClick={() => setConfirming(true)}>
-              Cancel appointment
-            </Button>
-          ) : null}
-          {!booking.cancellable && booking.status === "BOOKED" ? (
-            <p className="notice">
-              Online cancellation has closed (2 hours before). Please call the
-              shop: {shop.phone}
-            </p>
-          ) : null}
-          {confirming ? (
-            <div className="confirm-box">
-              <Heading level={3}>Release this time?</Heading>
-              <p>This can’t be undone.</p>
-              <div>
-                <Button variant="ghost" onClick={() => setConfirming(false)}>
-                  Keep booking
-                </Button>
-                <Button variant="danger" loading={loading} onClick={cancel}>
-                  <Check /> Yes, cancel
-                </Button>
-              </div>
-            </div>
-          ) : null}
-          {error ? <p className="form-error">{error}</p> : null}
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setBooking(null)
-              setConfirming(false)
-            }}
-          >
-            Find another booking
-          </Button>
-          <AppLink to="/" variant="secondary">
-            Back to home
-          </AppLink>
-        </div>
-      </main>
-    )
-  }
+
+  const status = booking ? statusOf(booking) : null
   return (
-    <main className="result-page cancel-lookup-page">
-      <div className="result-card cancel-lookup-card">
-        <div className="cancel-code-icon">
-          <KeyRound />
+    <main>
+      <PageIntro title="Manage a booking">
+        <p>Find your booking with the code from your confirmation.</p>
+      </PageIntro>
+      <section className="wrap booking-body manage-layout">
+        <div className="slip on-paper">
+          <h2>Find a booking</h2>
+          <form onSubmit={find} onChange={checks.onChange} onBlur={checks.onBlur} noValidate>
+            <TextField label="Booking code" name="code" placeholder="K7Q2-M9" autoCapitalize="characters" maxLength={limits["lookup.code"]}
+              value={code} onChange={(e) => setCode(e.target.value)} error={checks.errorFor("code")} />
+            <TextField label="Phone number" name="phone" type="tel" autoComplete="tel" placeholder="+359" maxLength={limits["lookup.phone"]}
+              value={phone} onChange={(e) => setPhone(e.target.value)} error={checks.errorFor("phone")} />
+            <button className="button button-primary" type="submit" disabled={busy && !booking}>
+              {busy && !booking ? "Looking..." : "Find booking"}
+            </button>
+          </form>
         </div>
-        <Eyebrow>Manage your chair</Eyebrow>
-        <Heading level={1}>Find your booking.</Heading>
-        <p>
-          Enter your booking code and the phone number you booked with. Codes
-          start with FS- and aren’t case-sensitive. Online cancellation is free
-          until 2 hours before the appointment.
-        </p>
-        <form
-          noValidate
-          onSubmit={lookup}
-          onBlur={checks.onBlur}
-          onChange={checks.onChange}
-        >
-          <Input
-            label="Booking code"
-            name="code"
-            placeholder="FS-7K3QXM"
-            autoComplete="off"
-            required
-            maxLength={limits["lookup.code"]}
-            value={code}
-            error={checks.errorFor("code")}
-            onChange={(event) => setCode(event.target.value)}
-          />
-          <Input
-            label="Phone number"
-            name="phone"
-            type="tel"
-            placeholder="0888 123 456"
-            autoComplete="tel"
-            required
-            maxLength={limits["lookup.phone"]}
-            value={phone}
-            error={checks.errorFor("phone")}
-            onChange={(event) => setPhone(event.target.value)}
-          />
-          {error ? (
-            <p className="form-error">
-              <ShieldAlert /> {error}
+        <div className="slip on-paper" aria-live="polite">
+          <FormError>{problem}</FormError>
+          {note && (
+            <p className="form-sent" role="status">
+              {note}
             </p>
-          ) : null}
-          <Button type="submit" loading={loading}>
-            Open booking
-          </Button>
-        </form>
-        <AppLink to="/" variant="ghost">
-          Back to Tattoo Studio
-        </AppLink>
-      </div>
+          )}
+          {booking && status ? (
+            <>
+              <div className="managed-heading">
+                <div>
+                  <h2>{titleOf(booking)}</h2>
+                  <p className="record-code">{booking.code}</p>
+                </div>
+                <Stamp tone={status.tone}>{status.label}</Stamp>
+              </div>
+              <dl className="slip-list">
+                <div>
+                  <dt>Artist</dt>
+                  <dd>{booking.artistName}</dd>
+                </div>
+                <div>
+                  <dt>Date</dt>
+                  <dd>{longDate(booking.date)}</dd>
+                </div>
+                <div>
+                  <dt>Time</dt>
+                  <dd>
+                    {booking.time} to {booking.endTime}
+                  </dd>
+                </div>
+                {booking.consultation?.placement && (
+                  <div>
+                    <dt>Placement</dt>
+                    <dd>{placementLabel(booking.consultation.placement)}</dd>
+                  </div>
+                )}
+                {booking.price !== null && (
+                  <div>
+                    <dt>Price</dt>
+                    <dd>{euros(booking.price)}</dd>
+                  </div>
+                )}
+                {booking.deposit.amount !== null && (
+                  <div>
+                    <dt>Deposit</dt>
+                    <dd>{euros(booking.deposit.amount)}</dd>
+                  </div>
+                )}
+              </dl>
+              {(booking.canPayDeposit || booking.cancellable || booking.canReview) && (
+                <div className="managed-actions">
+                  {booking.canPayDeposit && (
+                    <button className="button button-primary" type="button" onClick={pay} disabled={busy}>
+                      {busy ? "Taking you to Revolut to pay..." : `Pay ${euros(booking.deposit.amount)} deposit with Revolut`}
+                    </button>
+                  )}
+                  {booking.canReview && (
+                    <button className="button button-primary" type="button" onClick={() => setDialog("review")}>
+                      Leave a review
+                    </button>
+                  )}
+                  {booking.cancellable && (
+                    <button className="button button-secondary" type="button" onClick={() => setDialog("cancel")}>
+                      Cancel booking
+                    </button>
+                  )}
+                </div>
+              )}
+              <button
+                className="text-button"
+                type="button"
+                onClick={() => {
+                  setBooking(null)
+                  setFound(null)
+                  setNote("")
+                  setCode("")
+                }}
+              >
+                Find another booking
+              </button>
+            </>
+          ) : (
+            !problem &&
+            !note && (
+              <p className="state-note">
+                Enter the booking code from your confirmation and the phone number you booked with. Lost the code? Call the
+                studio. <Link to="/account">Signed up?</Link> Your bookings are in My account too.
+              </p>
+            )
+          )}
+        </div>
+      </section>
+      {dialog === "cancel" && booking && found && (
+        <CancelDialog
+          booking={booking}
+          onClose={() => setDialog(null)}
+          onCancel={async () => {
+            const b = await api<Booking>("/bookings/cancel", { method: "POST", body: JSON.stringify(found) })
+            setBooking(b)
+            setNote(cancelledNote(b))
+            setDialog(null)
+          }}
+        />
+      )}
+      {dialog === "review" && booking && found && (
+        <ReviewDialog
+          booking={booking}
+          onClose={() => setDialog(null)}
+          onSend={async (review) => {
+            await api("/bookings/review", { method: "POST", body: JSON.stringify({ ...found, ...review }) })
+            setBooking({ ...booking, canReview: false })
+            setNote("Thank you for the review. It appears on the artist's page once the studio has checked it.")
+            setDialog(null)
+          }}
+        />
+      )}
     </main>
   )
 }
-
-export default CancellationLookup

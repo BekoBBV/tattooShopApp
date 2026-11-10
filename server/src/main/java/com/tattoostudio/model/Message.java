@@ -1,6 +1,8 @@
 package com.tattoostudio.model;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -15,6 +17,9 @@ public class Message {
     /** Email or phone number, whichever the sender gave. */
     private String contact;
     private String text;
+    /** Up to 5 photos the sender attached. */
+    private List<Image> photos = new ArrayList<>();
+    /** Handled by the studio ("Mark as handled"). */
     private boolean read;
     private Instant createdAt;
     /** 1 for the first message from this email / phone, 2 for the second, … (helps spot repeat senders). */
@@ -36,6 +41,8 @@ public class Message {
     public String getText() { return text; }
     public void setText(String text) { this.text = text; }
 
+    public List<Image> getPhotos() { return photos; }
+    public void setPhotos(List<Image> photos) { this.photos = photos; }
     public boolean isRead() { return read; }
     public void setRead(boolean read) { this.read = read; }
 

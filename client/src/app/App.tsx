@@ -1,5 +1,4 @@
 import { RouterProvider } from "react-router"
-import { BookingProvider } from "../features/booking/BookingContext"
 import { router } from "./routes"
 
 /** Jumps keyboard users past the header to the page's main heading. */
@@ -23,9 +22,9 @@ function SkipLink() {
 
 export default function App() {
   return (
-    <BookingProvider>
+    <>
       <SkipLink />
       <RouterProvider router={router} />
-    </BookingProvider>
+    </>
   )
 }

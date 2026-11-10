@@ -26,6 +26,7 @@ import com.tattoostudio.error.ErrorCode;
 import com.tattoostudio.model.Artist;
 import com.tattoostudio.model.Booking;
 import com.tattoostudio.model.BookingStatus;
+import com.tattoostudio.model.DepositStatus;
 import com.tattoostudio.repository.ArtistRepository;
 
 /** Numbers for the admin overview. A small shop has few bookings, so they are counted in memory. */
@@ -84,15 +85,22 @@ public class StatsService {
         return list.stream().filter(b -> b.getStatus() == status).count();
     }
 
+    /** Confirmed appointments: booked, done or missed (not held, released or cancelled). */
     private static long countNotCancelled(List<Booking> list) {
-        return list.stream().filter(b -> b.getStatus() != BookingStatus.CANCELLED).count();
+        return list.stream().filter(b -> b.getStatus() == BookingStatus.BOOKED || b.getStatus() == BookingStatus.DONE
+                || b.getStatus() == BookingStatus.NO_SHOW).count();
     }
 
-    /** Revenue counts finished (DONE) appointments only, at the price when they were booked. */
+    /** Revenue counts finished (DONE) appointments at their price, plus deposits kept after late cancellations. */
     private static BigDecimal revenue(List<Booking> list) {
-        return list.stream()
-                .filter(b -> b.getStatus() == BookingStatus.DONE && b.getPriceAtBooking() != null)
-                .map(Booking::getPriceAtBooking)
+        BigDecimal done = list.stream()
+                .filter(b -> b.getStatus() == BookingStatus.DONE && b.getPrice() != null)
+                .map(Booking::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal kept = list.stream()
+                .filter(b -> b.getDepositStatus() == DepositStatus.KEPT && b.getDepositAmount() != null)
+                .map(Booking::getDepositAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return done.add(kept);
     }
 }

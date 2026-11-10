@@ -1,10 +1,12 @@
 package com.tattoostudio.controller;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,7 +16,10 @@ import com.tattoostudio.config.BookingRules;
 import com.tattoostudio.dto.AvailabilityDto;
 import com.tattoostudio.dto.AvailabilityDto.Day;
 import com.tattoostudio.dto.AvailabilityDto.Slot;
+import com.tattoostudio.error.ApiException;
+import com.tattoostudio.error.ErrorCode;
 import com.tattoostudio.model.Artist;
+import com.tattoostudio.model.FlashDesign;
 import com.tattoostudio.service.AvailabilityService;
 import com.tattoostudio.service.CatalogService;
 
@@ -26,7 +31,7 @@ import jakarta.validation.constraints.Min;
 
 @RestController
 @RequestMapping("/api/availability")
-@Tag(name = "Booking", description = "Free times, booking, lookup and cancellation (public)")
+@Tag(name = "Booking", description = "Free times, booking, deposits, lookup, cancellation and reviews (public)")
 public class AvailabilityController {
 
     private final AvailabilityService availability;
@@ -40,26 +45,33 @@ public class AvailabilityController {
     }
 
     @GetMapping
-    @Operation(summary = "Free start times for a service over several days",
-            description = "Leave artistId empty for \"any artist\". Times are local shop time (Europe/Sofia).")
+    @Operation(summary = "Free start times for a flash design or a consultation over several days",
+            description = "Give flashId (its artist and time) or artistId (a 30-minute consultation). "
+                    + "Times are local studio time (Europe/Sofia).")
     public AvailabilityDto get(
-            @RequestParam String serviceId,
-            @Parameter(description = "Artist id, or empty for any artist") @RequestParam(required = false) String artistId,
-            @Parameter(description = "First date, e.g. 2026-10-20 (default: today)")
+            @Parameter(description = "Flash design id") @RequestParam(required = false) String flashId,
+            @Parameter(description = "Artist id, for a consultation") @RequestParam(required = false) String artistId,
+            @Parameter(description = "First date, e.g. 2026-11-20 (default: today)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @Parameter(description = "Number of days (1–31)") @RequestParam(defaultValue = "7") @Min(1) @Max(31) int days) {
-        catalog.activeService(serviceId); // 404 for unknown services; every artist offers every service
-        Artist artist = artistId == null || artistId.isBlank() ? null : catalog.activeArtist(artistId);
-        List<Artist> everyone = catalog.activeArtists();
+            @Parameter(description = "Number of days (1–31)") @RequestParam(defaultValue = "14") @Min(1) @Max(31) int days) {
+        Artist artist;
+        Duration length;
+        if (flashId != null && !flashId.isBlank()) {
+            FlashDesign flash = catalog.flash(flashId);
+            artist = catalog.activeArtist(flash.getArtistId());
+            length = Duration.ofMinutes(flash.getDurationMinutes());
+        } else if (artistId != null && !artistId.isBlank()) {
+            artist = catalog.activeArtist(artistId);
+            length = rules.consultationLength();
+        } else {
+            throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Give a flashId or an artistId");
+        }
         LocalDate first = from == null ? availability.today() : from;
-
         List<Day> result = new ArrayList<>(days);
-        availability.freeStartsForDays(artist, everyone, first, days).forEach((date, free) -> {
-            List<Slot> slots = free.entrySet().stream()
-                    .map(e -> new Slot(e.getKey().atZone(rules.timezone()).toLocalTime(), e.getKey(), e.getValue()))
-                    .toList();
-            result.add(new Day(date, slots));
-        });
-        return new AvailabilityDto(serviceId, artist == null ? null : artist.getId(), result);
+        availability.freeStartsForDays(artist, length, first, days).forEach((date, free) -> result.add(new Day(date,
+                !availability.worksOn(artist, date),
+                free.stream().map(t -> new Slot(t.atZone(rules.timezone()).toLocalTime(), t)).toList())));
+        return new AvailabilityDto(artist.getId(), flashId == null || flashId.isBlank() ? null : flashId,
+                (int) length.toMinutes(), result);
     }
 }

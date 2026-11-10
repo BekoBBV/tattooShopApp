@@ -27,6 +27,7 @@ import com.tattoostudio.dto.ScheduleResponse;
 import com.tattoostudio.dto.StaffBookingDto;
 import com.tattoostudio.model.Booking;
 import com.tattoostudio.model.BookingStatus;
+import com.tattoostudio.model.BookingType;
 import com.tattoostudio.repository.BookingRepository;
 import com.tattoostudio.error.ApiException;
 import com.tattoostudio.error.ErrorCode;
@@ -67,10 +68,14 @@ public class ScheduleService {
 
     public ScheduleResponse get(String artistId) {
         Artist artist = artist(artistId);
-        return new ScheduleResponse(artist.getWeeklyHours(), upcoming(artist.getExceptions()), conflicts(artist));
+        return new ScheduleResponse(artist.getWeeklyHours(), upcoming(artist.getExceptions()), artist.getBreakMinutes(),
+                conflicts(artist));
     }
 
-    /** Upcoming bookings of this artist that fall outside their current hours. */
+    /**
+     * Upcoming bookings customers made (flash, consultations) that fall outside the artist's current
+     * hours. Sessions the artist reserved may lie outside them on purpose, so they don't count.
+     */
     public List<StaffBookingDto> conflicts(Artist artist) {
         return conflicts(List.of(artist)).getOrDefault(artist.getId(), List.of());
     }
@@ -78,9 +83,10 @@ public class ScheduleService {
     /** The same for several artists with one database query, by artist id. */
     public Map<String, List<StaffBookingDto>> conflicts(List<Artist> artistList) {
         Map<String, Artist> byId = artistList.stream().collect(Collectors.toMap(Artist::getId, b -> b));
-        return bookings.findByArtistIdInAndStatusAndStartsAtAfterOrderByStartsAtAsc(byId.keySet(), BookingStatus.BOOKED,
-                        clock.instant())
+        return bookings.findByArtistIdInAndStatusInAndStartsAtAfterOrderByStartsAtAsc(byId.keySet(),
+                        List.of(BookingStatus.PENDING, BookingStatus.BOOKED), clock.instant())
                 .stream()
+                .filter(b -> b.getType() != BookingType.SESSION)
                 .filter(b -> !availability.withinWorkingHours(byId.get(b.getArtistId()), b.getStartsAt(), b.getEndsAt()))
                 .collect(Collectors.groupingBy(Booking::getArtistId,
                         Collectors.mapping(b -> staffBookings.toDto(b, byId.get(b.getArtistId())), Collectors.toList())));
@@ -90,12 +96,29 @@ public class ScheduleService {
         Artist artist = artist(artistId);
         artist.setWeeklyHours(cleanWeeklyHours(schedule.weeklyHours()));
         artist.setExceptions(cleanExceptions(schedule.exceptions()));
+        if (schedule.breakMinutes() != null) {
+            artist.setBreakMinutes(cleanBreak(schedule.breakMinutes()));
+        }
         // Only the schedule is written, so a profile edit by the admin at the same time is kept
         mongo.updateFirst(Query.query(Criteria.where("_id").is(artistId)),
-                new Update().set("weeklyHours", artist.getWeeklyHours()).set("exceptions", artist.getExceptions()),
+                new Update().set("weeklyHours", artist.getWeeklyHours()).set("exceptions", artist.getExceptions())
+                        .set("breakMinutes", artist.getBreakMinutes()),
                 Artist.class);
         log.info("Updated schedule of {}", artist.getName());
-        return new ScheduleResponse(artist.getWeeklyHours(), artist.getExceptions(), conflicts(artist));
+        return new ScheduleResponse(artist.getWeeklyHours(), artist.getExceptions(), artist.getBreakMinutes(),
+                conflicts(artist));
+    }
+
+    /**
+     * The break after each client: 0 to 120 minutes in steps of the time grid (30 minutes), so every
+     * booking still starts on the grid.
+     */
+    public int cleanBreak(int minutes) {
+        long step = rules.slotLength().toMinutes();
+        if (minutes < 0 || minutes > 120 || minutes % step != 0) {
+            throw invalid("The break after each client must be 0 to 120 minutes, in steps of " + step);
+        }
+        return minutes;
     }
 
     private Artist artist(String artistId) {
@@ -181,7 +204,7 @@ public class ScheduleService {
         long slotMinutes = rules.slotLength().toMinutes();
         if ((start.toSecondOfDay() / 60) % slotMinutes != 0 || start.getSecond() != 0) {
             throw invalid(where + " the start time must be "
-                    + (slotMinutes == 60 ? "on the full hour (e.g. 10:00)" : "a multiple of " + slotMinutes + " minutes")
+                    + (slotMinutes == 60 ? "on the full hour (e.g. 11:00)" : "on the hour or half hour (e.g. 11:00 or 11:30)")
                     + ", so appointments line up");
         }
     }

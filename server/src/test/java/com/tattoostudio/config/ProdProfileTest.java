@@ -23,7 +23,7 @@ class ProdProfileTest extends ApiTest {
         // No OpenAPI description any more: the address just gets the React app (its "page not found")
         mvc.perform(get("/v3/api-docs")).andExpect(content().string(not(containsString("openapi"))));
         mvc.perform(get("/swagger-ui/index.html")).andExpect(status().isNotFound());
-        mvc.perform(get("/api/services")).andExpect(status().isOk());
+        mvc.perform(get("/api/flash")).andExpect(status().isOk());
     }
 
     @Test

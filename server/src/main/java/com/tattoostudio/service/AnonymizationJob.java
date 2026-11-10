@@ -16,11 +16,14 @@ import org.springframework.stereotype.Component;
 
 import com.tattoostudio.config.BookingRules;
 import com.tattoostudio.model.Booking;
+import com.tattoostudio.storage.ImageUploads;
 
 /**
- * Privacy clean-up: 24 hours after an appointment ends, the customer's name, phone,
- * email and notes are removed. The booking itself (service, artist, time, price, status) is kept,
- * so the admin statistics still work without holding anyone's personal data.
+ * Privacy clean-up: some months after an appointment ends (app.booking.anonymize-after, 180 days),
+ * the customer's name, phone, email, date of birth, notes, idea and reference photos are removed.
+ * Long enough for an artist to plan the next sessions of a large piece; the booking itself (type,
+ * artist, time, price, status, deposit) is kept, so the admin statistics still work without holding
+ * anyone's personal data.
  */
 @Component
 public class AnonymizationJob {
@@ -28,11 +31,13 @@ public class AnonymizationJob {
     private static final Logger log = LoggerFactory.getLogger(AnonymizationJob.class);
 
     private final MongoTemplate mongo;
+    private final ImageUploads images;
     private final BookingRules rules;
     private final Clock clock;
 
-    public AnonymizationJob(MongoTemplate mongo, BookingRules rules, Clock clock) {
+    public AnonymizationJob(MongoTemplate mongo, ImageUploads images, BookingRules rules, Clock clock) {
         this.mongo = mongo;
+        this.images = images;
         this.rules = rules;
         this.clock = clock;
     }
@@ -50,12 +55,24 @@ public class AnonymizationJob {
     /** Wipes customer details of every booking that ended before {@code cutoff}; returns how many. */
     public long anonymizeEndedBefore(Instant cutoff) {
         Query query = Query.query(Criteria.where("anonymized").is(false).and("endsAt").lt(cutoff));
-        Update update = new Update()
-                .unset("customerName")
-                .unset("phone")
-                .unset("email")
-                .unset("notes")
-                .set("anonymized", true);
-        return mongo.updateMulti(query, update, Booking.class).getModifiedCount();
+        long wiped = 0;
+        for (Booking booking : mongo.find(query, Booking.class)) {
+            Update update = new Update()
+                    .unset("customerName")
+                    .unset("phone")
+                    .unset("email")
+                    .unset("dateOfBirth")
+                    .unset("notes")
+                    .unset("idea")
+                    .set("photos", java.util.List.of())
+                    .set("anonymized", true);
+            boolean changed = mongo.updateFirst(Query.query(Criteria.where("_id").is(booking.getId()).and("anonymized").is(false)),
+                    update, Booking.class).getModifiedCount() == 1;
+            if (changed) {
+                images.deleteAll(booking.getPhotos());
+                wiped++;
+            }
+        }
+        return wiped;
     }
 }

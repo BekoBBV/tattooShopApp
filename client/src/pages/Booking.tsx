@@ -1,809 +1,675 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react"
+import { ImagePlus, X } from "lucide-react"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router"
+import { PageIntro } from "../components/Layout"
 import {
-  ArrowLeft,
-  ArrowRight,
-  CalendarDays,
-  Check,
-  Clock3,
-  Copy,
-  KeyRound,
-  MapPin,
-  ShieldCheck,
-  SprayCan,
-} from "lucide-react"
-import {
-  Navigate,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from "react-router"
-import { MiniDisc, SprayDisc } from "../components/brand"
-import {
-  AppLink,
-  BareButton,
-  Button,
-  Checkbox,
-  Eyebrow,
-  Heading,
-  Input,
-  Textarea,
-} from "../components/ui"
-import { useBooking } from "../features/booking/useBooking"
-import { ApiError, api } from "../lib/api"
+  Art,
+  ArtistSeal,
+  ConsentCheck,
+  FormError,
+  SelectField,
+  StepBar,
+  TextAreaField,
+  TextField,
+} from "../components/Studio"
+import { api, ApiError } from "../lib/api"
+import { startDraft, updateDraft, useBookingDraft } from "../lib/bookingDraft"
+import { whenOf } from "../lib/bookingText"
 import { useCustomer } from "../lib/customer"
-import { formatAppointment, formatMoney, shop } from "../lib/data"
-import { errorText, useLoad } from "../lib/useLoad"
-import { checkBooking, useFieldChecks } from "../lib/validation"
-import type {
-  Account,
-  Availability,
-  Artist,
-  Booking,
-  Day,
-  ErrorCode,
-  Service,
-} from "../lib/types"
-import { usePageTitle } from "../lib/usePageTitle"
+import { colours, countdown, dayButton, euros, hours, longDate, parseTypedDate, placements, size, todayInSofia } from "../lib/format"
 import { limits } from "../lib/limits"
+import type { Account, Artist, Availability, Booking, CreateConsultation, CreateFlashBooking, Flash, PaymentStart } from "../lib/types"
+import { useLoad } from "../lib/useLoad"
+import { usePageTitle } from "../lib/usePageTitle"
+import { checkDetails, useFieldChecks } from "../lib/validation"
 
-const steps = ["Service", "Artist", "Time", "Details"]
-const weekdays: Day[] = [
-  "SUNDAY",
-  "MONDAY",
-  "TUESDAY",
-  "WEDNESDAY",
-  "THURSDAY",
-  "FRIDAY",
-  "SATURDAY",
-]
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-type Catalog = { services: Service[]; artists: Artist[] }
-/** Kept this long, so the four steps share one download instead of fetching it on every step. */
-const CATALOG_MAX_AGE = 5 * 60_000
-type CatalogDownload = { at: number; promise: Promise<Catalog>; data?: Catalog }
-let catalogCache: CatalogDownload | null = null
+const MAX_PHOTOS = 5
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 
-const isFresh = (cache: CatalogDownload | null): cache is CatalogDownload =>
-  !!cache && Date.now() - cache.at <= CATALOG_MAX_AGE
+// ---- Step 1: Choose ----
 
-function loadCatalog(): Promise<Catalog> {
-  if (!isFresh(catalogCache)) {
-    const entry: CatalogDownload = {
-      at: Date.now(),
-      promise: Promise.all([api<Service[]>("/services"), api<Artist[]>("/artists")]).then(
-        ([services, artists]) => {
-          entry.data = { services, artists }
-          return entry.data
-        },
-      ),
-    }
-    // A failed download is not kept: "Try again" fetches it anew
-    entry.promise.catch(() => {
-      if (catalogCache === entry) catalogCache = null
-    })
-    catalogCache = entry
-  }
-  return catalogCache!.promise
-}
+/** Step 1: a flash design (chosen on the flash sheet) or a free consultation with an artist. */
+export function BookChoose() {
+  usePageTitle("Choose what to book")
+  const [params] = useSearchParams()
+  const navigate = useNavigate()
+  const draft = useBookingDraft()
+  const artists = useLoad<Artist[]>("/artists")
+  const chosenFlash = useLoad<Flash>(draft.flashId ? `/flash/${draft.flashId}` : null)
+  const [problem, setProblem] = useState("")
 
-function useCatalog() {
-  // Already downloaded: shown straight away, without a loading screen between steps
-  const [state, setState] = useState<{ data?: Catalog; error: string }>(() => ({
-    data: isFresh(catalogCache) ? catalogCache.data : undefined,
-    error: "",
-  }))
+  // A link may bring the choice along: ?flash=<id>, or ?type=consultation (&artist=<id>)
+  const linkFlash = params.get("flash")
+  const linkConsultation = params.get("type") === "consultation"
+  const linkArtist = params.get("artist")
   useEffect(() => {
-    if (state.data) return
-    let current = true
-    loadCatalog()
-      .then((data) => current && setState({ data, error: "" }))
-      .catch((reason) => current && setState({ error: errorText(reason) }))
-    return () => {
-      current = false
+    if (linkFlash && linkFlash !== draft.flashId) startDraft({ kind: "flash", flashId: linkFlash })
+    else if (linkFlash && draft.kind !== "flash") updateDraft({ kind: "flash" })
+    else if (linkConsultation && (draft.kind !== "consultation" || (linkArtist && linkArtist !== draft.artistId))) {
+      startDraft({ kind: "consultation", artistId: linkArtist ?? draft.artistId, flashId: draft.flashId })
     }
-  }, [state.data])
-  return {
-    services: state.data?.services ?? [],
-    artists: state.data?.artists ?? [],
-    loading: !state.data && !state.error,
-    error: state.error,
+    // Only when the link changes; the draft is the result
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkFlash, linkConsultation, linkArtist])
+
+  const flash = chosenFlash.data
+  const pick = (kind: "flash" | "consultation") => {
+    setProblem("")
+    if (kind !== draft.kind) updateDraft({ kind, date: null, time: null })
   }
-}
-function BookingHeader({ current }: { current: number }) {
+
+  function proceed() {
+    if (draft.kind === "flash" && (!flash || !flash.bookable)) {
+      setProblem(flash ? "This design was just booked by someone else. Choose another design." : "Choose a design from the flash sheet first.")
+      return
+    }
+    if (draft.kind === "consultation" && !draft.artistId) {
+      setProblem("Choose the artist you'd like to talk to.")
+      return
+    }
+    if (!draft.kind) {
+      setProblem("Choose a flash design or a free consultation.")
+      return
+    }
+    navigate("/book/time")
+  }
+
   return (
-    <header className="booking-header">
-      <AppLink to="/" className="brand">
-        TATTOO <span>STUDIO</span>
-      </AppLink>
-      <div
-        className="booking-progress"
-        aria-label={`Booking step ${current + 1} of 4`}
-      >
-        {steps.map((step, index) => (
-          <div className={index <= current ? "active" : ""} key={step}>
-            <span>{index < current ? <Check /> : index + 1}</span>
-            <b>{step}</b>
-          </div>
-        ))}
-      </div>
-      <span className="booking-count">0{current + 1}/04</span>
-    </header>
-  )
-}
-function Summary({
-  services,
-  artists,
-}: {
-  services: Service[]
-  artists: Artist[]
-}) {
-  const { draft } = useBooking()
-  const service = services.find((item) => item.id === draft.serviceId)
-  const artist = artists.find((item) => item.id === draft.artistId)
-  return (
-    <aside className="booking-summary">
-      <span className="summary-label">Now playing</span>
-      <div className={`summary-disc palette-${service?.palette || "blue"}`}>
-        <span />
-      </div>
-      <Heading level={3}>Your booking</Heading>
-      <dl>
-        <div>
-          <dt>Service</dt>
-          <dd>{service?.name || "Not selected"}</dd>
+    <main>
+      <PageIntro title="Choose what to book">
+        <p>Book a finished design or start a custom piece with a free conversation.</p>
+      </PageIntro>
+      <StepBar current={1} withDeposit={draft.kind !== "consultation"} />
+      <div className="wrap booking-body">
+        <FormError>{problem}</FormError>
+        <div className="choice-grid">
+          <section className={`slip choice-card on-paper${draft.kind === "flash" ? " is-selected" : ""}`} aria-label="A flash design">
+            <label className={`choice-radio${draft.kind === "flash" ? " is-selected" : ""}`}>
+              <input type="radio" className="visually-hidden" name="kind" checked={draft.kind === "flash"} onChange={() => pick("flash")} />
+              <span className="radio-mark" aria-hidden="true"></span>
+              <span>
+                <strong>A flash design</strong>
+                <small>Fixed design, time and price</small>
+              </span>
+            </label>
+            {flash ? (
+              <div className="selected-flash">
+                <div className="flash-frame">
+                  <Art image={flash.image} alt={flash.name} />
+                </div>
+                <div>
+                  <div className="selected-title">
+                    <h3>{flash.name}</h3>
+                    <ArtistSeal name={flash.artistName} />
+                  </div>
+                  <p>By {flash.artistName}</p>
+                  <dl className="slip-list">
+                    <div>
+                      <dt>Size</dt>
+                      <dd>{size(flash.widthCm, flash.heightCm)}</dd>
+                    </div>
+                    <div>
+                      <dt>Time</dt>
+                      <dd>About {hours(flash.durationMinutes)}</dd>
+                    </div>
+                    <div>
+                      <dt>Price</dt>
+                      <dd>{euros(flash.price)}</dd>
+                    </div>
+                  </dl>
+                  {!flash.bookable && <p className="field-error">This design was just booked by someone else.</p>}
+                  <Link className="text-link choose-other" to="/flash">
+                    Choose another design
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <p>
+                Pick a design on the <Link className="text-link" to="/flash">flash sheet</Link> and press Book.
+              </p>
+            )}
+          </section>
+          <section className={`slip choice-card on-paper${draft.kind === "consultation" ? " is-selected" : ""}`} aria-label="A free consultation">
+            <label className={`choice-radio${draft.kind === "consultation" ? " is-selected" : ""}`}>
+              <input
+                type="radio"
+                className="visually-hidden"
+                name="kind"
+                checked={draft.kind === "consultation"}
+                onChange={() => pick("consultation")}
+              />
+              <span className="radio-mark" aria-hidden="true"></span>
+              <span>
+                <strong>A free consultation</strong>
+                <small>30 minutes to plan a bigger or custom piece</small>
+              </span>
+            </label>
+            <fieldset className="artist-choice-list">
+              <legend>Choose your artist</legend>
+              {(artists.data ?? []).map((artist) => (
+                <label key={artist.id} className="artist-choice">
+                  <input
+                    type="radio"
+                    className="visually-hidden"
+                    name="artist"
+                    checked={draft.kind === "consultation" && draft.artistId === artist.id}
+                    onChange={() => {
+                      setProblem("")
+                      updateDraft({ kind: "consultation", artistId: artist.id, date: null, time: null })
+                    }}
+                  />
+                  <span className={`radio-mark${draft.kind === "consultation" && draft.artistId === artist.id ? " is-on" : ""}`} aria-hidden="true"></span>
+                  <ArtistSeal name={artist.name} />
+                  <span>
+                    <strong>{artist.name}</strong>
+                    <small>{artist.style}</small>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          </section>
         </div>
-        <div>
-          <dt>Artist</dt>
-          <dd>
-            {draft.artistId === "any"
-              ? "First available"
-              : artist?.name || "Not selected"}
-          </dd>
+        <div className="booking-continue">
+          <button className="button button-primary" type="button" onClick={proceed}>
+            Continue
+          </button>
         </div>
-        <div>
-          <dt>Time</dt>
-          <dd>
-            {draft.slot
-              ? formatAppointment(draft.slot.startsAt)
-              : "Not selected"}
-          </dd>
-        </div>
-        <div>
-          <dt>Total</dt>
-          <dd>{service ? formatMoney(service.price) : "—"}</dd>
-        </div>
-      </dl>
-      <p>
-        <ShieldCheck /> Pay at the shop. Cancel online up to 2 hours before.
-      </p>
-    </aside>
-  )
-}
-function BookingShell({
-  step,
-  children,
-  services,
-  artists,
-}: {
-  step: number
-  children: ReactNode
-  services: Service[]
-  artists: Artist[]
-}) {
-  return (
-    <main className="booking-page">
-      <BookingHeader current={step} />
-      <div className="booking-layout">
-        <section className="booking-content">{children}</section>
-        <Summary services={services} artists={artists} />
       </div>
     </main>
   )
 }
-function CatalogState({ loading, error }: { loading: boolean; error: string }) {
-  if (loading)
-    return (
-      <main className="result-page">
-        <div className="spinner" />
-      </main>
-    )
-  if (error)
-    return (
-      <main className="result-page">
-        <div className="result-card">
-          <Heading level={2}>Couldn’t load the cut list.</Heading>
-          <p>{error}</p>
-          <Button onClick={() => location.reload()}>Try again</Button>
-        </div>
-      </main>
-    )
-  return null
-}
-export function ServiceStep() {
-  usePageTitle("Choose a service")
-  const { draft, update } = useBooking()
-  const navigate = useNavigate()
-  const catalog = useCatalog()
-  const state = <CatalogState loading={catalog.loading} error={catalog.error} />
-  if (catalog.loading || catalog.error) return state
-  return (
-    <BookingShell step={0} {...catalog}>
-      <Eyebrow>Step one</Eyebrow>
-      <Heading level={1}>Choose your cut.</Heading>
-      <p className="page-intro">
-        Every service reserves the same one-hour chair slot.
-      </p>
-      <h2 className="sr-only">Services</h2>
-      {catalog.services.length ? (
-        <div className="choice-grid">
-          {catalog.services.map((service) => (
-            <BareButton
-              className="choice-button"
-              aria-pressed={draft.serviceId === service.id}
-              // Keeps the artist: every artist offers every service, and "Book with …" pre-selects one
-              onClick={() => update({ serviceId: service.id, slot: null })}
-              key={service.id}
-            >
-              <MiniDisc
-                className={`palette-${service.palette}`}
-                label={service.label}
-                selected={draft.serviceId === service.id}
-              >
-                <div className="choice-check">
-                  {draft.serviceId === service.id ? <Check /> : null}
-                </div>
-                <div className="choice-copy">
-                  <Heading level={3}>{service.name}</Heading>
-                  <p>{service.description}</p>
-                  <strong>{formatMoney(service.price)}</strong>
-                </div>
-              </MiniDisc>
-            </BareButton>
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <Heading level={3}>No services available.</Heading>
-        </div>
-      )}
-      <div className="booking-actions">
-        <AppLink to="/" variant="ghost">
-          <ArrowLeft /> Back home
-        </AppLink>
-        <Button
-          disabled={!draft.serviceId}
-          onClick={() => navigate("/book/artist")}
-        >
-          Choose artist <ArrowRight />
-        </Button>
-      </div>
-    </BookingShell>
-  )
-}
-export function ArtistStep() {
-  usePageTitle("Choose an artist")
-  const { draft, update } = useBooking()
-  const navigate = useNavigate()
-  const [params] = useSearchParams()
-  const catalog = useCatalog()
-  useEffect(() => {
-    const id = params.get("artist")
-    // A time picked for another artist doesn't carry over to this one
-    if (id) update((d) => (d.artistId === id ? {} : { artistId: id, slot: null }))
-  }, [params, update])
-  if (!draft.serviceId) return <Navigate to="/book/service" replace />
-  if (catalog.loading || catalog.error)
-    return <CatalogState loading={catalog.loading} error={catalog.error} />
-  return (
-    <BookingShell step={1} {...catalog}>
-      <Eyebrow>Step two</Eyebrow>
-      <Heading level={1}>Pick your chair.</Heading>
-      <p className="page-intro">Every artist offers every service.</p>
-      <h2 className="sr-only">Artists</h2>
-      <div className="artist-choice-grid">
-        <BareButton
-          className={`artist-choice accent-cyan ${
-            draft.artistId === "any" ? "selected" : ""
-          }`}
-          aria-pressed={draft.artistId === "any"}
-          onClick={() => update({ artistId: "any", slot: null })}
-        >
-          <SprayDisc accent="cyan" initials="ANY" />
-          <div>
-            <Heading level={3}>First available</Heading>
-            <strong>Fastest way in</strong>
-            <p>We’ll pair you with an open chair.</p>
-          </div>
-          <span className="radio">
-            {draft.artistId === "any" ? <Check /> : null}
-          </span>
-        </BareButton>
-        {catalog.artists.map((artist) => (
-          <BareButton
-            className={`artist-choice accent-${artist.accent} ${
-              draft.artistId === artist.id ? "selected" : ""
-            }`}
-            aria-pressed={draft.artistId === artist.id}
-            onClick={() => update({ artistId: artist.id, slot: null })}
-            key={artist.id}
-          >
-            <SprayDisc
-              accent={artist.accent}
-              initials={initials(artist.name)}
-            />
-            <div>
-              <Heading level={3}>{artist.name}</Heading>
-              <strong>{artist.specialty}</strong>
-              <p>{artist.bio}</p>
-            </div>
-            <span className="radio">
-              {draft.artistId === artist.id ? <Check /> : null}
-            </span>
-          </BareButton>
-        ))}
-      </div>
-      <div className="booking-actions">
-        <AppLink to="/book/service" variant="ghost">
-          <ArrowLeft /> Service
-        </AppLink>
-        <Button
-          disabled={!draft.artistId}
-          onClick={() => navigate("/book/time")}
-        >
-          Find a time <ArrowRight />
-        </Button>
-      </div>
-    </BookingShell>
-  )
-}
-/** "Tuesday 20 October", for the spoken labels of the time buttons */
-const spokenDay = new Intl.DateTimeFormat("en-GB", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  timeZone: "UTC",
-})
 
-export function TimeStep() {
-  usePageTitle("Pick a time")
-  const { draft, update } = useBooking()
+// ---- Step 2: Time ----
+
+/** Step 2: the next days, then the free start times on the chosen day. */
+export function BookTime() {
+  usePageTitle("Choose a time")
   const navigate = useNavigate()
-  const catalog = useCatalog()
-  const artistParam =
-    draft.artistId === "any" ? "" : `&artistId=${draft.artistId}`
-  const {
-    data: availability,
-    loading,
-    error,
-    reload: load,
-  } = useLoad<Availability>(
-    draft.serviceId && draft.artistId
-      ? `/availability?serviceId=${draft.serviceId}${artistParam}&days=7`
-      : null,
-  )
-  // Why a day has no times: nobody (or the chosen artist) works that weekday,
-  // today's remaining times have passed, or every chair is taken.
-  const emptyDayLabel = (date: string) => {
-    const weekday = weekdays[new Date(`${date}T12:00:00Z`).getUTCDay()]
-    // A date exception (day off or special hours) wins over the weekly hours
-    const working = catalog.artists.filter((artist) => {
-      const exception = artist.exceptions?.find((item) => item.date === date)
-      if (exception) return !exception.closed
-      return artist.weeklyHours.some((hours) => hours.day === weekday)
-    })
-    if (!working.length) return "Closed"
-    if (
-      draft.artistId !== "any" &&
-      !working.some((artist) => artist.id === draft.artistId)
-    )
-      return "Day off"
-    if (date === availability?.days[0]?.date) return "No more times today"
-    return "Fully booked"
+  const draft = useBookingDraft()
+  const today = useMemo(() => todayInSofia(), [])
+  const ready = draft.kind === "flash" ? !!draft.flashId : draft.kind === "consultation" && !!draft.artistId
+  const query = draft.kind === "flash" ? `flashId=${draft.flashId}` : `artistId=${draft.artistId}`
+  const availability = useLoad<Availability>(ready ? `/availability?${query}&from=${today}&days=31` : null)
+  const artists = useLoad<Artist[]>("/artists")
+  const [problem, setProblem] = useState("")
+
+  const days = availability.data?.days ?? []
+  const firstOpen = days.find((d) => d.slots.length > 0)?.date ?? days[0]?.date ?? null
+  const selectedDate = draft.date && days.some((d) => d.date === draft.date) ? draft.date : firstOpen
+  const day = days.find((d) => d.date === selectedDate)
+  const artistName = artists.data?.find((a) => a.id === availability.data?.artistId)?.name ?? "the artist"
+  const minutes = availability.data?.durationMinutes ?? 30
+  const isConsultation = draft.kind === "consultation"
+
+  if (!ready) return <Navigate to="/book/choose" replace />
+
+  const intro = isConsultation
+    ? `Times when ${artistName} is free for a 30-minute consultation.`
+    : `Times when ${artistName} is free for about ${hours(minutes)}.`
+
+  function proceed() {
+    if (!draft.time || draft.date !== selectedDate) {
+      setProblem("Choose a start time first.")
+      return
+    }
+    navigate("/book/details")
   }
-  if (!draft.serviceId || !draft.artistId)
-    return <Navigate to="/book/artist" replace />
-  if (catalog.loading || catalog.error)
-    return <CatalogState loading={catalog.loading} error={catalog.error} />
+
   return (
-    <BookingShell step={2} {...catalog}>
-      <Eyebrow>Step three</Eyebrow>
-      <Heading level={1}>Lock your time.</Heading>
-      <p className="page-intro">
-        Seven days at once. Times are 24-hour Europe/Sofia shop time.
-      </p>
-      {loading ? (
-        <div className="loading-panel">
-          <div className="spinner" />
-          <p>Checking the chairs…</p>
+    <main>
+      <PageIntro title="Choose a time">
+        <p>{availability.data ? intro : "Loading the free times..."}</p>
+      </PageIntro>
+      <StepBar current={2} withDeposit={!isConsultation} />
+      <div className="wrap booking-body">
+        <FormError>{availability.error || problem}</FormError>
+        <div className="day-strip" aria-label="Available days" tabIndex={0}>
+          {days.map((d) => {
+            const label = dayButton(d.date)
+            return (
+              <button
+                key={d.date}
+                type="button"
+                className={`day-button${d.date === selectedDate ? " is-selected" : ""}`}
+                disabled={d.closed}
+                aria-pressed={d.date === selectedDate}
+                onClick={() => {
+                  setProblem("")
+                  updateDraft({ date: d.date, time: null })
+                }}
+              >
+                <span>{label.weekday}</span>
+                <strong>{label.date}</strong>
+                {d.closed ? <small>Closed</small> : d.slots.length === 0 && <small>Full</small>}
+              </button>
+            )
+          })}
         </div>
-      ) : null}
-      {error ? (
-        <div className="error-panel">
-          <Heading level={3}>Couldn’t load times</Heading>
-          <p>{error}</p>
-          <Button onClick={load}>Try again</Button>
-        </div>
-      ) : null}
-      <h2 className="sr-only">Available times</h2>
-      {!loading && !error ? (
-        <div className="slot-days">
-          {availability?.days.map((day) => (
-            <div className="slot-day" key={day.date}>
-              <div>
-                <CalendarDays />
-                <Heading level={3}>
-                  {new Intl.DateTimeFormat("en-GB", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                    timeZone: "UTC",
-                  }).format(new Date(`${day.date}T12:00:00Z`))}
-                </Heading>
-              </div>
-              {day.slots.length ? (
-                <div className="slot-grid">
-                  {day.slots.map((slot) => (
-                    <BareButton
-                      className={
-                        draft.slot?.startsAt === slot.startsAt ? "selected" : ""
-                      }
-                      aria-pressed={draft.slot?.startsAt === slot.startsAt}
-                      aria-label={`${slot.time} on ${spokenDay.format(new Date(`${day.date}T12:00:00Z`))}`}
-                      onClick={() =>
-                        update({ slot: { ...slot, date: day.date } })
-                      }
-                      key={slot.startsAt}
+        {day && (
+          <section className="time-selection" aria-labelledby="day-title">
+            <h2 id="day-title">{longDate(day.date)}</h2>
+            {day.slots.length === 0 ? (
+              <p className="state-note">
+                {isConsultation
+                  ? `${artistName} has no free time on this day. Try another day or another artist.`
+                  : `${artistName} has no free ${hours(minutes).replace(" hours", "-hour").replace(" hour", "-hour")} slot on this day. Try another day or another artist's design.`}
+              </p>
+            ) : (
+              <div className="time-grid">
+                {day.slots.map((slot) => {
+                  const chosen = draft.date === day.date && draft.time === slot.time
+                  return (
+                    <button
+                      key={slot.time}
+                      type="button"
+                      className={`time-button${chosen ? " is-selected" : ""}`}
+                      aria-pressed={chosen}
+                      onClick={() => {
+                        setProblem("")
+                        updateDraft({ date: day.date, time: slot.time })
+                      }}
                     >
-                      <Clock3 /> {slot.time}
-                    </BareButton>
-                  ))}
-                </div>
-              ) : (
-                <p>{emptyDayLabel(day.date)}</p>
-              )}
-            </div>
-          ))}
+                      {slot.time}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            <p className="time-note">
+              All times are start times. {isConsultation ? "The consultation takes 30 minutes." : `The session takes about ${hours(minutes)}.`}
+            </p>
+          </section>
+        )}
+        <div className="booking-continue">
+          <button className="button button-primary" type="button" onClick={proceed}>
+            Continue
+          </button>
         </div>
-      ) : null}
-      <div className="booking-actions">
-        <AppLink to="/book/artist" variant="ghost">
-          <ArrowLeft /> Artist
-        </AppLink>
-        <Button
-          disabled={!draft.slot}
-          onClick={() => navigate("/book/details")}
-        >
-          Add details <ArrowRight />
-        </Button>
       </div>
-    </BookingShell>
+    </main>
   )
 }
-export function DetailsStep() {
-  usePageTitle("Your details")
-  const { draft, update } = useBooking()
-  const navigate = useNavigate()
-  const catalog = useCatalog()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [errorCode, setErrorCode] = useState<ErrorCode | undefined>()
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  // Blocks a double click from sending the booking twice before the button re-renders as disabled
-  const submitting = useRef(false)
-  const [agreed, setAgreed] = useState(false)
-  const customer = useCustomer()
-  // Signed in: fill in the empty fields from the account (once per visit to this step)
-  const customerToken = customer?.token
-  useEffect(() => {
-    if (!customerToken) return
-    let current = true
-    api<Account>("/account", { token: customerToken })
-      .then((account) => {
-        if (!current) return
-        update((d) => ({
-          customer: {
-            ...d.customer,
-            name: d.customer.name || account.name,
-            phone: d.customer.phone || account.phone,
-            email: d.customer.email || account.email,
-          },
-        }))
-      })
-      .catch(() => {
-        // Not filled in: the customer types their details as a guest would
-      })
-    return () => {
-      current = false
+
+// ---- Step 3: Details ----
+
+type Photo = { file: File; url: string }
+
+/**
+ * Cancels an earlier booking from this tab if it is still only held (deposit not paid), e.g. after
+ * the customer went back and picked another time. Paid and confirmed bookings are left alone.
+ */
+async function releaseHold(code: string, phone: string) {
+  try {
+    const earlier = await api<Booking>("/bookings/lookup", { method: "POST", body: JSON.stringify({ code, phone }) })
+    if (earlier.status === "PENDING") {
+      await api<Booking>("/bookings/cancel", { method: "POST", body: JSON.stringify({ code, phone }) })
     }
-  }, [customerToken, update])
-  const checks = useFieldChecks(
-    {
-      ...checkBooking(draft.customer),
-      ...(agreed ? {} : { policy: "Please tick this box to continue." }),
-    },
-    fieldErrors,
-  )
-  if (!draft.serviceId || !draft.artistId || !draft.slot)
-    return <Navigate to="/book/time" replace />
-  if (catalog.loading || catalog.error)
-    return <CatalogState loading={catalog.loading} error={catalog.error} />
+  } catch {
+    // Gone already, or the lookup failed: the new booking simply goes ahead
+  }
+  updateDraft({ code: null, phone: null })
+}
+
+/** Step 3: who is coming, the idea (consultations) and the confirmations. */
+export function BookDetails() {
+  usePageTitle("Your details")
+  const navigate = useNavigate()
+  const draft = useBookingDraft()
+  const customer = useCustomer()
+  const account = useLoad<Account>(customer ? "/account" : null, customer?.token)
+  const kind = draft.kind
+  const [consent, setConsent] = useState({ adult: false, consentForm: false, depositPolicy: false })
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [photoProblem, setPhotoProblem] = useState("")
+  const [sending, setSending] = useState(false)
+  const [problem, setProblem] = useState<{ text: string; back?: "time" | "flash" } | null>(null)
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({})
+  const d = draft.details
+
+  // A signed-in customer gets their details filled in (only into empty fields)
+  useEffect(() => {
+    const a = account.data
+    if (!a) return
+    updateDraft({
+      details: {
+        ...d,
+        customerName: d.customerName || a.name,
+        phone: d.phone || a.phone,
+        email: d.email || a.email,
+        dateOfBirth: d.dateOfBirth || (a.dateOfBirth ? a.dateOfBirth.split("-").reverse().join(".") : ""),
+      },
+    })
+    // Once, when the account arrives
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account.data])
+
+  // Free the photo previews when leaving the page (a removed photo is freed when it is removed)
+  const photosRef = useRef<Photo[]>([])
+  photosRef.current = photos
+  useEffect(() => () => photosRef.current.forEach((p) => URL.revokeObjectURL(p.url)), [])
+
+  const form = { ...d, ...consent }
+  const errors = kind ? checkDetails(form, kind, draft.date ?? todayInSofia()) : {}
+  const checks = useFieldChecks(errors, serverErrors)
+
+  if (!kind || !draft.date || !draft.time) return <Navigate to={kind ? "/book/time" : "/book/choose"} replace />
+
+  const set = (field: keyof typeof d, value: string) => updateDraft({ details: { ...d, [field]: value } })
+
+  function addPhotos(files: FileList | null) {
+    setPhotoProblem("")
+    const added = [...(files ?? [])]
+    const tooBig = added.find((f) => f.size > MAX_PHOTO_BYTES)
+    if (tooBig) {
+      setPhotoProblem(`"${tooBig.name}" is larger than 10 MB.`)
+      return
+    }
+    if (photos.length + added.length > MAX_PHOTOS) {
+      setPhotoProblem(`You can add up to ${MAX_PHOTOS} photos.`)
+      return
+    }
+    setPhotos([...photos, ...added.map((file) => ({ file, url: URL.createObjectURL(file) }))])
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!checks.canSubmit(event.currentTarget)) return
-    if (submitting.current) return
-    submitting.current = true
-    setLoading(true)
-    setError("")
-    setErrorCode(undefined)
-    setFieldErrors({})
+    setSending(true)
+    setProblem(null)
+    setServerErrors({})
+    const dateOfBirth = parseTypedDate(d.dateOfBirth)!
+    const common = {
+      date: draft.date!,
+      time: draft.time!,
+      customerName: d.customerName.trim(),
+      phone: d.phone.trim(),
+      email: d.email.trim(),
+      dateOfBirth,
+      adult: consent.adult,
+      consentForm: consent.consentForm,
+    }
     try {
-      const body = JSON.stringify({
-        serviceId: draft.serviceId,
-        artistId: draft.artistId === "any" ? null : draft.artistId,
-        date: draft.slot!.date,
-        time: draft.slot!.time,
-        customerName: draft.customer.name,
-        phone: draft.customer.phone,
-        email: draft.customer.email || null,
-        notes: draft.customer.notes || null,
-      })
-      // Signed in: the booking also goes to My bookings (a sign-in the server no longer accepts
-      // is ignored there, so the booking then simply goes through as a guest booking)
-      const result = await api<Booking>("/bookings", { method: "POST", token: customer?.token, body })
-      try {
-        // Lets the confirmation survive a page refresh; optional if storage is blocked
-        sessionStorage.setItem(
-          "tattoo-studio-last-confirmation",
-          JSON.stringify(result),
-        )
-      } catch {
-        // Storage unavailable: the confirmation still arrives via navigation state
+      // A flash booking made earlier in this tab and not paid still holds its time and design: let it go first
+      if (draft.code && draft.phone) await releaseHold(draft.code, draft.phone)
+      let booking: Booking
+      if (kind === "flash") {
+        const body: CreateFlashBooking = { ...common, flashId: draft.flashId!, notes: d.notes.trim() || null, depositPolicy: consent.depositPolicy }
+        booking = await api<Booking>("/bookings/flash", { method: "POST", body: JSON.stringify(body), token: customer?.token })
+      } else {
+        const body: CreateConsultation = {
+          ...common,
+          artistId: draft.artistId!,
+          idea: d.idea.trim(),
+          placement: d.placement,
+          sizeCm: d.sizeCm.trim() ? Number(d.sizeCm) : null,
+          colour: d.colour,
+        }
+        const data = new FormData()
+        data.append("booking", new Blob([JSON.stringify(body)], { type: "application/json" }))
+        photos.forEach((p) => data.append("photos", p.file))
+        booking = await api<Booking>("/bookings/consultation", { method: "POST", body: data, token: customer?.token })
       }
-      navigate("/booking/confirmed", { state: result })
+      updateDraft({ code: booking.code, phone: d.phone.trim() })
+      navigate(kind === "flash" ? "/book/deposit" : `/booking/confirmed?code=${encodeURIComponent(booking.code)}`)
     } catch (reason) {
       if (reason instanceof ApiError) {
-        setErrorCode(reason.code)
-        setFieldErrors(reason.errors || {})
+        if (reason.errors) setServerErrors(reason.errors)
+        if (reason.code === "UNDER_AGE") setServerErrors({ dateOfBirth: reason.message })
+        else if (reason.code === "INVALID_PHONE") setServerErrors({ phone: reason.message })
+        else if (reason.code === "SLOT_UNAVAILABLE" || reason.code === "OUTSIDE_BOOKING_WINDOW") setProblem({ text: reason.message, back: "time" })
+        else if (reason.code === "FLASH_NOT_AVAILABLE") setProblem({ text: reason.message, back: "flash" })
+        else if (reason.code !== "VALIDATION_FAILED") setProblem({ text: reason.message })
+      } else {
+        setProblem({ text: "Something went wrong. Please try again." })
       }
-      setError(reason instanceof Error ? reason.message : "Booking failed.")
     } finally {
-      submitting.current = false
-      setLoading(false)
+      setSending(false)
     }
   }
+
   return (
-    <BookingShell step={3} {...catalog}>
-      <Eyebrow>Final step</Eyebrow>
-      <Heading level={1}>Put your name on it.</Heading>
-      <p className="page-intro">
-        {customer ? (
-          <>
-            Signed in as {customer.user.name || customer.user.username}: this
-            booking goes to <AppLink to="/account">My bookings</AppLink>.
-          </>
-        ) : (
-          <>
-            Add your email (optional) and we’ll send your confirmation and
-            booking code there too. Have an account?{" "}
-            <AppLink to="/account/sign-in" state={{ back: "/book/details" }}>
-              Sign in
-            </AppLink>{" "}
-            to fill this in.
-          </>
+    <main>
+      <PageIntro title="Your details">
+        <p>Tell us who is coming to the studio and confirm the essentials.</p>
+      </PageIntro>
+      <StepBar current={3} withDeposit={kind === "flash"} />
+      <div className="wrap booking-body">
+        {!customer && (
+          <p className="guest-note">
+            No account needed. Have an account? <Link to="/account/sign-in?next=/book/details">Sign in</Link> to fill this in faster.
+          </p>
         )}
-      </p>
-      <form
-        className="details-form"
-        noValidate
-        onSubmit={submit}
-        onBlur={checks.onBlur}
-        onChange={checks.onChange}
-      >
-        <div className="form-grid">
-          <Input
-            label="Full name"
-            name="customerName"
-            autoComplete="name"
-            required
-            maxLength={limits["booking.customerName"]}
-            value={draft.customer.name}
-            error={checks.errorFor("customerName")}
-            onChange={(e) =>
-              update({ customer: { ...draft.customer, name: e.target.value } })
-            }
-          />
-          <Input
-            label="Phone"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            required
-            maxLength={limits["booking.phone"]}
-            value={draft.customer.phone}
-            error={checks.errorFor("phone")}
-            onChange={(e) =>
-              update({ customer: { ...draft.customer, phone: e.target.value } })
-            }
-          />
-          <Input
-            label="Email (optional)"
-            name="email"
-            type="email"
-            autoComplete="email"
-            maxLength={limits["booking.email"]}
-            value={draft.customer.email}
-            error={checks.errorFor("email")}
-            onChange={(e) =>
-              update({ customer: { ...draft.customer, email: e.target.value } })
-            }
-          />
-        </div>
-        <Textarea
-          label="Anything your artist should know?"
-          name="notes"
-          maxLength={limits["booking.notes"]}
-          error={checks.errorFor("notes")}
-          rows={4}
-          value={draft.customer.notes}
-          onChange={(e) =>
-            update({ customer: { ...draft.customer, notes: e.target.value } })
-          }
-        />
-        <Checkbox
-          className="policy-check"
-          name="policy"
-          required
-          checked={agreed}
-          onChange={(e) => setAgreed(e.target.checked)}
-          aria-invalid={checks.errorFor("policy") ? true : undefined}
-          label={
-            <span>
-              <ShieldCheck /> I understand I can cancel online up to 2 hours
-              before; payment is at the shop.
-            </span>
-          }
-        />
-        {checks.errorFor("policy") ? (
-          <small className="field-error">{checks.errorFor("policy")}</small>
-        ) : null}
-        {error ? (
-          <div className="form-error">
-            <p>{error}</p>
-            {errorCode === "SLOT_UNAVAILABLE" ? (
-              <AppLink to="/book/time">Back to step 3</AppLink>
-            ) : null}
-            {errorCode === "PHONE_LIMIT_REACHED" ? (
-              <AppLink to="/cancel">Manage booking</AppLink>
-            ) : null}
+        {problem && (
+          <FormError>
+            {problem.text}{" "}
+            {problem.back === "time" && <Link to="/book/time">Pick another time</Link>}
+            {problem.back === "flash" && <Link to="/flash">Choose another design</Link>}
+          </FormError>
+        )}
+        <p className="guest-note">
+          {kind === "flash" ? "Flash design" : "Free consultation"}: {longDate(draft.date)}, {draft.time}.{" "}
+          <Link to="/book/time">Change the time</Link>
+        </p>
+        <form className="slip form-slip on-paper" onSubmit={submit} onChange={checks.onChange} onBlur={checks.onBlur} noValidate>
+          <div className="form-section">
+            <div className="form-grid">
+              <TextField label="Full name" name="customerName" autoComplete="name" maxLength={limits["booking.customerName"]}
+                value={d.customerName} onChange={(e) => set("customerName", e.target.value)} error={checks.errorFor("customerName")} />
+              <TextField label="Phone" name="phone" type="tel" autoComplete="tel" maxLength={limits["booking.phone"]}
+                value={d.phone} onChange={(e) => set("phone", e.target.value)} error={checks.errorFor("phone")} />
+              <TextField label="Email" name="email" type="email" autoComplete="email" maxLength={limits["booking.email"]}
+                value={d.email} onChange={(e) => set("email", e.target.value)} error={checks.errorFor("email")} />
+              <TextField label="Date of birth" name="dateOfBirth" inputMode="numeric" placeholder="dd.mm.yyyy" autoComplete="bday"
+                value={d.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} error={checks.errorFor("dateOfBirth")} />
+            </div>
           </div>
-        ) : null}
-        <div className="booking-actions">
-          <AppLink to="/book/time" variant="ghost">
-            <ArrowLeft /> Time
-          </AppLink>
-          <Button type="submit" loading={loading}>
-            Confirm booking <Check />
-          </Button>
-        </div>
-      </form>
-    </BookingShell>
+          {kind === "consultation" && (
+            <section className="form-section">
+              <h2>About your idea</h2>
+              <TextAreaField label="Your idea" name="idea" full rows={5} maxLength={limits["consultation.idea"]}
+                value={d.idea} onChange={(e) => set("idea", e.target.value)} error={checks.errorFor("idea")} />
+              <div className="form-grid three" style={{ marginTop: 20 }}>
+                <SelectField label="Placement" name="placement" options={placements} value={d.placement}
+                  onChange={(e) => set("placement", e.target.value)} />
+                <TextField label="Approximate size in cm" name="sizeCm" type="number" min={1} max={200} inputMode="numeric"
+                  value={d.sizeCm} onChange={(e) => set("sizeCm", e.target.value)} error={checks.errorFor("sizeCm")} />
+                <SelectField label="Colour" name="colour" options={colours} value={d.colour} onChange={(e) => set("colour", e.target.value)} />
+              </div>
+              <div className="reference-upload">
+                <div>
+                  <h3>Reference photos</h3>
+                  <p>Up to 5 JPG, PNG or HEIC photos, 10 MB each.</p>
+                </div>
+                <label className="button button-secondary file-button">
+                  <ImagePlus className="icon" size={18} aria-hidden="true" /> Add photos
+                  <input type="file" multiple accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif"
+                    onChange={(e) => {
+                      addPhotos(e.target.files)
+                      e.target.value = ""
+                    }} />
+                </label>
+                {photoProblem && <p className="field-error">{photoProblem}</p>}
+                {photos.length > 0 && (
+                  <div className="reference-grid">
+                    {photos.map((p, i) => (
+                      <figure key={p.url}>
+                        <img src={p.url} alt="" />
+                        <figcaption>{p.file.name}</figcaption>
+                        <button type="button" aria-label={`Remove ${p.file.name}`} onClick={() => {
+                          URL.revokeObjectURL(p.url)
+                          setPhotos(photos.filter((_, j) => j !== i))
+                        }}>
+                          <X className="icon" size={16} aria-hidden="true" />
+                        </button>
+                      </figure>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+          <section className="form-section">
+            <h2>Consent</h2>
+            <ConsentCheck name="adult" checked={consent.adult} onChange={(v) => setConsent({ ...consent, adult: v })} error={checks.errorFor("adult")}>
+              I am 18 or older.
+            </ConsentCheck>
+            <ConsentCheck name="consentForm" checked={consent.consentForm} onChange={(v) => setConsent({ ...consent, consentForm: v })}
+              error={checks.errorFor("consentForm")}>
+              I have read and agree to the consent form.
+            </ConsentCheck>
+            <details className="consent-details">
+              <summary>Read the consent form</summary>
+              <div>
+                <h3>Health and safety</h3>
+                <p>
+                  Tell your artist about medical conditions, medication, allergies, skin reactions, pregnancy or anything else that
+                  may affect safe tattooing.
+                </p>
+                <p>
+                  Do not drink alcohol for 24 hours before your appointment. The artist may refuse or stop the session if tattooing
+                  would be unsafe.
+                </p>
+              </div>
+            </details>
+            {kind === "flash" && (
+              <ConsentCheck name="depositPolicy" checked={consent.depositPolicy}
+                onChange={(v) => setConsent({ ...consent, depositPolicy: v })} error={checks.errorFor("depositPolicy")}>
+                I understand the deposit policy: the €30 deposit is taken off the price, refunded if I cancel at least 48 hours before,
+                and kept if I cancel later.
+              </ConsentCheck>
+            )}
+          </section>
+          <div className="form-actions">
+            <button className="button button-primary" type="submit" disabled={sending}>
+              {sending ? "Booking..." : kind === "flash" ? "Continue" : "Book consultation"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
   )
 }
-export function Confirmation() {
-  const customer = useCustomer()
-  usePageTitle("Booking confirmed")
-  const location = useLocation()
-  const { reset } = useBooking()
-  const [copied, setCopied] = useState<"" | "copied" | "failed">("")
-  let booking = location.state as Booking | null
-  if (!booking) {
+
+// ---- Step 4: Deposit ----
+
+/** Step 4 (flash): the summary, the 15-minute hold and the button to the payment page. */
+export function BookDeposit() {
+  usePageTitle("Pay the deposit")
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const draft = useBookingDraft()
+  const code = params.get("code") ?? draft.code
+  const phone = draft.phone
+  const [booking, setBooking] = useState<Booking | null>(null)
+  const [problem, setProblem] = useState("")
+  const [paying, setPaying] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!code || !phone) return
+    let current = true
+    api<Booking>("/bookings/lookup", { method: "POST", body: JSON.stringify({ code, phone }) })
+      .then((b) => {
+        if (!current) return
+        if (b.deposit.status === "PAID") navigate(`/booking/confirmed?code=${encodeURIComponent(b.code)}`, { replace: true })
+        setBooking(b)
+      })
+      .catch((reason) => current && setProblem(reason instanceof Error ? reason.message : "Something went wrong."))
+    return () => {
+      current = false
+    }
+  }, [code, phone, navigate])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  if (!code || !phone) return <Navigate to="/book/choose" replace />
+
+  const left = booking?.deposit.dueAt ? countdown(booking.deposit.dueAt, now) : null
+  const expired = booking !== null && (booking.status !== "PENDING" || left === null)
+
+  async function pay() {
+    setPaying(true)
+    setProblem("")
     try {
-      booking = JSON.parse(
-        sessionStorage.getItem("tattoo-studio-last-confirmation") || "null",
-      )
-    } catch {
-      booking = null
+      const start = await api<PaymentStart>("/bookings/deposit", { method: "POST", body: JSON.stringify({ code, phone }) })
+      window.location.assign(start.checkoutUrl)
+    } catch (reason) {
+      setPaying(false)
+      if (reason instanceof ApiError && reason.code === "HOLD_EXPIRED") {
+        setBooking(booking && { ...booking, status: "EXPIRED" })
+        return
+      }
+      setProblem(reason instanceof Error ? reason.message : "Something went wrong. Please try again.")
     }
   }
-  useEffect(() => reset(), [reset])
-  if (!booking) return <Navigate to="/book/service" replace />
-  const current = booking
-  async function copy() {
-    try {
-      // Not available on plain http (except localhost) or when the browser denies it
-      await navigator.clipboard.writeText(current.code)
-      setCopied("copied")
-    } catch {
-      setCopied("failed")
-    }
-    window.setTimeout(() => setCopied(""), 2500)
-  }
+
   return (
-    <main className="result-page">
-      <div className="result-card confirmation-card">
-        <div className="success-mark">
-          <Check />
-        </div>
-        <Eyebrow>Chair locked</Eyebrow>
-        <div className="paint-reveal">
-          <span className="paint-stroke" />
-          <SprayCan className="paint-can" />
-          <Heading level={1}>You’re on the list.</Heading>
-        </div>
-        <div className="receipt">
-          <div>
-            <KeyRound />
-            <span>
-              <small>Booking code</small>
-              {current.code}
-            </span>
+    <main>
+      <PageIntro title="Pay the deposit">
+        <p>Review the booking and secure the appointment with a {euros(booking?.deposit.amount ?? 30)} deposit.</p>
+      </PageIntro>
+      <StepBar current={4} locked={booking !== null && !expired} />
+      <div className="wrap booking-body">
+        <FormError>{problem}</FormError>
+        {booking && (
+          <div className="deposit-layout">
+            <section className="slip on-paper" aria-labelledby="summary-title">
+              <h2 id="summary-title">Booking summary</h2>
+              <dl className="slip-list">
+                <div>
+                  <dt>Design</dt>
+                  <dd>{booking.title}</dd>
+                </div>
+                <div>
+                  <dt>Artist</dt>
+                  <dd>{booking.artistName}</dd>
+                </div>
+                <div>
+                  <dt>Date and time</dt>
+                  <dd>{whenOf(booking)}</dd>
+                </div>
+                <div>
+                  <dt>Price</dt>
+                  <dd>{euros(booking.price)}</dd>
+                </div>
+                <div>
+                  <dt>Deposit</dt>
+                  <dd>{euros(booking.deposit.amount)}</dd>
+                </div>
+                <div className="total">
+                  <dt>Pay in the studio</dt>
+                  <dd>{euros(booking.leftToPay)}</dd>
+                </div>
+              </dl>
+            </section>
+            <section aria-label="Payment">
+              {expired ? (
+                <>
+                  <p className="hold-countdown" role="status">
+                    The hold expired and the time is free again. Pick a time again to continue.
+                  </p>
+                  <Link className="button button-primary payment-button" to="/book/time" onClick={() => updateDraft({ time: null, code: null })}>
+                    Pick a time
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="hold-countdown">
+                    We're holding this time for you for <strong aria-live="off">{left ?? "15:00"}</strong>
+                  </p>
+                  <button className="button button-primary payment-button" type="button" onClick={pay} disabled={paying}>
+                    {paying ? "Taking you to Revolut to pay..." : `Pay ${euros(booking.deposit.amount)} deposit with Revolut`}
+                  </button>
+                  <p className="payment-methods">You can pay with Revolut Pay, a card, Apple Pay or Google Pay.</p>
+                </>
+              )}
+            </section>
           </div>
-          <div>
-            <Clock3 />
-            <span>
-              <small>Date & time</small>
-              {formatAppointment(current.startsAt)}
-            </span>
-          </div>
-          <div>
-            <SprayDisc initials={initials(current.artistName)} size="sm" />
-            <span>
-              <small>Service & artist</small>
-              {current.serviceName} with {current.artistName}
-            </span>
-          </div>
-          <div>
-            <MapPin />
-            <span>
-              <small>Location</small>
-              {shop.address}
-            </span>
-          </div>
-          <div>
-            <ShieldCheck />
-            <span>
-              <small>Due at shop</small>
-              {formatMoney(current.price)}
-            </span>
-          </div>
-        </div>
-        <div className="cancellation-code">
-          <span>Booking code</span>
-          <strong>{current.code}</strong>
-          <Button variant="ghost" onClick={copy}>
-            <Copy />{" "}
-            {copied === "copied"
-              ? "Copied"
-              : copied === "failed"
-                ? "Couldn’t copy, please write it down"
-                : "Copy code"}
-          </Button>
-          <p>
-            {customer
-              ? "It’s also in My bookings, where you can cancel it. "
-              : "Save this code. You’ll need it together with your phone number to view or cancel your booking. "}
-            Online cancellation is free until 2 hours before.
-          </p>
-        </div>
-        <div className="confirmation-actions">
-          {customer ? (
-            <AppLink to="/account" variant="secondary">
-              My bookings
-            </AppLink>
-          ) : (
-            <AppLink to="/cancel" state={{ code: current.code }} variant="secondary">
-              Manage booking
-            </AppLink>
-          )}
-          <AppLink to="/" variant="primary">
-            Back to Tattoo Studio
-          </AppLink>
-        </div>
+        )}
+        {!booking && !problem && <p className="state-note">Loading your booking...</p>}
       </div>
     </main>
   )

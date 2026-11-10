@@ -1,10 +1,11 @@
 package com.tattoostudio.service;
 
-import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -21,120 +22,64 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.tattoostudio.dto.AdminArtistDto;
-import com.tattoostudio.dto.AdminServiceDto;
 import com.tattoostudio.dto.ArtistLoginRequest;
 import com.tattoostudio.dto.ArtistOptionDto;
 import com.tattoostudio.dto.ArtistRequest;
 import com.tattoostudio.dto.ListQuery;
 import com.tattoostudio.dto.PageDto;
-import com.tattoostudio.dto.ServiceRequest;
 import com.tattoostudio.dto.StaffBookingDto;
 import com.tattoostudio.error.ApiException;
 import com.tattoostudio.error.ErrorCode;
 import com.tattoostudio.model.Artist;
 import com.tattoostudio.model.BookingStatus;
+import com.tattoostudio.model.FlashDesign;
 import com.tattoostudio.model.Role;
-import com.tattoostudio.model.ServiceItem;
 import com.tattoostudio.model.User;
+import com.tattoostudio.model.Work;
 import com.tattoostudio.repository.ArtistRepository;
 import com.tattoostudio.repository.BookingRepository;
-import com.tattoostudio.repository.ServiceItemRepository;
+import com.tattoostudio.repository.FlashRepository;
 import com.tattoostudio.repository.UserRepository;
+import com.tattoostudio.repository.WorkRepository;
+import com.tattoostudio.storage.ImageUploads;
 
 /**
- * The admin's side of services and artists. Usually services are hidden and artists deactivated
- * (PUT with active: false). Deleting for good is possible when nothing depends on them: a service
- * without upcoming bookings (past bookings keep their own copy of the name and price), an artist
- * without any bookings (so history and stats stay complete).
+ * The admin's side of artists. Usually artists are deactivated (PUT with active: false). Deleting
+ * for good is possible for an artist without any bookings (so history and stats stay complete),
+ * together with their login, flash designs and portfolio.
  */
 @Service
 public class AdminCatalogService {
 
     private static final Logger log = LoggerFactory.getLogger(AdminCatalogService.class);
 
-    private final ServiceItemRepository services;
     private final ArtistRepository artists;
     private final BookingRepository bookings;
+    private final FlashRepository flash;
+    private final WorkRepository works;
     private final UserRepository users;
     private final ScheduleService schedules;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
     private final MongoTemplate mongo;
     private final CatalogService catalog;
+    private final ImageUploads images;
 
-    public AdminCatalogService(ServiceItemRepository services, ArtistRepository artists, BookingRepository bookings,
-            UserRepository users, ScheduleService schedules, PasswordEncoder passwordEncoder, Clock clock,
-            MongoTemplate mongo, CatalogService catalog) {
-        this.services = services;
+    public AdminCatalogService(ArtistRepository artists, BookingRepository bookings, FlashRepository flash,
+            WorkRepository works, UserRepository users, ScheduleService schedules, PasswordEncoder passwordEncoder,
+            Clock clock, MongoTemplate mongo, CatalogService catalog, ImageUploads images) {
         this.artists = artists;
         this.bookings = bookings;
+        this.flash = flash;
+        this.works = works;
         this.users = users;
         this.schedules = schedules;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
         this.mongo = mongo;
         this.catalog = catalog;
+        this.images = images;
     }
-
-    // ---- Services ----
-
-    /** All services (hidden ones too) matching the search text, price range and shown/hidden state. */
-    public PageDto<AdminServiceDto> searchServices(String text, Boolean active, BigDecimal minPrice, BigDecimal maxPrice,
-            ListQuery list) {
-        return catalog.searchServices(text, active, minPrice, maxPrice, list)
-                .map(page -> page.stream().map(AdminServiceDto::from).toList());
-    }
-
-    public AdminServiceDto createService(ServiceRequest request) {
-        ServiceItem service = new ServiceItem();
-        service.setSortOrder(services.findAll().stream().mapToInt(ServiceItem::getSortOrder).max().orElse(0) + 1);
-        apply(service, request);
-        log.info("Added service {}", service.getName());
-        return AdminServiceDto.from(services.save(service));
-    }
-
-    public AdminServiceDto updateService(String id, ServiceRequest request) {
-        ServiceItem service = service(id);
-        apply(service, request);
-        return AdminServiceDto.from(services.save(service));
-    }
-
-    /** Shows or hides the service on the booking page; only the active flag is written. */
-    public AdminServiceDto setServiceActive(String id, boolean active) {
-        service(id);
-        setActive(id, active, ServiceItem.class);
-        return AdminServiceDto.from(service(id));
-    }
-
-    /** Deletes the service for good. Refused while it has upcoming bookings; past ones keep its name and price. */
-    public void deleteService(String id) {
-        ServiceItem service = service(id);
-        long upcoming = bookings.countByServiceIdAndStatusAndEndsAtAfter(id, BookingStatus.BOOKED, clock.instant());
-        if (upcoming > 0) {
-            throw new ApiException(HttpStatus.CONFLICT, ErrorCode.CONFLICT, service.getName() + " has " + upcoming
-                    + (upcoming == 1 ? " upcoming booking" : " upcoming bookings") + ". Hide it instead, or cancel them first.");
-        }
-        services.delete(service);
-        log.info("Deleted service {}", service.getName());
-    }
-
-    private void apply(ServiceItem service, ServiceRequest r) {
-        service.setName(r.name().trim());
-        service.setDescription(trimToEmpty(r.description()));
-        service.setPrice(r.price());
-        service.setLabel(trimToEmpty(r.label()));
-        service.setPalette(r.palette());
-        if (r.active() != null) {
-            service.setActive(r.active());
-        }
-    }
-
-    private ServiceItem service(String id) {
-        return services.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, ErrorCode.SERVICE_NOT_FOUND, "Service not found"));
-    }
-
-    // ---- Artists ----
 
     /** All artists (inactive ones too) matching the search text, working day and active state. */
     public PageDto<AdminArtistDto> searchArtists(String text, Boolean active, DayOfWeek day, ListQuery list) {
@@ -146,7 +91,7 @@ public class AdminCatalogService {
         List<Artist> all = artists.findAll(Sort.by("name"));
         Map<String, String> usernames = users.findByArtistIdIn(all.stream().map(Artist::getId).toList()).stream()
                 .collect(Collectors.toMap(User::getArtistId, User::getUsername, (a, b) -> a));
-        return all.stream().map(b -> new ArtistOptionDto(b.getId(), b.getName(), b.isActive(), usernames.get(b.getId())))
+        return all.stream().map(a -> new ArtistOptionDto(a.getId(), a.getName(), a.isActive(), usernames.get(a.getId())))
                 .toList();
     }
 
@@ -156,8 +101,8 @@ public class AdminCatalogService {
                 .collect(Collectors.toMap(User::getArtistId, User::getUsername, (a, b) -> a));
         Map<String, List<StaffBookingDto>> conflicts = schedules.conflicts(page);
         return page.stream()
-                .map(b -> AdminArtistDto.from(b, schedules.upcoming(b.getExceptions()), usernames.get(b.getId()),
-                        conflicts.getOrDefault(b.getId(), List.of())))
+                .map(a -> AdminArtistDto.from(a, schedules.upcoming(a.getExceptions()), usernames.get(a.getId()),
+                        conflicts.getOrDefault(a.getId(), List.of())))
                 .toList();
     }
 
@@ -166,7 +111,7 @@ public class AdminCatalogService {
         artist.setSortOrder(artists.findAll().stream().mapToInt(Artist::getSortOrder).max().orElse(0) + 1);
         apply(artist, request);
         log.info("Added artist {}", artist.getName());
-        return toDto(artists.save(artist), null);
+        return toDto(save(artist), null);
     }
 
     public AdminArtistDto updateArtist(String id, ArtistRequest request) {
@@ -175,33 +120,41 @@ public class AdminCatalogService {
             requireNoUpcomingBookings(artist);
         }
         apply(artist, request);
-        return toDto(artists.save(artist), username(id));
+        return toDto(save(artist), username(id));
     }
 
     /**
-     * Puts the artist on or takes them off the booking page; while inactive their login can't sign in.
-     * Deactivating is refused while they still have upcoming bookings: those need to be cancelled first.
-     * Only the active flag is written, so hours the artist saved meanwhile are kept.
+     * Puts the artist on or takes them off the site; while inactive their login can't sign in and their
+     * flash designs are off the sheet. Deactivating is refused while they still have upcoming bookings:
+     * those need to be cancelled first. Only the active flag is written, so hours the artist saved
+     * meanwhile are kept.
      */
     public AdminArtistDto setArtistActive(String id, boolean active) {
         Artist artist = artist(id);
         if (!active && artist.isActive()) {
             requireNoUpcomingBookings(artist);
         }
-        setActive(id, active, Artist.class);
+        mongo.updateFirst(Query.query(Criteria.where("_id").is(id)), new Update().set("active", active), Artist.class);
         return toDto(artist(id), username(id));
     }
 
-    /** Deletes an artist who never had a booking, together with their login. */
+    /** Deletes an artist who never had a booking, with their login, flash designs and portfolio. */
     public void deleteArtist(String id) {
         Artist artist = artist(id);
         long history = bookings.countByArtistId(id);
         if (history > 0) {
             throw new ApiException(HttpStatus.CONFLICT, ErrorCode.CONFLICT, artist.getName() + " has " + history
-                    + (history == 1 ? " booking" : " bookings") + " in the shop's history. Deactivate them instead.");
+                    + (history == 1 ? " booking" : " bookings") + " in the studio's history. Deactivate them instead.");
         }
         users.findByArtistId(id).ifPresent(users::delete);
+        List<FlashDesign> designs = flash.findByArtistIdOrderBySortOrderAsc(id);
+        List<Work> portfolio = works.findByArtistIdOrderByCreatedAtDesc(id);
+        flash.deleteAll(designs);
+        works.deleteAll(portfolio);
         artists.delete(artist);
+        designs.forEach(d -> images.delete(d.getImage()));
+        portfolio.forEach(w -> images.delete(w.getImage()));
+        images.delete(artist.getSignaturePiece());
         log.info("Deleted artist {}", artist.getName());
     }
 
@@ -235,13 +188,9 @@ public class AdminCatalogService {
         return username;
     }
 
-    /** Writes only the active flag, so nothing else edited at the same moment is overwritten. */
-    private void setActive(String id, boolean active, Class<?> type) {
-        mongo.updateFirst(Query.query(Criteria.where("_id").is(id)), new Update().set("active", active), type);
-    }
-
     private void requireNoUpcomingBookings(Artist artist) {
-        long upcoming = bookings.countByArtistIdAndStatusAndEndsAtAfter(artist.getId(), BookingStatus.BOOKED, clock.instant());
+        long upcoming = bookings.countByArtistIdAndStatusInAndEndsAtAfter(artist.getId(),
+                List.of(BookingStatus.PENDING, BookingStatus.BOOKED), clock.instant());
         if (upcoming > 0) {
             throw new ApiException(HttpStatus.CONFLICT, ErrorCode.CONFLICT, artist.getName() + " still has " + upcoming
                     + (upcoming == 1 ? " upcoming booking" : " upcoming bookings") + ". Cancel them first.");
@@ -250,11 +199,20 @@ public class AdminCatalogService {
 
     private void apply(Artist artist, ArtistRequest r) {
         artist.setName(r.name().trim());
-        artist.setHandle(trimToEmpty(r.handle()));
-        artist.setSpecialty(trimToEmpty(r.specialty()));
+        // The page address only changes when the admin changes it, so old links keep working
+        if (r.slug() != null && !r.slug().isBlank()) {
+            artist.setSlug(r.slug().trim());
+        } else if (artist.getSlug() == null) {
+            String fromName = slugOf(r.name());
+            artist.setSlug(fromName != null ? fromName : "artist-" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        }
+        artist.setStyle(trimToEmpty(r.style()));
         artist.setBio(trimToEmpty(r.bio()));
-        artist.setPhotoUrl(r.photoUrl() == null || r.photoUrl().isBlank() ? null : r.photoUrl().trim());
-        artist.setAccent(r.accent());
+        artist.setHourlyRate(r.hourlyRate());
+        artist.setDayRate(r.dayRate());
+        if (r.breakMinutes() != null) {
+            artist.setBreakMinutes(schedules.cleanBreak(r.breakMinutes()));
+        }
         artist.setWeeklyHours(schedules.cleanWeeklyHours(r.weeklyHours()));
         artist.setExceptions(new ArrayList<>(schedules.cleanExceptions(r.exceptions())));
         if (r.active() != null) {
@@ -262,8 +220,24 @@ public class AdminCatalogService {
         }
     }
 
-    private AdminArtistDto toDto(Artist b, String username) {
-        return AdminArtistDto.from(b, schedules.upcoming(b.getExceptions()), username, schedules.conflicts(b));
+    /** "Kai" → "kai", "Ana María" → "ana-maria". */
+    static String slugOf(String name) {
+        String plain = Normalizer.normalize(name.trim(), Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        String slug = plain.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("(^-+|-+$)", "");
+        return slug.isEmpty() ? null : slug.length() > 40 ? slug.substring(0, 40) : slug;
+    }
+
+    private Artist save(Artist artist) {
+        try {
+            return artists.save(artist);
+        } catch (DuplicateKeyException e) {
+            throw new ApiException(HttpStatus.CONFLICT, ErrorCode.CONFLICT,
+                    "Another artist already uses the page address /artists/" + artist.getSlug());
+        }
+    }
+
+    private AdminArtistDto toDto(Artist a, String username) {
+        return AdminArtistDto.from(a, schedules.upcoming(a.getExceptions()), username, schedules.conflicts(a));
     }
 
     private String username(String artistId) {

@@ -34,3 +34,6 @@ build/
 
 ### Secrets ###
 src/main/resources/secrets.properties
+
+### Pictures uploaded while developing (without Cloudinary) ###
+/uploads/

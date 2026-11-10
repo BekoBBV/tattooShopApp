@@ -3,6 +3,7 @@ package com.tattoostudio.service;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Locale;
 
 import org.slf4j.Logger;
@@ -23,10 +24,12 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
+import com.tattoostudio.config.BookingRules;
 import com.tattoostudio.config.JwtConfig;
 import com.tattoostudio.dto.AuthUserDto;
 import com.tattoostudio.dto.LoginResponse;
 import com.tattoostudio.dto.RegisterRequest;
+import com.tattoostudio.dto.UpdateAccountRequest;
 import com.tattoostudio.error.ApiException;
 import com.tattoostudio.error.ErrorCode;
 import com.tattoostudio.model.Booking;
@@ -60,6 +63,8 @@ public class AuthService {
     private final JwtEncoder jwtEncoder;
     private final MongoTemplate mongo;
     private final Clock clock;
+    /** Customer accounts are for adults, with the same age and time zone as the bookings. */
+    private final BookingRules rules;
     private final Duration tokenLifetime;
     private final int maxSignupsPerHour;
     private final SlidingWindowCounter failedByUsername;
@@ -69,7 +74,7 @@ public class AuthService {
     private final String dummyHash;
 
     public AuthService(UserRepository users, ArtistRepository artists, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
-            MongoTemplate mongo, Clock clock,
+            MongoTemplate mongo, Clock clock, BookingRules rules,
             @Value("${app.auth.token-lifetime}") Duration tokenLifetime,
             @Value("${app.limits.signups-per-hour:5}") int maxSignupsPerHour) {
         this.users = users;
@@ -78,6 +83,7 @@ public class AuthService {
         this.jwtEncoder = jwtEncoder;
         this.mongo = mongo;
         this.clock = clock;
+        this.rules = rules;
         this.tokenLifetime = tokenLifetime;
         this.maxSignupsPerHour = maxSignupsPerHour;
         this.failedByUsername = new SlidingWindowCounter(USERNAME_WINDOW, clock);
@@ -128,11 +134,17 @@ public class AuthService {
         } catch (IllegalArgumentException e) {
             throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_PHONE, "Please enter a valid phone number");
         }
+        LocalDate today = LocalDate.now(clock.withZone(rules.timezone()));
+        if (request.dateOfBirth().plusYears(rules.minAge()).isAfter(today) || request.dateOfBirth().getYear() < 1900) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.UNDER_AGE,
+                    "You need to be " + rules.minAge() + " or older to create an account.");
+        }
         String email = normalize(request.email());
         User user = new User(email, passwordEncoder.encode(request.password()), Role.USER, null);
         user.setName(request.name().trim());
         user.setEmail(email);
         user.setPhone(request.phone().trim());
+        user.setDateOfBirth(request.dateOfBirth());
         Instant now = clock.instant();
         user.setCreatedAt(now);
         user.setLastLoginAt(now);
@@ -158,6 +170,38 @@ public class AuthService {
                 .set("passwordHash", passwordEncoder.encode(newPassword))
                 .set("passwordChangedAt", now), User.class);
         log.info("Customer {} changed their password", user.getUsername());
+        return issueToken(user);
+    }
+
+    /**
+     * A customer changes their name, phone or email. The email is the username, so a new one must be
+     * free, and the answer is a new sign-in: the old one names the old email (other devices sign in again).
+     */
+    public LoginResponse updateDetails(String userId, UpdateAccountRequest request) {
+        User user = users.findById(userId).filter(u -> u.getRole() == Role.USER)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "Please sign in again."));
+        try {
+            PhoneNumbers.normalize(request.phone());
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_PHONE, "Please enter a valid phone number");
+        }
+        String email = normalize(request.email());
+        boolean newEmail = !email.equals(user.getUsername());
+        if (newEmail && users.findByUsername(email).isPresent()) {
+            throw emailTaken();
+        }
+        user.setName(request.name().trim());
+        user.setPhone(request.phone().trim());
+        user.setEmail(email);
+        user.setUsername(email);
+        try {
+            users.save(user);
+        } catch (DuplicateKeyException e) {
+            throw emailTaken(); // taken at the same moment
+        }
+        if (newEmail) {
+            log.info("Customer {} changed their email", user.getId());
+        }
         return issueToken(user);
     }
 

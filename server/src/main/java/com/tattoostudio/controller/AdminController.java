@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +33,9 @@ import com.tattoostudio.dto.StatusUpdateRequest;
 import com.tattoostudio.error.ApiException;
 import com.tattoostudio.error.ErrorCode;
 import com.tattoostudio.model.BookingStatus;
+import com.tattoostudio.model.BookingType;
+import com.tattoostudio.model.DepositMethod;
+import com.tattoostudio.model.DepositStatus;
 import com.tattoostudio.model.Message;
 import com.tattoostudio.model.Review;
 import com.tattoostudio.repository.MessageRepository;
@@ -40,6 +44,7 @@ import com.tattoostudio.security.StaffUser;
 import com.tattoostudio.service.InboxService;
 import com.tattoostudio.service.StaffBookingService;
 import com.tattoostudio.service.StatsService;
+import com.tattoostudio.storage.ImageUploads;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -60,15 +65,17 @@ public class AdminController {
     private final ReviewRepository reviews;
     private final MessageRepository messages;
     private final InboxService inbox;
+    private final ImageUploads images;
     private final Clock clock;
 
     public AdminController(StaffBookingService staffBookings, StatsService stats, ReviewRepository reviews,
-            MessageRepository messages, InboxService inbox, Clock clock) {
+            MessageRepository messages, InboxService inbox, ImageUploads images, Clock clock) {
         this.staffBookings = staffBookings;
         this.stats = stats;
         this.reviews = reviews;
         this.messages = messages;
         this.inbox = inbox;
+        this.images = images;
         this.clock = clock;
     }
 
@@ -76,24 +83,37 @@ public class AdminController {
 
     @GetMapping("/bookings")
     @Operation(summary = "All bookings", description = "Dates are inclusive. Default: the last 7 days and the next 30. "
-            + "Search by customer, phone, email, code, service or notes; sort by date, service, customer, price or status.")
+            + "Filter by artist, type, status and deposit (depositStatus, depositMethod: ONLINE = paid with Revolut, "
+            + "CASH = paid in cash). Search by customer, phone, email, code, title, idea or notes; sort by date, title, "
+            + "type, customer, price or status. depositOverdue marks deposits still waiting after their due time.")
     public PageDto<StaffBookingDto> bookings(@Valid @ParameterObject ListQuery list,
             @RequestParam(required = false) String artistId,
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to,
-            @RequestParam(required = false) BookingStatus status) {
-        return staffBookings.list(artistId == null || artistId.isBlank() ? null : artistId, from, to, status, list);
+            @RequestParam(required = false) BookingStatus status,
+            @RequestParam(required = false) BookingType type,
+            @RequestParam(required = false) DepositStatus depositStatus,
+            @RequestParam(required = false) DepositMethod depositMethod) {
+        return staffBookings.list(new StaffBookingService.Filter(artistId == null || artistId.isBlank() ? null : artistId,
+                from, to, status, type, depositStatus, depositMethod), list);
     }
 
     @PatchMapping("/bookings/{id}")
-    @Operation(summary = "Mark any booking Done, No-show or Cancelled")
+    @Operation(summary = "Mark any booking Done, No-show or Cancelled",
+            description = "Cancelling refunds a paid deposit (the studio cancelled).")
     public StaffBookingDto updateStatus(@AuthenticationPrincipal Jwt jwt, @PathVariable String id,
             @Valid @RequestBody StatusUpdateRequest request) {
         return staffBookings.updateStatus(id, request.status(), StaffUser.from(jwt));
     }
 
+    @PostMapping("/bookings/{id}/deposit-cash")
+    @Operation(summary = "Mark a waiting deposit paid in cash", description = "A held flash booking is confirmed by it.")
+    public StaffBookingDto depositPaidInCash(@PathVariable String id) {
+        return staffBookings.depositPaidInCash(id);
+    }
+
     @PutMapping("/bookings/{id}")
-    @Operation(summary = "Edit a booking's customer details and notes", description = "Time, artist and service stay. "
+    @Operation(summary = "Edit a booking's customer details and notes", description = "Time, artist and design stay. "
             + "Refused (409) once the details were removed for privacy.")
     public StaffBookingDto updateBooking(@PathVariable String id, @Valid @RequestBody BookingUpdateRequest request) {
         return staffBookings.updateDetails(id, request);
@@ -109,7 +129,7 @@ public class AdminController {
     // ---- Stats ----
 
     @GetMapping("/stats")
-    @Operation(summary = "Shop numbers", description = "Dates are inclusive. Default: this week (Monday to Sunday).")
+    @Operation(summary = "Studio numbers", description = "Dates are inclusive. Default: this week (Monday to Sunday).")
     public StatsDto stats(@RequestParam(required = false) LocalDate from, @RequestParam(required = false) LocalDate to) {
         return stats.stats(from, to);
     }
@@ -118,10 +138,11 @@ public class AdminController {
 
     @GetMapping("/reviews")
     @Operation(summary = "Reviews, newest first", description = "status=pending or approved (all when left out), "
-            + "minRating, search by name or text; sort by date, rating or name.")
+            + "artistId, minRating, search by name or text; sort by date, rating or name.")
     public PageDto<AdminReviewDto> reviews(@Valid @ParameterObject ListQuery list,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) @Min(1) @Max(5) Integer minRating) {
+            @RequestParam(required = false) @Min(1) @Max(5) Integer minRating,
+            @RequestParam(required = false) String artistId) {
         Boolean approved = switch (status == null ? "" : status) {
             case "" -> null;
             case "pending" -> false;
@@ -129,7 +150,7 @@ public class AdminController {
             default -> throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
                     "status must be pending or approved");
         };
-        return inbox.searchReviews(list.text(), approved, minRating, list)
+        return inbox.searchReviews(list.text(), approved, minRating, artistId, list)
                 .map(page -> page.stream().map(AdminReviewDto::from).toList());
     }
 
@@ -170,7 +191,7 @@ public class AdminController {
     }
 
     @PatchMapping("/messages/{id}")
-    @Operation(summary = "Mark a message read or unread")
+    @Operation(summary = "Mark a message handled (read) or not")
     public MessageDto updateMessage(@PathVariable String id, @Valid @RequestBody MessageUpdateRequest request) {
         Message message = message(id);
         message.setRead(request.read());
@@ -180,9 +201,11 @@ public class AdminController {
 
     @DeleteMapping("/messages/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Delete a message")
+    @Operation(summary = "Delete a message", description = "Its photos are deleted too.")
     public void deleteMessage(@PathVariable String id) {
-        messages.delete(message(id));
+        Message message = message(id);
+        messages.delete(message);
+        images.deleteAll(message.getPhotos());
     }
 
     private Review review(String id) {

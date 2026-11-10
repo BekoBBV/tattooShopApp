@@ -6,8 +6,8 @@ import type { LoginResponse } from "./types"
  * The signed-in customer (role USER), kept in this browser only and separate from the staff
  * sign-in, so an artist testing the site as a customer never loses their staff session.
  */
-const key = "tattoo-studio-customer-session"
-const CHANGED = "tattoo-studio-customer-changed"
+const key = "blade-and-brush-customer-session"
+const CHANGED = "blade-and-brush-customer-changed"
 
 /** Used when the browser blocks storage: then the sign-in lasts until the page reloads. */
 let memory: string | null = null

@@ -9,4 +9,6 @@ import com.tattoostudio.model.Review;
 public interface ReviewRepository extends MongoRepository<Review, String> {
 
     List<Review> findByApprovedTrueOrderByCreatedAtDesc();
+
+    List<Review> findByArtistIdAndApprovedTrueOrderByCreatedAtDesc(String artistId);
 }

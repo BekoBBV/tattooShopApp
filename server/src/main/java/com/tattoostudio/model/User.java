@@ -1,6 +1,7 @@
 package com.tattoostudio.model;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -33,6 +34,8 @@ public class User {
     /** As the customer typed it, e.g. "0888 123 456"; bookings store it normalised. */
     private String phone;
 
+    /** Customers: to fill in the booking form (bookings need 18+). */
+    private LocalDate dateOfBirth;
     private Instant createdAt;
     private Instant lastLoginAt;
     /** How many times this login has signed in (shown on the admin's users page). */
@@ -78,6 +81,8 @@ public class User {
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
