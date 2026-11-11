@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { createBrowserRouter, Navigate } from "react-router"
+import { createBrowserRouter, Navigate, type RouteObject } from "react-router"
 import { BookingLayout, RootLayout, SiteLayout } from "../components/Layout"
 import Account from "../pages/Account"
 import Aftercare from "../pages/Aftercare"
@@ -18,7 +18,7 @@ import { Register, SignIn } from "../pages/SignIn"
 const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({ Component: (await load()).default })
 
 /** Every page of the website: the customer site, the booking steps, and the artist and admin area. */
-export const router = createBrowserRouter([
+export const routes: RouteObject[] = [
   {
     Component: RootLayout,
     children: [
@@ -72,4 +72,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-])
+]
+
+/** The website's router; the page tests build their own from `routes`, starting at any address. */
+export const router = createBrowserRouter(routes)

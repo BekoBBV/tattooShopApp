@@ -176,7 +176,7 @@ Send the token as `Authorization: Bearer <token>` on every `/staff/**`, `/admin/
 | Method & path | Body / query | Response |
 |---|---|---|
 | `GET /account` | | `{ name, email, phone, dateOfBirth, createdAt }` |
-| `PUT /account` | `{ name, phone, email }` (the date of birth can't be changed) | A new sign-in (same as sign in), with the new name and email. The email is the sign-in, so a new one signs other devices out and the old email no longer signs in. `409 CONFLICT` if another account has the email, `INVALID_PHONE` |
+| `PUT /account` | `{ name, phone, email, password \| null }` (the date of birth can't be changed; `password` is the current one and only needed when the email changes) | A new sign-in (same as sign in), with the new name and email. The email is the sign-in, so a new one signs other devices out and the old email no longer signs in. `400` if the email changes and the password is missing or wrong, `409 CONFLICT` if another account has the email, `INVALID_PHONE` |
 | `GET /account/bookings` | *page* + `when` (`UPCOMING` default, `PAST`, `ALL`), `type` (e.g. `CONSULTATION` for the Consultations tab), `status`; `q` = title, idea, code; sort `date`, `title`, `type`, `price`, `status` | `Page<Booking>`: bookings made while signed in and sessions reserved for them (upcoming soonest first, otherwise latest first) |
 | `POST /account/bookings/{code}/cancel` | | `Booking` (same rules as `/bookings/cancel`; `404 BOOKING_NOT_FOUND` for someone else's booking) |
 | `POST /account/bookings/{code}/deposit` | | `{ checkoutUrl, amount, dueAt }` |
@@ -204,6 +204,7 @@ Send the token as `Authorization: Bearer <token>` on every `/staff/**`, `/admin/
 | `POST /staff/works` | multipart `image` + optional `caption` (max 60) | `201 Work` (up to 60 photos) |
 | `DELETE /staff/works/{id}` | | `204` |
 | `PUT /staff/signature` | multipart `image` | `Image`: the signature piece on the scroll |
+| `DELETE /staff/signature` | | `204`: the scroll goes back to the empty frame and the picture is deleted |
 
 `conflicts` lists upcoming customer bookings (flash, consultations) that fall outside the hours, e.g. after adding a day off. The hours are saved anyway; the bookings stay until someone cancels them. Sessions an artist reserved may lie outside the hours on purpose and don't count.
 

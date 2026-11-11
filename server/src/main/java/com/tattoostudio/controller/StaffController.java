@@ -213,6 +213,13 @@ public class StaffController {
         return portfolio.setSignature(artistId(jwt), image);
     }
 
+    @DeleteMapping("/signature")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Take the signature piece off my hanging scroll")
+    public void removeSignature(@AuthenticationPrincipal Jwt jwt) {
+        portfolio.setSignature(artistId(jwt), null);
+    }
+
     /** The signed-in, active artist; the admin login is not an artist and has no own bookings or hours. */
     private String artistId(Jwt jwt) {
         String artistId = StaffUser.from(jwt).artistId();

@@ -323,11 +323,16 @@ function DetailsDialog({
   onClose: () => void
   onDone: (emailChanged: boolean) => void
 }) {
-  const [values, setValues] = useState({ name: account.name, phone: account.phone, email: account.email })
+  const [values, setValues] = useState({ name: account.name, phone: account.phone, email: account.email, password: "" })
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState("")
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({})
-  const checks = useFieldChecks(checkAccountDetails(values), serverErrors)
+  // A new email is a new sign-in, so it asks for the password (the server checks it)
+  const emailChanged = values.email.trim().toLowerCase() !== account.email.trim().toLowerCase()
+  const checks = useFieldChecks(
+    { ...checkAccountDetails(values), ...(emailChanged && !values.password ? { password: "Enter your password to change your email." } : {}) },
+    serverErrors,
+  )
   const set = (field: keyof typeof values) => (e: { target: { value: string } }) => setValues({ ...values, [field]: e.target.value })
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -339,7 +344,12 @@ function DetailsDialog({
     try {
       const session = await api<LoginResponse>("/account", {
         method: "PUT",
-        body: JSON.stringify({ name: values.name.trim(), phone: values.phone.trim(), email: values.email.trim() }),
+        body: JSON.stringify({
+          name: values.name.trim(),
+          phone: values.phone.trim(),
+          email: values.email.trim(),
+          password: emailChanged ? values.password : null,
+        }),
         token,
       })
       setCustomer(session)
@@ -348,6 +358,7 @@ function DetailsDialog({
       if (reason instanceof ApiError && reason.errors) setServerErrors(reason.errors)
       else if (reason instanceof ApiError && reason.code === "INVALID_PHONE") setServerErrors({ phone: reason.message })
       else if (reason instanceof ApiError && reason.status === 409) setServerErrors({ email: "Another account already uses this email." })
+      else if (reason instanceof ApiError && reason.code === "VALIDATION_FAILED" && emailChanged) setServerErrors({ password: reason.message })
       else setProblem(reason instanceof Error ? reason.message : "Something went wrong. Please try again.")
       setBusy(false)
     }
@@ -364,6 +375,11 @@ function DetailsDialog({
         <TextField label="Email" name="email" type="email" autoComplete="email" maxLength={limits["account.email"]}
           value={values.email} onChange={set("email")} error={checks.errorFor("email")}
           helper="You sign in with this email." />
+        {emailChanged && (
+          <TextField label="Your password" name="password" type="password" autoComplete="current-password"
+            maxLength={limits["login.password"]} value={values.password} onChange={set("password")} error={checks.errorFor("password")}
+            helper="Needed to change your email." />
+        )}
       <div className="dialog-actions">
         <button className="button button-primary" type="submit" disabled={busy}>
           {busy ? "Saving..." : "Save details"}

@@ -576,6 +576,11 @@ async function handle(method: string, url: URL, headers: Headers, body: BodyInit
       const data = await json()
       const email = String(data.email ?? "").trim().toLowerCase()
       if (!normalizePhone(String(data.phone ?? ""))) return fail(400, "INVALID_PHONE", "Please enter a valid phone number")
+      if (email !== user.email) {
+        const given = String(data.password ?? "")
+        if (!given) return fail(400, "VALIDATION_FAILED", "Enter your password to change your email.")
+        if (given.length < 8 || (user.password && user.password !== given)) return fail(400, "VALIDATION_FAILED", "Your current password is not right.")
+      }
       if ([...users.values()].some((u) => u.id !== userId && u.email === email)) return fail(409, "CONFLICT", EMAIL_TAKEN)
       Object.assign(user, { name: String(data.name ?? "").trim(), phone: String(data.phone ?? "").trim(), email })
       return ok(login(userId))
@@ -1057,6 +1062,10 @@ async function staffRoutes(method: string, path: string, q: URLSearchParams, hea
       if (!(file instanceof File)) return fail(400, "INVALID_FILE", "Choose a picture")
       artist.signaturePiece = await toImage(file)
       return ok(artist.signaturePiece)
+    }
+    if (method === "DELETE" && path === "/staff/signature") {
+      artist.signaturePiece = null
+      return ok(undefined, 204)
     }
     return fail(404, "NOT_FOUND", "Not found (the sample data doesn't cover this)")
   }

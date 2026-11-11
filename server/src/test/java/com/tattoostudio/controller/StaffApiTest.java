@@ -424,5 +424,11 @@ class StaffApiTest extends ApiTest {
                         .header("Authorization", nika))
                 .andExpect(status().isOk());
         mvc.perform(get("/api/artists/nika")).andExpect(jsonPath("$.signaturePiece.url").exists());
+
+        // The artist takes it off again; another artist's scroll is never touched
+        mvc.perform(delete("/api/staff/signature").header("Authorization", nika)).andExpect(status().isNoContent());
+        mvc.perform(get("/api/artists/nika")).andExpect(jsonPath("$.signaturePiece").doesNotExist());
+        assertThat(artist("Nika").getSignaturePiece()).isNull();
+        mvc.perform(delete("/api/staff/signature")).andExpect(status().isUnauthorized());
     }
 }

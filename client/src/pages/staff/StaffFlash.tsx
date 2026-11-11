@@ -27,6 +27,7 @@ export default function StaffFlash() {
   const [removing, setRemoving] = useState<Work | null>(null)
   const [viewing, setViewing] = useState<number | null>(null)
   const [signature, setSignature] = useState<Image | null | undefined>(undefined)
+  const [removingSignature, setRemovingSignature] = useState(false)
   const shownSignature = signature === undefined ? me?.signaturePiece ?? null : signature
 
   const say = (text: string) => {
@@ -144,7 +145,14 @@ export default function StaffFlash() {
         </div>
         <div className="signature-setting">
           <div className="staff-image">{shownSignature && <img src={shownSignature.thumbUrl} alt="Your signature piece" />}</div>
-          <p>The piece shown on your hanging scroll on the artists' pages. Pick one that shows your style at a glance.</p>
+          <div>
+            <p>The piece shown on your hanging scroll on the artists' pages. Pick one that shows your style at a glance.</p>
+            {shownSignature && (
+              <button className="staff-text-button" type="button" onClick={() => setRemovingSignature(true)}>
+                Remove picture
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -174,6 +182,21 @@ export default function StaffFlash() {
             works.reload()
           }}
         />
+      )}
+      {removingSignature && (
+        <ConfirmDialog
+          title="Remove your signature piece?"
+          confirmLabel="Remove picture"
+          onClose={() => setRemovingSignature(false)}
+          onConfirm={async () => {
+            await staffApi("/staff/signature", { method: "DELETE" })
+            setRemovingSignature(false)
+            setSignature(null)
+            say("Signature piece removed. Your scroll shows the studio seal until you add another.")
+          }}
+        >
+          Your hanging scroll on the artists' pages goes back to the studio seal.
+        </ConfirmDialog>
       )}
       {removing && (
         <ConfirmDialog

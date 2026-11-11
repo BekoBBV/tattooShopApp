@@ -7,10 +7,12 @@ import jakarta.validation.constraints.Size;
 
 /**
  * A customer changing their details on My account. The email is also what they sign in with; the
- * date of birth can't be changed (the age check of the sign-up stays true).
+ * date of birth can't be changed (the age check of the sign-up stays true). A new email needs the
+ * password too: whoever holds a signed-in phone can't take the account over by changing its email.
  */
 public record UpdateAccountRequest(
         @NotBlank @Size(max = 60) @Schema(example = "Mira Petrova") String name,
         @NotBlank @Size(max = 30) @Schema(example = "0888 123 456") String phone,
-        @NotBlank @Email @Size(max = 120) @Schema(example = "mira@example.com") String email) {
+        @NotBlank @Email @Size(max = 120) @Schema(example = "mira@example.com") String email,
+        @Size(max = 200) @Schema(description = "The current password; only needed when the email changes", nullable = true) String password) {
 }

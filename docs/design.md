@@ -161,7 +161,7 @@ Fixes found that way:
 Deliberate differences from the drawings:
 
 - *My account* has an *Edit details* button, as drawn, which needed a new server endpoint (`PUT /api/account`). The delete-account note says bookings still work with their code, because deleting an account keeps the bookings and their photos (the drawing said the references are deleted).
-- Deleting an account asks for the password (the server requires it). The review dialog says the first name is shown with the review.
+- Deleting an account asks for the password (the server requires it). So does changing the email in *Edit details*: a *Your password* field appears as soon as the email differs, because the email is the sign-in. The review dialog says the first name is shown with the review.
 - *Cancel this booking?* starts with the focus on *Keep booking*, so a stray Enter doesn't cancel.
 - The credits page lists the images the site really uses.
 
@@ -204,6 +204,7 @@ Deliberate differences from the drawings:
 - **An artist's login shows the artist's name** in the top bar (Kai, not the username kai).
 - **Reset password** sets a new password that the admin passes on, as the server does; the drawing's "Password reset sent" note implied an email the server doesn't send.
 - Every confirmation that loses something starts with the safe choice focused, like the customer site.
+- **The signature piece can be removed** (*Remove picture* under it, with a confirmation); the drawing only had *Replace picture*. The scroll then shows the studio seal again.
 
 ## Still open
 

@@ -184,8 +184,23 @@ class AccountApiTest extends ApiTest {
         customer("test-taken@example.com");
         String old = customer("test-details@example.com");
         mvc.perform(put("/api/account").header("Authorization", old).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Mira P.\",\"phone\":\"0899 111 222\",\"email\":\"Test-Taken@example.com\"}"))
+                        .content("{\"name\":\"Mira P.\",\"phone\":\"0899 111 222\",\"email\":\"Test-Taken@example.com\",\"password\":\"customer-password\"}"))
                 .andExpect(status().isConflict());
+        // A new email needs the current password: without it, or with a wrong one, nothing changes and nobody is signed out
+        mvc.perform(put("/api/account").header("Authorization", old).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Mira P.\",\"phone\":\"0899 111 222\",\"email\":\"test-new@example.com\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Enter your password to change your email."));
+        mvc.perform(put("/api/account").header("Authorization", old).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Mira P.\",\"phone\":\"0899 111 222\",\"email\":\"test-new@example.com\",\"password\":\"wrong-password\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Your current password is not right."));
+        mvc.perform(get("/api/account").header("Authorization", old)).andExpect(jsonPath("$.email").value("test-details@example.com"));
+        // Name and phone alone need no password
+        mvc.perform(put("/api/account").header("Authorization", old).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Mira Petrova-Ilieva\",\"phone\":\"0899 111 333\",\"email\":\"test-details@example.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.name").value("Mira Petrova-Ilieva"));
         mvc.perform(put("/api/account").header("Authorization", old).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\",\"phone\":\"12\",\"email\":\"nope\"}"))
                 .andExpect(status().isBadRequest())
@@ -193,7 +208,7 @@ class AccountApiTest extends ApiTest {
                 .andExpect(jsonPath("$.errors.email").exists());
 
         String body = mvc.perform(put("/api/account").header("Authorization", old).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\" Mira P. \",\"phone\":\"0899 111 222\",\"email\":\"Test-New@example.com\"}"))
+                        .content("{\"name\":\" Mira P. \",\"phone\":\"0899 111 222\",\"email\":\"Test-New@example.com\",\"password\":\"customer-password\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.username").value("test-new@example.com"))
                 .andExpect(jsonPath("$.user.name").value("Mira P."))

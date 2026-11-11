@@ -176,6 +176,7 @@ public class AuthService {
     /**
      * A customer changes their name, phone or email. The email is the username, so a new one must be
      * free, and the answer is a new sign-in: the old one names the old email (other devices sign in again).
+     * A new email also needs the current password, so a borrowed or stolen sign-in can't move the account.
      */
     public LoginResponse updateDetails(String userId, UpdateAccountRequest request) {
         User user = users.findById(userId).filter(u -> u.getRole() == Role.USER)
@@ -187,6 +188,13 @@ public class AuthService {
         }
         String email = normalize(request.email());
         boolean newEmail = !email.equals(user.getUsername());
+        if (newEmail && (request.password() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash()))) {
+            // 400, not 401: a typo must not sign the customer out
+            throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
+                    request.password() == null || request.password().isEmpty()
+                            ? "Enter your password to change your email."
+                            : "Your current password is not right.");
+        }
         if (newEmail && users.findByUsername(email).isPresent()) {
             throw emailTaken();
         }
