@@ -1,8 +1,8 @@
-import { Check, X } from "lucide-react"
+import { Check, Star, X } from "lucide-react"
 import { useEffect, useRef, type FocusEvent, type FormEvent, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react"
 import { Link } from "react-router"
-import { euros, hours, size } from "../lib/format"
-import type { Flash, Image } from "../lib/types"
+import { euros, hours, plainDate, size } from "../lib/format"
+import type { Flash, Image, Review } from "../lib/types"
 
 /** An artist's seal: a red frame with their initial (filled red on black backgrounds, see the CSS). */
 export function ArtistSeal({ name, px = 32 }: { name: string; px?: 32 | 48 }) {
@@ -13,9 +13,28 @@ export function ArtistSeal({ name, px = 32 }: { name: string; px?: 32 | 48 }) {
   )
 }
 
-/** A picture in a frame, or the empty paper tile until one is uploaded. */
-export function Art({ image, alt = "", fit = "contain" }: { image: Image | null | undefined; alt?: string; fit?: "contain" | "cover" }) {
-  if (!image) return <div className="flash-art" aria-hidden="true"></div>
+/**
+ * A picture in a frame. Until one is uploaded the paper tile carries the studio's seal, faintly,
+ * and (in frames big enough for it) a few words such as "Drawing coming soon".
+ */
+export function Art({
+  image,
+  alt = "",
+  fit = "contain",
+  waiting,
+}: {
+  image: Image | null | undefined
+  alt?: string
+  fit?: "contain" | "cover"
+  waiting?: string
+}) {
+  if (!image) {
+    return (
+      <div className="flash-art" aria-hidden="true">
+        {waiting && <span>{waiting}</span>}
+      </div>
+    )
+  }
   return <img className={`art-image is-${fit}`} src={image.thumbUrl} alt={alt} loading="lazy" />
 }
 
@@ -25,7 +44,6 @@ export function FlashCard({
   byline = true,
   action,
   aboutTime = true,
-  filledSeal = false,
   href,
 }: {
   flash: Flash
@@ -33,16 +51,13 @@ export function FlashCard({
   /** The Book button (or nothing on the home page). */
   action?: ReactNode
   aboutTime?: boolean
-  /** The home page's seals are filled red, like the logo. */
-  filledSeal?: boolean
   /** Makes the whole card a link (through its title). */
   href?: string
 }) {
-  const seal = <ArtistSeal name={flash.artistName} />
   return (
     <article className={`flash-card${href ? " is-linked" : ""}`}>
       <div className="flash-frame">
-        <Art image={flash.image} alt={flash.name} />
+        <Art image={flash.image} alt={flash.name} waiting="Drawing coming soon" />
       </div>
       <div className="flash-title-row">
         <h3>
@@ -54,7 +69,7 @@ export function FlashCard({
             flash.name
           )}
         </h3>
-        {filledSeal ? <span className="seal-lockup">{seal}</span> : seal}
+        <ArtistSeal name={flash.artistName} />
       </div>
       {byline && <p className="artist-byline">By {flash.artistName}</p>}
       <dl>
@@ -79,9 +94,46 @@ export function FlashCard({
 /** The Book button under a flash design: straight to the booking steps with it chosen. */
 export function BookFlashButton({ flash }: { flash: Flash }) {
   return (
-    <Link className="button button-primary" to={`/book/choose?flash=${flash.id}`} aria-label={`Book ${flash.name}`}>
+    <Link className="button button-primary" to={`/book/time?flash=${flash.id}`} aria-label={`Book ${flash.name}`}>
       Book
     </Link>
+  )
+}
+
+/**
+ * A rating as five stars. The filled stars lie over the outlined ones and are cut off at the
+ * rating, so an average of 4.7 fills most of the fifth star instead of rounding up to five.
+ */
+export function Stars({ rating, size = 18 }: { rating: number; size?: number }) {
+  const five = [1, 2, 3, 4, 5].map((n) => <Star key={n} size={size} aria-hidden="true" />)
+  const share = Math.max(0, Math.min(5, rating)) / 5
+  return (
+    <span className="stars" role="img" aria-label={`${Number.isInteger(rating) ? rating : rating.toFixed(1)} out of 5 stars`}>
+      <span className="stars-row">{five}</span>
+      <span className="stars-row is-filled" style={{ width: `${share * 100}%` }}>
+        {five}
+      </span>
+    </span>
+  )
+}
+
+/** One review: who wrote it, when, the stars, what they said and (on the home page) whose work it is about. */
+export function ReviewCard({ review, artistName }: { review: Review; artistName?: string }) {
+  return (
+    <article className="review">
+      <div>
+        <h3>{review.name}</h3>
+        <time dateTime={review.createdAt}>{plainDate(review.createdAt.slice(0, 10))}</time>
+      </div>
+      <Stars rating={review.rating} />
+      <p>{review.text}</p>
+      {artistName && (
+        <p className="review-artist">
+          <ArtistSeal name={artistName} />
+          Tattooed by {artistName}
+        </p>
+      )}
+    </article>
   )
 }
 

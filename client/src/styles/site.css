@@ -258,3 +258,133 @@ button.staff-sign-out { border: 0; background: none; font: inherit; cursor: poin
 @media (max-width: 599px) {
   .hours-row { grid-template-columns: auto auto; justify-content: space-between; gap: 4px 16px; }
 }
+
+/* ==== Changes after the design review (each one is listed in docs/design.md) ==== */
+
+/* Task pages (booking, managing, account, signing in): no painting, a smaller title, straight to the task */
+.page-intro.is-compact { padding-top: 44px; padding-bottom: 14px; }
+.page-intro.is-compact h1 { margin-bottom: 8px; font-size: clamp(30px, 3.2vw, 42px); }
+.page-intro.is-compact p { font-size: 17px; }
+@media (max-width: 767px) {
+  .page-intro.is-compact { padding-top: 26px; padding-bottom: 10px; }
+  .page-intro.is-compact p { font-size: 16px; }
+}
+
+/* Booking steps 2 and 3: the step on the left, "Your booking" on a slip that stays in view on the right */
+.booking-columns { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.booking-summary { display: none; }
+.booking-summary-line { order: -1; margin: 0 0 26px; padding: 12px 16px; border: 1px solid var(--rule-night); color: var(--paper-on-sumi-soft); }
+.booking-summary-line strong { color: var(--paper-on-sumi); font-family: 'Zen Old Mincho', serif; font-size: 18px; }
+.booking-summary-line a { color: var(--paper-on-sumi); white-space: nowrap; }
+.booking-summary h2 { margin: 0 0 16px; font-size: 22px; }
+.booking-summary-what { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+.booking-summary-what > div:not(.flash-frame) { flex: 1; min-width: 0; }
+.booking-summary-what .flash-frame { width: 72px; flex: none; padding: 6px; }
+.booking-summary-what h3 { margin: 0; font-size: 20px; line-height: 1.25; }
+.booking-summary-what p { margin: 2px 0 0; color: var(--ink-soft); font-size: 14px; }
+.booking-summary .text-link { display: inline-block; margin-top: 14px; }
+@media (min-width: 1024px) {
+  .booking-columns { grid-template-columns: minmax(0, 1fr) 340px; gap: 48px; }
+  .booking-summary { display: block; position: sticky; top: 88px; }
+  .booking-summary-line { display: none; }
+}
+@media (min-width: 768px) {
+  .booking-columns .time-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); max-width: none; }
+}
+
+/* The days: arrows at the ends and a fade where more days wait (phones swipe, so no arrows there) */
+.day-strip-wrap { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }
+.strip-arrow { width: 40px; margin: 2px 0 6px; display: grid; place-items: center; background: transparent; color: var(--paper-on-sumi);
+  border: 1.5px solid rgba(245, 228, 210, .45); cursor: pointer; }
+.strip-arrow:hover:not(:disabled) { border-color: var(--paper-on-sumi); }
+.strip-arrow:disabled { opacity: .3; cursor: default; }
+.fades-end .day-strip { mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent); }
+.fades-start .day-strip { mask-image: linear-gradient(to left, #000 calc(100% - 56px), transparent); }
+.fades-start.fades-end .day-strip { mask-image: linear-gradient(to right, transparent, #000 56px, #000 calc(100% - 56px), transparent); }
+@media (max-width: 767px) {
+  .day-strip-wrap { grid-template-columns: minmax(0, 1fr); }
+  .strip-arrow { display: none; }
+}
+
+/* Step 1: the designs to choose from, inside the flash slip */
+.link-button { padding: 0; background: none; border: 0; font: inherit; cursor: pointer; }
+.flash-choice-scroll { max-height: 400px; overflow-y: auto; border-bottom: 1px solid var(--mist); }
+.flash-choice { position: relative; }
+.flash-choice-thumb { width: 48px; height: 48px; flex: none; border: 1px solid var(--mist); background: var(--paper-light); }
+.flash-choice-text { flex: 1; min-width: 0; }
+.flash-choice-price { font-weight: 700; font-variant-numeric: tabular-nums; }
+.flash-choice-note { margin: 12px 0 0; color: var(--ink-soft); }
+.flash-choice:has(input:focus-visible), .artist-choice:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.flash-choice-scroll { padding-right: 10px; }
+
+/* A frame without its picture yet: the studio's seal, faintly, instead of a blank tile */
+.flash-art { position: relative; width: 100%; height: 100%; min-height: 40px; display: grid; place-items: end center; }
+.flash-art::before { content: ''; position: absolute; inset: 0; background: url('/images/seal-bb.png') center / min(34%, 88px) no-repeat; opacity: .14; }
+.flash-art span { position: relative; padding-bottom: 5%; color: var(--ink-soft); font-size: 14px; letter-spacing: .03em; }
+.work-soon { margin: 0; max-width: 62ch; color: var(--paper-on-sumi-soft); font-size: 18px; }
+@media (max-width: 767px) {
+  .flash-card .flash-art span { display: none; }
+  .work-soon { font-size: 16px; }
+}
+
+/* Home: reviews on paper slips, between the artists and the custom-piece block */
+.home-review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; align-items: start; }
+.home-review-grid .review { padding: 0; border-top: 0; }
+.home-review-grid .review time { color: var(--ink-soft); }
+.review-artist { display: flex; align-items: center; gap: 10px; margin-top: 16px !important; padding-top: 14px; border-top: 1px solid var(--mist); color: var(--ink-soft); font-size: 14px; }
+@media (max-width: 1023px) {
+  .home-review-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+}
+
+/* Home: the motifs as a tighter grid; phones show four until asked for the rest */
+.motif-more { display: none; }
+@media (min-width: 1024px) {
+  .motif-section .motif-list { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 36px; }
+  .motif-section .motif-list > div { align-content: start; }
+  .motif-section .motif-list dt { font-size: 24px; }
+  .motif-section .motif-list dd p { font-size: 16px; }
+}
+@media (max-width: 767px) {
+  .motif-list:not(.is-open) > div:nth-child(n + 5) { display: none; }
+  .motif-more { display: inline-flex; margin-top: 20px; }
+}
+
+/* Flash cards in a row end level, however long a name is */
+@media (min-width: 768px) {
+  .flash-grid .flash-card, .gallery-grid .flash-card, .artist-flash-row .flash-card { display: flex; flex-direction: column; height: 100%; }
+  .flash-card > dl { margin-top: auto; }
+}
+
+/* "Pick one" marks are round; tick boxes (consent, password rules) stay square */
+.radio-mark, .radio-mark::after { border-radius: 50%; }
+
+/* Aftercare on wide screens: the days on the left, "Something doesn't look right?" in view on the right */
+@media (min-width: 1024px) {
+  .aftercare-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 72px; align-items: start; }
+  .aftercare-layout .aftercare-contact { position: sticky; top: 96px; margin-top: 0; flex-direction: column; align-items: stretch; }
+  .aftercare-timeline article p:last-child { font-size: 18px; }
+}
+
+/* Links that stand on their own are easy to tap on phones */
+@media (max-width: 767px) {
+  .site-footer .footer-grid a, .compact-footer a, .flash-how .text-link, .choose-other, .booking-summary-line a {
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
+}
+
+/* Home: the headline says what the studio does; on phones it stays on two lines so both buttons fit the first screen */
+.hero-copy h1 { text-wrap: balance; }
+@media (max-width: 767px) {
+  .hero-copy h1 { font-size: 32px; }
+}
+
+/* Review stars: red on paper, cream on the night background (red alone is too dim there) */
+.stars { position: relative; display: inline-flex; vertical-align: middle; color: var(--paper-on-sumi); }
+.stars .stars-row { display: flex; gap: 3px; margin: 0; }
+.stars-row svg { flex: none; fill: none; stroke-width: 1.5; opacity: .45; }
+.stars-row.is-filled { position: absolute; inset: 0 auto 0 0; overflow: hidden; }
+.stars-row.is-filled svg { fill: currentColor; opacity: 1; }
+.on-paper .stars { color: var(--red); }
+.review > .stars { display: flex; width: max-content; margin-top: 8px; }
+.rating-block > .stars { display: flex; width: max-content; margin-top: 14px; }
+.home-reviews .section-heading .stars { display: flex; width: max-content; margin-bottom: 8px; }

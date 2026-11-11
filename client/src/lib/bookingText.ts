@@ -1,5 +1,5 @@
-import { euros, longDate } from "./format"
-import type { Booking } from "./types"
+import { euros, hours, longDate, size } from "./format"
+import type { Booking, Flash } from "./types"
 
 /** The words the site uses for a booking's state, and how its stamp looks. */
 export function statusOf(b: Booking): { label: string; tone: "red" | "waiting" | "done" } {
@@ -74,4 +74,33 @@ export function calendarFile(b: Booking) {
     "END:VCALENDAR",
   ]
   return URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/calendar" }))
+}
+
+export type SummaryRow = { label: string; value: string; total?: boolean }
+
+/**
+ * The rows of the "Your booking" summary beside the Time and Details steps: what was chosen so far
+ * and, for a flash design, what is paid now and what is left for the studio.
+ */
+export function summaryRows(chosen: {
+  kind: "flash" | "consultation"
+  flash: Pick<Flash, "widthCm" | "heightCm" | "durationMinutes" | "price" | "deposit"> | null
+  artistName: string | null
+  date: string | null
+  time: string | null
+}): SummaryRow[] {
+  const { kind, flash } = chosen
+  const rows: SummaryRow[] = []
+  if (chosen.artistName) rows.push({ label: "Artist", value: chosen.artistName })
+  if (kind === "flash" && flash) rows.push({ label: "Size", value: size(flash.widthCm, flash.heightCm) })
+  if (kind === "consultation") rows.push({ label: "Length", value: "30 minutes" })
+  else if (flash) rows.push({ label: "Length", value: `About ${hours(flash.durationMinutes)}` })
+  rows.push({ label: "When", value: chosen.date && chosen.time ? `${longDate(chosen.date)}, ${chosen.time}` : "Not chosen yet" })
+  if (kind === "consultation") rows.push({ label: "Price", value: "Free" })
+  else if (flash) {
+    rows.push({ label: "Price", value: euros(flash.price) })
+    rows.push({ label: "Deposit now", value: euros(flash.deposit) })
+    rows.push({ label: "Pay in the studio", value: euros(flash.price - flash.deposit), total: true })
+  }
+  return rows
 }

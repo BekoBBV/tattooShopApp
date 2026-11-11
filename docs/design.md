@@ -165,6 +165,18 @@ Deliberate differences from the drawings:
 - *Cancel this booking?* starts with the focus on *Keep booking*, so a stray Enter doesn't cancel.
 - The credits page lists the images the site really uses.
 
+Changes after the design review (a critique of the built site at 1440, 1366 and 375px; all in `site.css` and the components, the design's own CSS is untouched):
+
+- **Book goes straight to the time step.** *Book* on a flash design opens `/book/time?flash=<id>`, and *Plan a custom piece with Kai* opens `/book/time?type=consultation&artist=<id>`. The drawings sent both through *Choose what to book* first, where the choice was already made. Step 1 in the step bar still leads there to change it.
+- **The Choose step has its own design list.** The header's *Book* button used to end at "pick a design on the flash sheet". The flash slip now lists the bookable designs (name, artist, size, time, price) to pick from; the flash sheet is linked for a larger look.
+- **"Your booking" summary on the Time and Details steps:** a paper slip that stays in view on the right at 1024px and wider (design, artist, size, length, day and time, price, deposit, what is left to pay in the studio), and one line above the step on tablets and phones. It replaces the single line of text the Details step had.
+- **Task pages have a compact header:** the booking steps, Manage a booking, My account, Sign in and Create an account drop the painting and the brush stroke and use a smaller title, so the task starts about 170px from the top instead of about 330px.
+- **The day strip has arrows** at both ends on tablets and desktop and fades where more days wait. Phones swipe.
+- **Empty picture frames carry the studio's seal, faintly,** and flash frames say "Drawing coming soon", until real drawings are uploaded. An artist without photos shows one line under *Work*, not six empty tiles.
+- **Home page:** the headline says what the studio does ("Japanese tattooing in Sofia"; the name is in the logo and the footer). The order is flash, artists, reviews, the custom-piece block, motifs, questions, contact. *What clients say* is new: the average and the three latest reviews on paper slips. Reviews show their rating as five stars, here and on the artist pages (red on paper, cream on black; an average such as 4.7 fills part of the last star). The motifs are a four-column grid on desktop; phones show four with a *Show all 8 motifs* button.
+- **Banners differ by page:** the night torii on Flash, the red-sun strip on the artists' pages, the maple steps on Aftercare.
+- **Smaller things:** flash cards in a row end level whatever the name's length; "pick one" marks are round (tick boxes stay square); artist seals are outlined on paper everywhere (the home sheet's were filled); Aftercare on desktop keeps "Something doesn't look right?" in view beside the days; footer links and stand-alone text links are 44px tall on phones.
+
 **Animations** (both described in the first brief, not drawn):
 
 - **Katana cut:** the first time in a browser session someone presses one of the two buttons in the home page hero, a sword stroke cuts the painting from the top-right to the bottom-left corner, the halves slide apart, twelve petals fall, and the next page opens after 0.7 seconds. After that the buttons go straight there, and so do Ctrl/Cmd-clicks and middle clicks. With reduced motion it is a 0.2 second fade.
@@ -196,6 +208,7 @@ Deliberate differences from the drawings:
 ## Still open
 
 - The image credits list the paintings' author, source and licence as "To be confirmed" until the final images are chosen.
-- Flash designs, artist work and signature pieces are still empty frames in Figma too.
+- Flash designs, artist work and signature pieces have no pictures yet (in Figma too). The website shows the studio seal in those frames until the real drawings and photos are uploaded in the staff area.
+- The Figma file still shows the booking flow, headers and home page as first drawn; the changes after the design review (see *Customer site*) exist only in the website.
 - Every staff page has been tried against the real server: the admin pages, and the artist pages (calendar and Reserve time, hours and days off with the conflicts note, flash designs with pictures, portfolio photos). The signature piece upload was left out there, as it has no remove button; it is covered by the server tests and sample-data mode.
 - In Figma the header and footer are frames in each screen, not components, and the faint wave pattern behind the footer is left out.

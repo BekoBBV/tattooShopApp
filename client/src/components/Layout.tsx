@@ -194,18 +194,43 @@ export function RootLayout() {
   )
 }
 
-/** The strip of the night painting and the page title under it (every page but the home page). */
-export function PageIntro({ title, children, stroke = true }: { title: string; children?: ReactNode; stroke?: boolean }) {
+/** The paintings a page banner can show, each with the part of it that fits the strip. */
+const BANNERS = {
+  night: { src: "/images/footer-night.jpg", position: undefined },
+  maples: { src: "/images/hero-landscape.jpg", position: "50% 90%" },
+  sky: { src: "/images/banner-sky.jpg", position: "50% 50%" },
+} as const
+
+/**
+ * The strip of a painting and the page title under it (every page but the home page). Pages where
+ * the visitor has something to do (booking, managing, signing in) are `compact`: no painting and
+ * a smaller title, so the task starts near the top of the screen.
+ */
+export function PageIntro({
+  title,
+  children,
+  stroke = true,
+  compact = false,
+  view = "night",
+}: {
+  title: string
+  children?: ReactNode
+  stroke?: boolean
+  compact?: boolean
+  view?: keyof typeof BANNERS
+}) {
   return (
     <>
-      <div className="page-banner" aria-hidden="true">
-        <img src="/images/footer-night.jpg" alt="" />
-      </div>
-      <div className="page-intro">
+      {!compact && (
+        <div className="page-banner" aria-hidden="true">
+          <img src={BANNERS[view].src} alt="" style={{ objectPosition: BANNERS[view].position }} />
+        </div>
+      )}
+      <div className={`page-intro${compact ? " is-compact" : ""}`}>
         <h1>{title}</h1>
         {children}
       </div>
-      {stroke && <BrushStroke />}
+      {stroke && !compact && <BrushStroke />}
     </>
   )
 }

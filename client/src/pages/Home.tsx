@@ -1,13 +1,13 @@
 import { Clock3, Paperclip, Phone, Send } from "lucide-react"
-import { useState, type FormEvent } from "react"
+import { useId, useState, type FormEvent } from "react"
 import { Link } from "react-router"
 import { BrushStroke, KatanaDivider } from "../components/Layout"
 import { KatanaCut } from "../components/KatanaCut"
-import { ArtistSeal, FlashCard, FormError, HangingScroll } from "../components/Studio"
+import { ArtistSeal, FlashCard, FormError, HangingScroll, ReviewCard, Stars } from "../components/Studio"
 import { api, ApiError } from "../lib/api"
 import { studio } from "../lib/format"
 import { limits } from "../lib/limits"
-import type { Artist, Flash } from "../lib/types"
+import type { Artist, Flash, ReviewSummary } from "../lib/types"
 import { useLoad } from "../lib/useLoad"
 import { usePageTitle } from "../lib/usePageTitle"
 import { checkMessage, useFieldChecks } from "../lib/validation"
@@ -49,6 +49,10 @@ export default function Home() {
   usePageTitle()
   const sheet = useLoad<Flash[]>("/flash")
   const artists = useLoad<Artist[]>("/artists")
+  const reviews = useLoad<ReviewSummary>("/reviews")
+  const [allMotifs, setAllMotifs] = useState(false)
+  const motifsId = useId()
+  const artistName = (id: string) => artists.data?.find((a) => a.id === id)?.name
   const slugOf = (name: string) => artists.data?.find((a) => a.name === name)?.slug ?? name.toLowerCase()
 
   return (
@@ -64,8 +68,8 @@ export default function Home() {
                 </div>
               </div>
               <div className="hero-copy">
-                <h1 id="hero-title">Blade &amp; Brush</h1>
-                <p>Japanese tattooing in Sofia. Flash designs you can book today, custom pieces planned with your artist.</p>
+                <h1 id="hero-title">Japanese tattooing in Sofia</h1>
+                <p>Flash designs you can book today. Custom pieces planned with your artist.</p>
                 <div className="hero-buttons">
                   <Link className="button button-primary" to="/flash" data-katana>
                     Book a flash design
@@ -96,7 +100,7 @@ export default function Home() {
           {sheet.data && sheet.data.length === 0 && <p className="state-note">Every design is booked right now. New flash comes soon.</p>}
           <div className="flash-grid">
             {pickSix(sheet.data ?? []).map((flash) => (
-              <FlashCard key={flash.id} flash={flash} byline={false} aboutTime={false} filledSeal href={`/book/choose?flash=${flash.id}`} />
+              <FlashCard key={flash.id} flash={flash} byline={false} aboutTime={false} href={`/book/time?flash=${flash.id}`} />
             ))}
           </div>
         </div>
@@ -109,34 +113,6 @@ export default function Home() {
       </section>
       <KatanaDivider />
 
-      <section className="content-section motif-section" aria-labelledby="motif-title">
-        <div className="section-heading">
-          <div>
-            <h2 id="motif-title">What the motifs mean</h2>
-          </div>
-          <p>
-            Traditional Japanese tattoos are chosen for what they stand for, not only for how they look. Waves, wind and
-            clouds fill the background and tie a piece together.
-          </p>
-        </div>
-        <dl className="motif-list">
-          {MOTIFS.map((motif) => (
-            <div key={motif.name}>
-              <dt>{motif.name}</dt>
-              <dd>
-                <p>{motif.meaning}</p>
-                <Link to={`/artists/${slugOf(motif.artist)}`} className="motif-artist">
-                  <span className="seal-lockup">
-                    <ArtistSeal name={motif.artist} />
-                  </span>
-                  Tattooed by {motif.artist}
-                </Link>
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-      <BrushStroke />
 
       <section className="content-section artists-section" aria-labelledby="artists-title">
         <div className="section-heading">
@@ -160,7 +136,32 @@ export default function Home() {
           ))}
         </div>
       </section>
-      <BrushStroke flipped />
+      <BrushStroke />
+
+      {reviews.data && reviews.data.count > 0 && (
+        <>
+          <section className="content-section home-reviews" aria-labelledby="reviews-title">
+            <div className="section-heading">
+              <div>
+                <h2 id="reviews-title">What clients say</h2>
+              </div>
+              <p>
+                <Stars rating={reviews.data.averageRating} size={20} />
+                {reviews.data.averageRating.toFixed(1)} out of 5 from {reviews.data.count} {reviews.data.count === 1 ? "review" : "reviews"}.
+                Example reviews: Blade &amp; Brush is a concept studio.
+              </p>
+            </div>
+            <div className="home-review-grid">
+              {reviews.data.reviews.slice(0, 3).map((review) => (
+                <div key={review.id} className="slip on-paper">
+                  <ReviewCard review={review} artistName={artistName(review.artistId) ?? "the studio"} />
+                </div>
+              ))}
+            </div>
+          </section>
+          <BrushStroke flipped />
+        </>
+      )}
 
       <section className="custom-cta" aria-labelledby="custom-title">
         <div className="noren">
@@ -179,6 +180,44 @@ export default function Home() {
             Book a free consultation
           </Link>
         </div>
+      </section>
+
+      <section className="content-section motif-section" aria-labelledby="motif-title">
+        <div className="section-heading">
+          <div>
+            <h2 id="motif-title">What the motifs mean</h2>
+          </div>
+          <p>
+            Traditional Japanese tattoos are chosen for what they stand for, not only for how they look. Waves, wind and
+            clouds fill the background and tie a piece together.
+          </p>
+        </div>
+        <dl className={`motif-list${allMotifs ? " is-open" : ""}`} id={motifsId}>
+          {MOTIFS.map((motif) => (
+            <div key={motif.name}>
+              <dt>{motif.name}</dt>
+              <dd>
+                <p>{motif.meaning}</p>
+                <Link to={`/artists/${slugOf(motif.artist)}`} className="motif-artist">
+                  <span className="seal-lockup">
+                    <ArtistSeal name={motif.artist} />
+                  </span>
+                  Tattooed by {motif.artist}
+                </Link>
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {!allMotifs && (
+          <button className="button button-secondary motif-more" type="button" aria-controls={motifsId} aria-expanded="false"
+            onClick={() => {
+              setAllMotifs(true)
+              // The button goes away: keyboard focus moves on to the first motif it revealed
+              requestAnimationFrame(() => document.getElementById(motifsId)?.querySelectorAll<HTMLElement>("a")[4]?.focus())
+            }}>
+            Show all {MOTIFS.length} motifs
+          </button>
+        )}
       </section>
 
       <section className="content-section faq-section" aria-labelledby="faq-title">

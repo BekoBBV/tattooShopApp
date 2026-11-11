@@ -121,7 +121,7 @@ export default function Account() {
 
   return (
     <main>
-      <PageIntro title="My account" stroke={false}>
+      <PageIntro title="My account" compact>
         <p>Your appointments, consultation ideas and account details.</p>
       </PageIntro>
       <div className="wrap account-layout">

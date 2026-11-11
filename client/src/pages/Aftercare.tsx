@@ -17,10 +17,10 @@ export default function Aftercare() {
   usePageTitle("Aftercare")
   return (
     <main>
-      <PageIntro title="Aftercare">
+      <PageIntro title="Aftercare" view="maples">
         <p>A simple healing routine protects the line, colour and skin beneath your tattoo.</p>
       </PageIntro>
-      <section className="wrap page-body" aria-label="Healing stages">
+      <section className="wrap page-body aftercare-layout" aria-label="Healing stages">
         <div className="aftercare-timeline">
           {STAGES.map((stage) => (
             <article key={stage.range}>

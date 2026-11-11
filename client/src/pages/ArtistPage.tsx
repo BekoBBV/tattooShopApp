@@ -2,8 +2,8 @@ import { useState } from "react"
 import { Link, useParams } from "react-router"
 import { BrushStroke, PageIntro } from "../components/Layout"
 import { Lightbox } from "../components/Lightbox"
-import { BookFlashButton, FlashCard, HangingScroll } from "../components/Studio"
-import { euros, plainDate } from "../lib/format"
+import { BookFlashButton, FlashCard, HangingScroll, ReviewCard, Stars } from "../components/Studio"
+import { euros } from "../lib/format"
 import type { Artist, Flash, ReviewSummary, Work } from "../lib/types"
 import { useLoad } from "../lib/useLoad"
 import { usePageTitle } from "../lib/usePageTitle"
@@ -26,7 +26,7 @@ export default function ArtistPage() {
   if (!a) {
     return (
       <main>
-        <PageIntro title={artist.error ? "This page didn't load" : " "}>
+        <PageIntro title={artist.error ? "This page didn't load" : " "} view="sky">
           {artist.error && (
             <p>
               {artist.error}{" "}
@@ -47,7 +47,7 @@ export default function ArtistPage() {
 
   return (
     <main>
-      <PageIntro title={a.name}>
+      <PageIntro title={a.name} view="sky">
         <p>{a.style}</p>
       </PageIntro>
       <section className="wrap page-body artist-hero" aria-label={`About ${a.name}`}>
@@ -61,7 +61,7 @@ export default function ArtistPage() {
             <Link className="button button-primary" to={`/flash?artist=${a.slug}`}>
               Book a flash design by {a.name}
             </Link>
-            <Link className="button button-secondary" to={`/book/choose?type=consultation&artist=${a.id}`}>
+            <Link className="button button-secondary" to={`/book/time?type=consultation&artist=${a.id}`}>
               Plan a custom piece with {a.name}
             </Link>
           </div>
@@ -72,7 +72,7 @@ export default function ArtistPage() {
         <h2 id="artist-flash-title">Flash by {a.name}</h2>
         {sheet.data && sheet.data.length === 0 ? (
           <p className="state-note">
-            Everything by {a.name} is booked right now. <Link to={`/book/choose?type=consultation&artist=${a.id}`}>Plan a custom piece</Link>{" "}
+            Everything by {a.name} is booked right now. <Link to={`/book/time?type=consultation&artist=${a.id}`}>Plan a custom piece</Link>{" "}
             instead.
           </p>
         ) : (
@@ -93,36 +93,37 @@ export default function ArtistPage() {
           <div>
             <h2 id="artist-work-title">Work</h2>
           </div>
-          <p>{works.data && works.data.length > 0 ? "Select a piece to view it larger." : "Photos of finished work come soon."}</p>
+          {works.data && works.data.length > 0 && <p>Select a piece to view it larger.</p>}
         </div>
-        <div className="portfolio-grid">
-          {works.data && works.data.length > 0
-            ? works.data.map((work, i) => (
-                <button key={work.id} type="button" aria-label={`View ${work.caption || `${a.name} work ${i + 1}`}`} onClick={() => setViewing(i)}>
-                  <img src={work.image.thumbUrl} alt="" loading="lazy" />
-                </button>
-              ))
-            : Array.from({ length: 6 }, (_, i) => <div key={i} className="portfolio-placeholder" aria-hidden="true"></div>)}
-        </div>
+        {works.data && works.data.length > 0 ? (
+          <div className="portfolio-grid">
+            {works.data.map((work, i) => (
+              <button key={work.id} type="button" aria-label={`View ${work.caption || `${a.name} work ${i + 1}`}`} onClick={() => setViewing(i)}>
+                <img src={work.image.thumbUrl} alt="" loading="lazy" />
+              </button>
+            ))}
+          </div>
+        ) : (
+          works.data && (
+            <p className="work-soon">
+              Photos of {a.name}'s finished work come soon. Until then, the flash above shows the style.
+            </p>
+          )
+        )}
       </section>
       <BrushStroke />
       <section className="wrap artist-section reviews-section" aria-labelledby="artist-reviews-title">
         <div className="rating-block">
           <strong>{reviews.data && reviews.data.count > 0 ? reviews.data.averageRating.toFixed(1) : "New"}</strong>
           <span>{reviews.data && reviews.data.count > 0 ? "out of 5" : "no reviews yet"}</span>
+          {reviews.data && reviews.data.count > 0 && <Stars rating={reviews.data.averageRating} size={22} />}
           <p>Example reviews: Blade &amp; Brush is a concept studio.</p>
         </div>
         <div>
           <h2 id="artist-reviews-title">Reviews</h2>
           <div className="review-list">
             {(reviews.data?.reviews ?? []).map((review) => (
-              <article key={review.id} className="review">
-                <div>
-                  <h3>{review.name}</h3>
-                  <time dateTime={review.createdAt}>{plainDate(review.createdAt.slice(0, 10))}</time>
-                </div>
-                <p>{review.text}</p>
-              </article>
+              <ReviewCard key={review.id} review={review} />
             ))}
             {reviews.data && reviews.data.count === 0 && <p className="state-note">No reviews for {a.name} yet.</p>}
           </div>

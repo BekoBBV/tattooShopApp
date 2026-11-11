@@ -47,7 +47,7 @@ export function SignIn() {
 
   return (
     <main>
-      <PageIntro title="Sign in" stroke={false}>
+      <PageIntro title="Sign in" compact>
         <p>See your bookings, consultations and account details.</p>
       </PageIntro>
       <section className="wrap auth-shell">
@@ -105,7 +105,7 @@ export function Register() {
 
   return (
     <main>
-      <PageIntro title="Create an account" stroke={false}>
+      <PageIntro title="Create an account" compact>
         <p>Keep your appointments, references and studio messages together.</p>
       </PageIntro>
       <section className="wrap auth-shell">

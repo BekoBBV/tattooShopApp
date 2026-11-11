@@ -62,7 +62,7 @@ export default function Manage() {
   const status = booking ? statusOf(booking) : null
   return (
     <main>
-      <PageIntro title="Manage a booking">
+      <PageIntro title="Manage a booking" compact>
         <p>Find your booking with the code from your confirmation.</p>
       </PageIntro>
       <section className="wrap booking-body manage-layout">

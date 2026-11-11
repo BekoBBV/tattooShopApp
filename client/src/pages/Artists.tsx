@@ -11,7 +11,7 @@ export default function Artists() {
   const artists = useLoad<Artist[]>("/artists")
   return (
     <main>
-      <PageIntro title="Our artists">
+      <PageIntro title="Our artists" view="sky">
         <p>Three artists, one shared foundation, and three very different hands.</p>
       </PageIntro>
       <section className="wrap page-body" aria-label="Artists">

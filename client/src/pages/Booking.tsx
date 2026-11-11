@@ -1,5 +1,5 @@
-import { ImagePlus, X } from "lucide-react"
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
+import { ChevronLeft, ChevronRight, ImagePlus, X } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router"
 import { PageIntro } from "../components/Layout"
 import {
@@ -13,8 +13,8 @@ import {
   TextField,
 } from "../components/Studio"
 import { api, ApiError } from "../lib/api"
-import { startDraft, updateDraft, useBookingDraft } from "../lib/bookingDraft"
-import { whenOf } from "../lib/bookingText"
+import { updateDraft, useBookingDraft, useBookingLink } from "../lib/bookingDraft"
+import { summaryRows, whenOf } from "../lib/bookingText"
 import { useCustomer } from "../lib/customer"
 import { colours, countdown, dayButton, euros, hours, longDate, parseTypedDate, placements, size, todayInSofia } from "../lib/format"
 import { limits } from "../lib/limits"
@@ -36,31 +36,28 @@ export function BookChoose() {
   const draft = useBookingDraft()
   const artists = useLoad<Artist[]>("/artists")
   const chosenFlash = useLoad<Flash>(draft.flashId ? `/flash/${draft.flashId}` : null)
+  const sheet = useLoad<Flash[]>("/flash")
   const [problem, setProblem] = useState("")
-
-  // A link may bring the choice along: ?flash=<id>, or ?type=consultation (&artist=<id>)
-  const linkFlash = params.get("flash")
-  const linkConsultation = params.get("type") === "consultation"
-  const linkArtist = params.get("artist")
-  useEffect(() => {
-    if (linkFlash && linkFlash !== draft.flashId) startDraft({ kind: "flash", flashId: linkFlash })
-    else if (linkFlash && draft.kind !== "flash") updateDraft({ kind: "flash" })
-    else if (linkConsultation && (draft.kind !== "consultation" || (linkArtist && linkArtist !== draft.artistId))) {
-      startDraft({ kind: "consultation", artistId: linkArtist ?? draft.artistId, flashId: draft.flashId })
-    }
-    // Only when the link changes; the draft is the result
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkFlash, linkConsultation, linkArtist])
+  /** The design list is open: nothing chosen yet, or the visitor asked for another design. */
+  const [picking, setPicking] = useState(false)
+  useBookingLink(params)
 
   const flash = chosenFlash.data
+  const bookable = (sheet.data ?? []).filter((f) => f.bookable)
+  const showPicker = picking || !draft.flashId || !!chosenFlash.error
   const pick = (kind: "flash" | "consultation") => {
     setProblem("")
     if (kind !== draft.kind) updateDraft({ kind, date: null, time: null })
   }
+  const pickFlash = (chosen: Flash) => {
+    setProblem("")
+    setPicking(false)
+    if (chosen.id !== draft.flashId || draft.kind !== "flash") updateDraft({ kind: "flash", flashId: chosen.id, date: null, time: null })
+  }
 
   function proceed() {
     if (draft.kind === "flash" && (!flash || !flash.bookable)) {
-      setProblem(flash ? "This design was just booked by someone else. Choose another design." : "Choose a design from the flash sheet first.")
+      setProblem(flash ? "This design was just booked by someone else. Choose another design." : "Choose a design first.")
       return
     }
     if (draft.kind === "consultation" && !draft.artistId) {
@@ -76,7 +73,7 @@ export function BookChoose() {
 
   return (
     <main>
-      <PageIntro title="Choose what to book">
+      <PageIntro title="Choose what to book" compact>
         <p>Book a finished design or start a custom piece with a free conversation.</p>
       </PageIntro>
       <StepBar current={1} withDeposit={draft.kind !== "consultation"} />
@@ -92,10 +89,45 @@ export function BookChoose() {
                 <small>Fixed design, time and price</small>
               </span>
             </label>
-            {flash ? (
+            {showPicker ? (
+              <>
+                <fieldset className="artist-choice-list flash-choice-list">
+                  <legend>Choose a design</legend>
+                  <div className="flash-choice-scroll">
+                    {bookable.map((f) => {
+                      const on = draft.kind === "flash" && draft.flashId === f.id
+                      return (
+                        <label key={f.id} className="artist-choice flash-choice">
+                          <input type="radio" className="visually-hidden" name="flash" checked={on} onChange={() => pickFlash(f)}
+                            onClick={() => on && setPicking(false)} />
+                          <span className={`radio-mark${on ? " is-on" : ""}`} aria-hidden="true"></span>
+                          <span className="flash-choice-thumb">
+                            <Art image={f.image} />
+                          </span>
+                          <span className="flash-choice-text">
+                            <strong>{f.name}</strong>
+                            <small>
+                              By {f.artistName}, {size(f.widthCm, f.heightCm)}, about {hours(f.durationMinutes)}
+                            </small>
+                          </span>
+                          <span className="flash-choice-price">{euros(f.price)}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                  {sheet.data && bookable.length === 0 && (
+                    <p className="flash-choice-note">Every design is booked right now. A free consultation plans a piece of your own.</p>
+                  )}
+                  {!sheet.data && <p className="flash-choice-note">{sheet.error || "Loading the designs..."}</p>}
+                </fieldset>
+                <Link className="text-link choose-other" to="/flash">
+                  See them larger on the flash sheet
+                </Link>
+              </>
+            ) : flash ? (
               <div className="selected-flash">
                 <div className="flash-frame">
-                  <Art image={flash.image} alt={flash.name} />
+                  <Art image={flash.image} alt={flash.name} waiting="Drawing coming soon" />
                 </div>
                 <div>
                   <div className="selected-title">
@@ -118,15 +150,13 @@ export function BookChoose() {
                     </div>
                   </dl>
                   {!flash.bookable && <p className="field-error">This design was just booked by someone else.</p>}
-                  <Link className="text-link choose-other" to="/flash">
+                  <button className="text-link link-button choose-other" type="button" onClick={() => setPicking(true)}>
                     Choose another design
-                  </Link>
+                  </button>
                 </div>
               </div>
             ) : (
-              <p>
-                Pick a design on the <Link className="text-link" to="/flash">flash sheet</Link> and press Book.
-              </p>
+              <p className="flash-choice-note">Loading the design...</p>
             )}
           </section>
           <section className={`slip choice-card on-paper${draft.kind === "consultation" ? " is-selected" : ""}`} aria-label="A free consultation">
@@ -179,18 +209,125 @@ export function BookChoose() {
   )
 }
 
+// ---- What is being booked (beside steps 2 and 3) ----
+
+/**
+ * "Your booking": the design or consultation, the artist, the time once chosen and the money. A
+ * paper slip beside the step on wide screens, one line above it on tablets and phones.
+ */
+function BookingSummary({
+  kind,
+  flash,
+  artistName,
+  date,
+  time,
+  change,
+}: {
+  kind: "flash" | "consultation"
+  flash: Flash | null
+  artistName: string | null
+  date: string | null
+  time: string | null
+  /** The link back to an earlier step ("Change the design", "Change the time"). */
+  change: { to: string; label: string }
+}) {
+  const title = kind === "flash" ? (flash?.name ?? "Flash design") : "Free consultation"
+  const rows = summaryRows({ kind, flash, artistName, date, time })
+  const line = [
+    artistName && (kind === "flash" ? `by ${artistName}` : `with ${artistName}`),
+    kind === "flash" ? flash && `about ${hours(flash.durationMinutes)}` : "30 minutes",
+    kind === "flash" ? flash && euros(flash.price) : "free",
+    date && time && `${longDate(date)}, ${time}`,
+  ].filter(Boolean)
+  return (
+    <>
+      <p className="booking-summary-line">
+        <strong>{title}</strong> {line.join(", ")}. <Link to={change.to}>{change.label}</Link>
+      </p>
+      <aside className="slip on-paper booking-summary" aria-labelledby="booking-summary-title">
+        <h2 id="booking-summary-title">Your booking</h2>
+        <div className="booking-summary-what">
+          {kind === "flash" && (
+            <div className="flash-frame">
+              <Art image={flash?.image} alt="" />
+            </div>
+          )}
+          <div>
+            <h3>{title}</h3>
+            {kind === "flash" && flash && <p>One of a kind, tattooed once</p>}
+            {kind === "consultation" && <p>Plan a bigger or custom piece</p>}
+          </div>
+          {artistName && <ArtistSeal name={artistName} />}
+        </div>
+        <dl className="slip-list">
+          {rows.map((row) => (
+            <div key={row.label} className={row.total ? "total" : undefined}>
+              <dt>{row.label}</dt>
+              <dd>{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <Link className="text-link" to={change.to}>
+          {change.label}
+        </Link>
+      </aside>
+    </>
+  )
+}
+
+/** The row of days: it scrolls sideways, with arrows at its ends and a fade where more days wait. */
+function DayStrip({ count, children }: { count: number; children: ReactNode }) {
+  const strip = useRef<HTMLDivElement>(null)
+  const [edge, setEdge] = useState({ start: true, end: true })
+  const measure = useCallback(() => {
+    const el = strip.current
+    if (!el) return
+    const start = el.scrollLeft <= 2
+    const end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2
+    setEdge((was) => (was.start === start && was.end === end ? was : { start, end }))
+  }, [])
+  useEffect(() => {
+    measure()
+    window.addEventListener("resize", measure)
+    return () => window.removeEventListener("resize", measure)
+  }, [measure, count])
+  const move = (direction: 1 | -1) => {
+    const el = strip.current
+    if (!el) return
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    el.scrollBy({ left: direction * Math.max(200, el.clientWidth - 100), behavior: calm ? "auto" : "smooth" })
+  }
+  return (
+    <div className={`day-strip-wrap${edge.start ? "" : " fades-start"}${edge.end ? "" : " fades-end"}`}>
+      <button className="strip-arrow" type="button" aria-label="Earlier days" disabled={edge.start} onClick={() => move(-1)}>
+        <ChevronLeft className="icon" size={20} aria-hidden="true" />
+      </button>
+      <div className="day-strip" ref={strip} onScroll={measure} aria-label="Available days" tabIndex={0}>
+        {children}
+      </div>
+      <button className="strip-arrow" type="button" aria-label="Later days" disabled={edge.end} onClick={() => move(1)}>
+        <ChevronRight className="icon" size={20} aria-hidden="true" />
+      </button>
+    </div>
+  )
+}
+
 // ---- Step 2: Time ----
 
 /** Step 2: the next days, then the free start times on the chosen day. */
 export function BookTime() {
   usePageTitle("Choose a time")
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const draft = useBookingDraft()
+  // Book on a design (or "Plan a piece with Kai") comes straight here with the choice in the link
+  const linked = useBookingLink(params)
   const today = useMemo(() => todayInSofia(), [])
   const ready = draft.kind === "flash" ? !!draft.flashId : draft.kind === "consultation" && !!draft.artistId
   const query = draft.kind === "flash" ? `flashId=${draft.flashId}` : `artistId=${draft.artistId}`
-  const availability = useLoad<Availability>(ready ? `/availability?${query}&from=${today}&days=31` : null)
+  const availability = useLoad<Availability>(ready && linked ? `/availability?${query}&from=${today}&days=31` : null)
   const artists = useLoad<Artist[]>("/artists")
+  const chosenFlash = useLoad<Flash>(linked && draft.kind === "flash" && draft.flashId ? `/flash/${draft.flashId}` : null)
   const [problem, setProblem] = useState("")
 
   const days = availability.data?.days ?? []
@@ -201,7 +338,15 @@ export function BookTime() {
   const minutes = availability.data?.durationMinutes ?? 30
   const isConsultation = draft.kind === "consultation"
 
+  if (!linked) return null // one moment: the link's choice is on its way into the draft
   if (!ready) return <Navigate to="/book/choose" replace />
+
+  // Booked by someone else since the visitor saw it (their own unpaid booking holds it too: then the times decide)
+  const taken = draft.kind === "flash" && !draft.code && chosenFlash.data?.bookable === false
+  const gone = draft.kind === "flash" && !!chosenFlash.error
+  const summaryArtist = isConsultation
+    ? (artists.data?.find((a) => a.id === draft.artistId)?.name ?? null)
+    : (chosenFlash.data?.artistName ?? null)
 
   const intro = isConsultation
     ? `Times when ${artistName} is free for a 30-minute consultation.`
@@ -217,13 +362,24 @@ export function BookTime() {
 
   return (
     <main>
-      <PageIntro title="Choose a time">
-        <p>{availability.data ? intro : "Loading the free times..."}</p>
+      <PageIntro title="Choose a time" compact>
+        <p>{availability.data ? intro : taken || gone ? "This design can't be booked any more." : "Loading the free times..."}</p>
       </PageIntro>
       <StepBar current={2} withDeposit={!isConsultation} />
       <div className="wrap booking-body">
-        <FormError>{availability.error || problem}</FormError>
-        <div className="day-strip" aria-label="Available days" tabIndex={0}>
+        {taken || gone ? (
+          <FormError>
+            {taken ? "This design was just booked by someone else." : "This design is no longer on the flash sheet."}{" "}
+            <Link to="/book/choose" onClick={() => updateDraft({ flashId: null, date: null, time: null })}>
+              Choose another design
+            </Link>
+          </FormError>
+        ) : (
+          <FormError>{availability.error || problem}</FormError>
+        )}
+        <div className="booking-columns">
+        <div className="booking-main">
+        <DayStrip count={days.length}>
           {days.map((d) => {
             const label = dayButton(d.date)
             return (
@@ -244,7 +400,7 @@ export function BookTime() {
               </button>
             )
           })}
-        </div>
+        </DayStrip>
         {day && (
           <section className="time-selection" aria-labelledby="day-title">
             <h2 id="day-title">{longDate(day.date)}</h2>
@@ -280,6 +436,10 @@ export function BookTime() {
             </p>
           </section>
         )}
+        </div>
+        <BookingSummary kind={isConsultation ? "consultation" : "flash"} flash={chosenFlash.data} artistName={summaryArtist}
+          date={draft.time ? draft.date : null} time={draft.time} change={{ to: "/book/choose", label: isConsultation ? "Change the artist" : "Change the design" }} />
+        </div>
         <div className="booking-continue">
           <button className="button button-primary" type="button" onClick={proceed}>
             Continue
@@ -318,6 +478,8 @@ export function BookDetails() {
   const customer = useCustomer()
   const account = useLoad<Account>(customer ? "/account" : null, customer?.token)
   const kind = draft.kind
+  const chosenFlash = useLoad<Flash>(kind === "flash" && draft.flashId ? `/flash/${draft.flashId}` : null)
+  const artists = useLoad<Artist[]>(kind === "consultation" ? "/artists" : null)
   const [consent, setConsent] = useState({ adult: false, consentForm: false, depositPolicy: false })
   const [photos, setPhotos] = useState<Photo[]>([])
   const [photoProblem, setPhotoProblem] = useState("")
@@ -429,7 +591,7 @@ export function BookDetails() {
 
   return (
     <main>
-      <PageIntro title="Your details">
+      <PageIntro title="Your details" compact>
         <p>Tell us who is coming to the studio and confirm the essentials.</p>
       </PageIntro>
       <StepBar current={3} withDeposit={kind === "flash"} />
@@ -446,10 +608,7 @@ export function BookDetails() {
             {problem.back === "flash" && <Link to="/flash">Choose another design</Link>}
           </FormError>
         )}
-        <p className="guest-note">
-          {kind === "flash" ? "Flash design" : "Free consultation"}: {longDate(draft.date)}, {draft.time}.{" "}
-          <Link to="/book/time">Change the time</Link>
-        </p>
+        <div className="booking-columns">
         <form className="slip form-slip on-paper" onSubmit={submit} onChange={checks.onChange} onBlur={checks.onBlur} noValidate>
           <div className="form-section">
             <div className="form-grid">
@@ -545,6 +704,10 @@ export function BookDetails() {
             </button>
           </div>
         </form>
+        <BookingSummary kind={kind} flash={chosenFlash.data}
+          artistName={kind === "flash" ? (chosenFlash.data?.artistName ?? null) : (artists.data?.find((a) => a.id === draft.artistId)?.name ?? null)}
+          date={draft.date} time={draft.time} change={{ to: "/book/time", label: "Change the time" }} />
+        </div>
       </div>
     </main>
   )
@@ -608,7 +771,7 @@ export function BookDeposit() {
 
   return (
     <main>
-      <PageIntro title="Pay the deposit">
+      <PageIntro title="Pay the deposit" compact>
         <p>Review the booking and secure the appointment with a {euros(booking?.deposit.amount ?? 30)} deposit.</p>
       </PageIntro>
       <StepBar current={4} locked={booking !== null && !expired} />

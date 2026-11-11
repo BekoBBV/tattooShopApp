@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react"
+import { useEffect, useSyncExternalStore } from "react"
 import type { ColourChoice, Placement } from "./types"
 
 /**
@@ -106,4 +106,27 @@ function subscribe(onChange: () => void) {
 
 export function useBookingDraft() {
   return useSyncExternalStore(subscribe, getDraft, () => empty)
+}
+
+/**
+ * A link may bring the choice along: ?flash=<id>, or ?type=consultation (&artist=<id>). Puts it in
+ * the draft and says whether the draft holds it yet, so a step can wait instead of sending the
+ * visitor back to step 1.
+ */
+export function useBookingLink(params: URLSearchParams) {
+  const draft = useBookingDraft()
+  const flash = params.get("flash")
+  const consultation = params.get("type") === "consultation"
+  const artist = params.get("artist")
+  useEffect(() => {
+    const now = getDraft()
+    if (flash && flash !== now.flashId) startDraft({ kind: "flash", flashId: flash })
+    else if (flash && now.kind !== "flash") updateDraft({ kind: "flash" })
+    else if (consultation && (now.kind !== "consultation" || (artist && artist !== now.artistId))) {
+      startDraft({ kind: "consultation", artistId: artist ?? now.artistId, flashId: now.flashId })
+    }
+  }, [flash, consultation, artist])
+  if (flash) return draft.kind === "flash" && draft.flashId === flash
+  if (consultation) return draft.kind === "consultation" && (!artist || draft.artistId === artist)
+  return true
 }
