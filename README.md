@@ -13,7 +13,7 @@ A full-stack booking website for Blade & Brush, a fictional traditional Japanese
 | 3 | Server: artists and styles, portfolios, flash designs, consultations, sessions of any length, deposits, consent; images on Cloudinary | Done |
 | 4 | Website: home, artist portfolios, flash gallery, both ways to book, My account | Done; tried with sample data and against the real server |
 | 5 | Artist and admin area: calendar, reserving sessions, deposits, flash and portfolio uploads | Done; every staff page tried against the real server |
-| 6 | Tests, docs, security pass, going live | Tests, docs and the security pass done; going live is next |
+| 6 | Tests, docs, security pass, going live | Tests, docs and the security pass done; the single app was built and tried with the production profile on this computer; going live on Render is next |
 
 ## Tech stack
 
