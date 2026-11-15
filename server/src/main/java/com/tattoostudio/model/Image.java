@@ -9,4 +9,21 @@ package com.tattoostudio.model;
  * @param thumbUrl the picture at up to 600 px wide, for lists and thumbnails
  */
 public record Image(String id, String url, String thumbUrl) {
+
+    /** How the id of a picture that ships with the website starts. */
+    public static final String BUNDLED = "bundled:";
+
+    /**
+     * A picture that ships with the website itself (client/public/images/...), such as the sample
+     * flash drawings. It is served from the site, so it survives a host wiping its disk, and it is
+     * never deleted from the image store: replacing or deleting the design only lets go of it.
+     */
+    public static Image bundled(String path) {
+        String url = "/images/" + path;
+        return new Image(BUNDLED + path, url, url);
+    }
+
+    public boolean isBundled() {
+        return id != null && id.startsWith(BUNDLED);
+    }
 }

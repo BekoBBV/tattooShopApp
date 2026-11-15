@@ -5,8 +5,12 @@
    height back to the page default of 1.5; the approved pages were drawn that way, so match it. */
 body { line-height: 1.5; }
 
-/* Uploaded pictures inside the design's frames */
-.art-image { display: block; width: 100%; height: 100%; }
+/* Uploaded pictures inside the design's frames. Whatever frame holds one, the picture fills the frame's
+   inside and is scaled down whole, instead of the frame growing to the picture's own height (tall
+   drawings and signature pieces used to spill out) */
+:has(> .art-image) { position: relative; overflow: hidden; }
+.art-image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; box-sizing: border-box; }
+.flash-frame > .art-image, .flash-choice-thumb > .art-image { padding: inherit; }
 .art-image.is-contain { object-fit: contain; }
 .art-image.is-cover { object-fit: cover; }
 .scroll-signature .art-image { padding: 12px; border: 1px solid var(--mist); background: var(--paper-light); }
@@ -310,7 +314,7 @@ button.staff-sign-out { border: 0; background: none; font: inherit; cursor: poin
 .link-button { padding: 0; background: none; border: 0; font: inherit; cursor: pointer; }
 .flash-choice-scroll { max-height: 400px; overflow-y: auto; border-bottom: 1px solid var(--mist); }
 .flash-choice { position: relative; }
-.flash-choice-thumb { width: 48px; height: 48px; flex: none; border: 1px solid var(--mist); background: var(--paper-light); }
+.flash-choice-thumb { width: 48px; height: 48px; flex: none; padding: 3px; border: 1px solid var(--mist); background: var(--paper-light); }
 .flash-choice-text { flex: 1; min-width: 0; }
 .flash-choice-price { font-weight: 700; font-variant-numeric: tabular-nums; }
 .flash-choice-note { margin: 12px 0 0; color: var(--ink-soft); }
@@ -388,3 +392,6 @@ button.staff-sign-out { border: 0; background: none; font: inherit; cursor: poin
 .review > .stars { display: flex; width: max-content; margin-top: 8px; }
 .rating-block > .stars { display: flex; width: max-content; margin-top: 14px; }
 .home-reviews .section-heading .stars { display: flex; width: max-content; margin-bottom: 8px; }
+
+/* Flash drawings come on white paper; multiplied onto the frame's cream they look drawn on it (no white box) */
+.flash-frame .art-image, .flash-choice-thumb .art-image { mix-blend-mode: multiply; }

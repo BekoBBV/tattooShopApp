@@ -70,8 +70,9 @@ public class ImageUploads {
         return store.store(c.bytes(), folder, c.extension());
     }
 
+    /** Deletes a stored picture; pictures that ship with the website (Image.bundled) stay. */
     public void delete(Image image) {
-        if (image != null) {
+        if (image != null && !image.isBundled()) {
             store.delete(image);
         }
     }

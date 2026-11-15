@@ -27,6 +27,8 @@ export type BookingDraft = {
   /** The booking once it is made (step 3), to pay the deposit and show the confirmation. */
   code: string | null
   phone: string | null
+  /** The design that booking holds (a held design shows as taken, but not to the one holding it). */
+  heldFlashId: string | null
 }
 
 const KEY = "blade-and-brush-booking"
@@ -53,6 +55,7 @@ const empty: BookingDraft = {
   details: emptyDetails,
   code: null,
   phone: null,
+  heldFlashId: null,
 }
 
 let memory: string | null = null
@@ -107,6 +110,10 @@ function subscribe(onChange: () => void) {
 export function useBookingDraft() {
   return useSyncExternalStore(subscribe, getDraft, () => empty)
 }
+
+/** The chosen design can't be booked: someone else has it (this visitor's own unpaid hold doesn't count). */
+export const takenByOthers = (draft: BookingDraft, flash: { id: string; bookable: boolean } | null | undefined) =>
+  !!flash && !flash.bookable && !(draft.code && draft.heldFlashId === flash.id)
 
 /**
  * A link may bring the choice along: ?flash=<id>, or ?type=consultation (&artist=<id>). Puts it in

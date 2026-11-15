@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest"
-import { summaryRows } from "./bookingText"
+import { summaryLine, summaryRows } from "./bookingText"
 
 const koi = { widthCm: 8, heightCm: 12, durationMinutes: 150, price: 220, deposit: 30 }
 const row = (rows: ReturnType<typeof summaryRows>, label: string) => rows.find((r) => r.label === label)?.value
+
+describe("summaryLine", () => {
+  it("says the same as the rows, in one line", () => {
+    const rows = summaryRows({ kind: "flash", flash: koi, artistName: "Kai", date: "2026-11-11", time: "15:00" })
+    expect(summaryLine(rows, "flash")).toBe("by Kai, about 2.5 hours, €220, €30 deposit now, Wednesday, 11 November 2026, 15:00")
+  })
+
+  it("leaves out the time until one is chosen", () => {
+    const rows = summaryRows({ kind: "consultation", flash: null, artistName: "Nika", date: null, time: null })
+    expect(summaryLine(rows, "consultation")).toBe("with Nika, 30 minutes, free")
+  })
+})
 
 describe("summaryRows", () => {
   it("shows a flash design's size, length and money, with the rest to pay in the studio", () => {

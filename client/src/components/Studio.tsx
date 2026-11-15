@@ -117,7 +117,10 @@ export function Stars({ rating, size = 18 }: { rating: number; size?: number }) 
   )
 }
 
-/** One review: who wrote it, when, the stars, what they said and (on the home page) whose work it is about. */
+/**
+ * One review: who wrote it, when, the stars, what they said and (on the home page) whose work it is
+ * about; that last line is left out while the artist's name isn't known (loading, or no longer listed).
+ */
 export function ReviewCard({ review, artistName }: { review: Review; artistName?: string }) {
   return (
     <article className="review">

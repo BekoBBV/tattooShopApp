@@ -49,7 +49,7 @@ export default function Home() {
   usePageTitle()
   const sheet = useLoad<Flash[]>("/flash")
   const artists = useLoad<Artist[]>("/artists")
-  const reviews = useLoad<ReviewSummary>("/reviews")
+  const reviews = useLoad<ReviewSummary>("/reviews?limit=3")
   const [allMotifs, setAllMotifs] = useState(false)
   const motifsId = useId()
   const artistName = (id: string) => artists.data?.find((a) => a.id === id)?.name
@@ -152,9 +152,9 @@ export default function Home() {
               </p>
             </div>
             <div className="home-review-grid">
-              {reviews.data.reviews.slice(0, 3).map((review) => (
+              {reviews.data.reviews.map((review) => (
                 <div key={review.id} className="slip on-paper">
-                  <ReviewCard review={review} artistName={artistName(review.artistId) ?? "the studio"} />
+                  <ReviewCard review={review} artistName={artistName(review.artistId)} />
                 </div>
               ))}
             </div>

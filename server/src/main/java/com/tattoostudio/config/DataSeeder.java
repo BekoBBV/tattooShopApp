@@ -25,6 +25,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -59,6 +60,27 @@ public class DataSeeder implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
     private static final String META_COLLECTION = "app_meta";
     private static final String DEMO_DATA_MARKER = "demo-data-seeded";
+    /** Set once the sample flash drawings were given to the sample designs (raise the number for new ones). */
+    static final String FLASH_PICTURES_MARKER = "flash-pictures-3";
+
+    /**
+     * The drawings that ship with the website (client/public/images/flash), by design name, one for
+     * each of the twelve sample designs. Adding or changing a drawing here means raising the number in
+     * FLASH_PICTURES_MARKER, so databases that already ran this pick it up.
+     */
+    static final java.util.Map<String, String> FLASH_PICTURES = java.util.Map.ofEntries(
+            java.util.Map.entry("Lucky koi", "flash/lucky-koi.jpg"),
+            java.util.Map.entry("Koi and wave", "flash/koi-and-wave.jpg"),
+            java.util.Map.entry("Small dragon", "flash/small-dragon.jpg"),
+            java.util.Map.entry("Tiger head", "flash/tiger-head.jpg"),
+            java.util.Map.entry("Hannya mask", "flash/hannya-mask.jpg"),
+            java.util.Map.entry("Oni", "flash/oni.jpg"),
+            java.util.Map.entry("Kabuto helmet", "flash/kabuto-helmet.jpg"),
+            java.util.Map.entry("Katana and smoke", "flash/katana-and-smoke.jpg"),
+            java.util.Map.entry("Crane in flight", "flash/crane-in-flight.jpg"),
+            java.util.Map.entry("Peony", "flash/peony.jpg"),
+            java.util.Map.entry("Cherry blossom branch", "flash/cherry-blossom-branch.jpg"),
+            java.util.Map.entry("Small wave", "flash/small-wave.jpg"));
     /** Start the server with --reset-demo to go back to the original demo data (e.g. before presenting). */
     static final String RESET_OPTION = "reset-demo";
     static final String DEMO_CUSTOMER_EMAIL = "mira@example.com";
@@ -101,6 +123,7 @@ public class DataSeeder implements ApplicationRunner {
             resetDemoData();
         }
         seedDemoDataOnce();
+        giveFlashTheirPicturesOnce();
         ensureAdmin();
         ensureDemoLogins();
     }
@@ -137,8 +160,31 @@ public class DataSeeder implements ApplicationRunner {
                 Artist.class)) {
             mongo.remove(new Query(), type);
         }
-        mongo.remove(Query.query(Criteria.where("_id").is(DEMO_DATA_MARKER)), META_COLLECTION);
+        mongo.remove(Query.query(Criteria.where("_id").in(DEMO_DATA_MARKER, FLASH_PICTURES_MARKER)), META_COLLECTION);
         images.deleteAll(pictures.stream().filter(p -> p != null).toList());
+    }
+
+    /**
+     * Gives the sample designs their drawings, once per database (per FLASH_PICTURES_MARKER): a fresh
+     * one right after the demo data, an existing one on its next start. A design without a picture gets
+     * its drawing, and one still showing an older bundled drawing gets the current one; a picture an
+     * artist uploaded is never replaced.
+     */
+    private void giveFlashTheirPicturesOnce() {
+        if (mongo.exists(Query.query(Criteria.where("_id").is(FLASH_PICTURES_MARKER)), META_COLLECTION)) {
+            return;
+        }
+        long given = 0;
+        for (var entry : FLASH_PICTURES.entrySet()) {
+            Image drawing = Image.bundled(entry.getValue());
+            Criteria noUpload = new Criteria().orOperator(Criteria.where("image").is(null),
+                    Criteria.where("image.id").regex("^" + java.util.regex.Pattern.quote(Image.BUNDLED)));
+            given += mongo.updateFirst(Query.query(new Criteria().andOperator(Criteria.where("name").is(entry.getKey()),
+                    noUpload, Criteria.where("image.id").ne(drawing.id()))),
+                    new Update().set("image", drawing), FlashDesign.class).getModifiedCount();
+        }
+        mongo.save(new Document("_id", FLASH_PICTURES_MARKER).append("at", new Date()), META_COLLECTION);
+        log.info("Gave {} sample flash designs their drawings", given);
     }
 
     /** The studio's hours: Tuesday to Sunday, 11:00 to 23:00; closed on Monday. */
@@ -170,7 +216,7 @@ public class DataSeeder implements ApplicationRunner {
         return artist;
     }
 
-    /** The twelve sample designs from the design brief (pictures come later). */
+    /** The twelve sample designs from the design brief (their drawings: giveFlashTheirPicturesOnce). */
     private void seedFlash(List<Artist> crew) {
         String kai = crew.get(0).getId();
         String dario = crew.get(1).getId();

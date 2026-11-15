@@ -223,6 +223,31 @@ class AccountApiTest extends ApiTest {
         login("test-new@example.com", "customer-password").andExpect(status().isOk());
     }
 
+    /** Asking for the current password again can't be used to guess it: 5 wrong answers lock it like sign-in does. */
+    @Test
+    void wrongCurrentPasswordsAreLimitedLikeSignIns() throws Exception {
+        String auth = customer("test-guess@example.com");
+        for (int i = 0; i < 5; i++) {
+            mvc.perform(put("/api/account").header("Authorization", auth).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"name\":\"Mira\",\"phone\":\"0888 123 456\",\"email\":\"test-guess2@example.com\",\"password\":\"guess-number-x\"}"))
+                    .andExpect(status().isBadRequest());
+        }
+        // Even the right password is refused for now, here, for a password change and at sign-in
+        mvc.perform(put("/api/account").header("Authorization", auth).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Mira\",\"phone\":\"0888 123 456\",\"email\":\"test-guess2@example.com\",\"password\":\"customer-password\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("TOO_MANY_ATTEMPTS"));
+        mvc.perform(put("/api/account/password").header("Authorization", auth).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"customer-password\",\"newPassword\":\"another-password-1\"}"))
+                .andExpect(status().isTooManyRequests());
+        login("test-guess@example.com", "customer-password").andExpect(status().isTooManyRequests());
+        // After 5 minutes it works again
+        clock.advance(Duration.ofMinutes(6));
+        mvc.perform(put("/api/account").header("Authorization", auth).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Mira\",\"phone\":\"0888 123 456\",\"email\":\"test-guess2@example.com\",\"password\":\"customer-password\"}"))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void aNewAccountWithADeletedAccountsEmailStartsWithoutItsOldSignIns() throws Exception {
         String old = customer("test-again@example.com");

@@ -104,3 +104,24 @@ export function summaryRows(chosen: {
   }
   return rows
 }
+
+/**
+ * The same summary as one line, for tablets and phones: "by Kai, about 2.5 hours, €220, €30 deposit
+ * now, Wednesday, 11 November 2026, 15:00". Built from summaryRows, so both always say the same.
+ */
+export function summaryLine(rows: SummaryRow[], kind: "flash" | "consultation") {
+  const value = (label: string) => rows.find((r) => r.label === label)?.value
+  const lower = (text: string | undefined) => text && text.charAt(0).toLowerCase() + text.slice(1)
+  const artist = value("Artist")
+  const deposit = value("Deposit now")
+  const when = value("When")
+  return [
+    artist && `${kind === "flash" ? "by" : "with"} ${artist}`,
+    lower(value("Length")),
+    lower(value("Price")),
+    deposit && `${deposit} deposit now`,
+    when !== "Not chosen yet" && when,
+  ]
+    .filter(Boolean)
+    .join(", ")
+}

@@ -91,7 +91,7 @@ The same list lives in `server/.../error/ErrorCode.java` and `client/src/lib/typ
 | `GET /artists/{slugOrId}/works` | | `Work[]`, newest first |
 | `GET /flash` | `artistId`, `size` (`SMALL` up to 8 cm on the longer side, `MEDIUM` up to 12 cm, `LARGE`) | `Flash[]`: the sheet, only designs that can be booked now |
 | `GET /flash/{id}` | | `Flash` (`bookable: false` once booked or off the sheet) |
-| `GET /reviews` | `artistId` (optional) | `{ averageRating, count, reviews: Review[] }`, approved only |
+| `GET /reviews` | `artistId` (optional), `limit` (1–50, optional: only the newest few) | `{ averageRating, count, reviews: Review[] }`, approved only, newest first; the average and count cover all of them |
 | `GET /reviews/search` *(signed in)* | *page* + `minRating` (1–5), `artistId`; `q` = name, text; sort `date`, `rating`, `name` | `Page<Review>` (approved only) |
 | `POST /messages` | JSON `{ name, contact, text }`, or multipart: part `message` (that JSON) + up to 5 `photos` | `201` |
 | `GET /health` | | `{ status, database }` |
@@ -176,7 +176,7 @@ Send the token as `Authorization: Bearer <token>` on every `/staff/**`, `/admin/
 | Method & path | Body / query | Response |
 |---|---|---|
 | `GET /account` | | `{ name, email, phone, dateOfBirth, createdAt }` |
-| `PUT /account` | `{ name, phone, email, password \| null }` (the date of birth can't be changed; `password` is the current one and only needed when the email changes) | A new sign-in (same as sign in), with the new name and email. The email is the sign-in, so a new one signs other devices out and the old email no longer signs in. `400` if the email changes and the password is missing or wrong, `409 CONFLICT` if another account has the email, `INVALID_PHONE` |
+| `PUT /account` | `{ name, phone, email, password \| null }` (the date of birth can't be changed; `password` is the current one and only needed when the email changes) | A new sign-in (same as sign in), with the new name and email. The email is the sign-in, so a new one signs other devices out and the old email no longer signs in. `400` if the email changes and the password is missing or wrong (wrong current passwords here, at `PUT /account/password` and `POST /account/delete` count with wrong sign-ins: 5 per account per 5 minutes, then `429 TOO_MANY_ATTEMPTS`), `409 CONFLICT` if another account has the email, `INVALID_PHONE` |
 | `GET /account/bookings` | *page* + `when` (`UPCOMING` default, `PAST`, `ALL`), `type` (e.g. `CONSULTATION` for the Consultations tab), `status`; `q` = title, idea, code; sort `date`, `title`, `type`, `price`, `status` | `Page<Booking>`: bookings made while signed in and sessions reserved for them (upcoming soonest first, otherwise latest first) |
 | `POST /account/bookings/{code}/cancel` | | `Booking` (same rules as `/bookings/cancel`; `404 BOOKING_NOT_FOUND` for someone else's booking) |
 | `POST /account/bookings/{code}/deposit` | | `{ checkoutUrl, amount, dueAt }` |

@@ -126,6 +126,10 @@ const design = (id: string, artistId: string, name: string, w: number, h: number
   bookable: true,
 })
 
+/** Every sample design has a drawing that ships with the website, named after its id (the server gives the same
+ * ones out: DataSeeder.FLASH_PICTURES; flashDrawings.test.ts checks the two match). */
+const drawing = (id: string): Image => ({ id: `bundled:flash/${id}.jpg`, url: `/images/flash/${id}.jpg`, thumbUrl: `/images/flash/${id}.jpg` })
+
 const flash: Flash[] = [
   design("lucky-koi", "kai", "Lucky koi", 6, 8, 90, 140),
   design("koi-and-wave", "kai", "Koi and wave", 8, 12, 150, 220),
@@ -139,7 +143,7 @@ const flash: Flash[] = [
   design("peony", "nika", "Peony", 6, 6, 60, 90),
   design("cherry-blossom-branch", "nika", "Cherry blossom branch", 4, 14, 90, 110),
   design("small-wave", "nika", "Small wave", 5, 5, 60, 80),
-]
+].map((f) => ({ ...f, image: drawing(f.id) }))
 
 const reviews: (Review & { approved: boolean })[] = [
   { id: "r1", artistId: "dario", name: "Elena", rating: 5, text: "Careful, clear and beautifully done.", createdAt: "2026-10-28T10:00:00Z", approved: true },
@@ -493,7 +497,8 @@ async function handle(method: string, url: URL, headers: Headers, body: BodyInit
   if (method === "GET" && path === "/reviews") {
     const list = reviews.filter((r) => r.approved && (!q.get("artistId") || r.artistId === q.get("artistId")))
     const avg = list.length ? Math.round((list.reduce((s, r) => s + r.rating, 0) / list.length) * 10) / 10 : 0
-    return ok({ averageRating: avg, count: list.length, reviews: list })
+    const limit = Number(q.get("limit") ?? "") || list.length
+    return ok({ averageRating: avg, count: list.length, reviews: list.slice(0, limit) })
   }
   if (method === "GET" && path === "/availability") {
     const f = q.get("flashId") ? flash.find((x) => x.id === q.get("flashId")) : null

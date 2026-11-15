@@ -3,10 +3,12 @@ import { usePageTitle } from "../lib/usePageTitle"
 
 /** Where the site's pictures come from. Rows are filled in as the final images are confirmed. */
 const CREDITS = [
-  { file: "Night torii painting (home page, page banners, menu)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
-  { file: "Day torii painting (footer)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
+  { file: "Night torii painting (home page, Flash page banner, menu)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
+  { file: "Day torii painting (footer, Aftercare banner)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
+  { file: "Red sun and mountain strip (artists' pages banner)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
+  { file: "Sample flash drawings (all twelve designs on the flash sheet)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
   { file: "BB seal (logo)", author: "Blade & Brush", source: "Studio artwork", licence: "All rights reserved" },
-  { file: "Flash designs and portfolio photos", author: "The studio's artists", source: "Their own work", licence: "All rights reserved" },
+  { file: "Flash designs and portfolio photos the artists upload", author: "The studio's artists", source: "Their own work", licence: "All rights reserved" },
 ]
 
 export default function Credits() {

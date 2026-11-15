@@ -13,8 +13,8 @@ import {
   TextField,
 } from "../components/Studio"
 import { api, ApiError } from "../lib/api"
-import { updateDraft, useBookingDraft, useBookingLink } from "../lib/bookingDraft"
-import { summaryRows, whenOf } from "../lib/bookingText"
+import { takenByOthers, updateDraft, useBookingDraft, useBookingLink } from "../lib/bookingDraft"
+import { summaryLine, summaryRows, whenOf } from "../lib/bookingText"
 import { useCustomer } from "../lib/customer"
 import { colours, countdown, dayButton, euros, hours, longDate, parseTypedDate, placements, size, todayInSofia } from "../lib/format"
 import { limits } from "../lib/limits"
@@ -56,7 +56,7 @@ export function BookChoose() {
   }
 
   function proceed() {
-    if (draft.kind === "flash" && (!flash || !flash.bookable)) {
+    if (draft.kind === "flash" && (!flash || takenByOthers(draft, flash))) {
       setProblem(flash ? "This design was just booked by someone else. Choose another design." : "Choose a design first.")
       return
     }
@@ -149,7 +149,7 @@ export function BookChoose() {
                       <dd>{euros(flash.price)}</dd>
                     </div>
                   </dl>
-                  {!flash.bookable && <p className="field-error">This design was just booked by someone else.</p>}
+                  {takenByOthers(draft, flash) && <p className="field-error">This design was just booked by someone else.</p>}
                   <button className="text-link link-button choose-other" type="button" onClick={() => setPicking(true)}>
                     Choose another design
                   </button>
@@ -233,16 +233,11 @@ function BookingSummary({
 }) {
   const title = kind === "flash" ? (flash?.name ?? "Flash design") : "Free consultation"
   const rows = summaryRows({ kind, flash, artistName, date, time })
-  const line = [
-    artistName && (kind === "flash" ? `by ${artistName}` : `with ${artistName}`),
-    kind === "flash" ? flash && `about ${hours(flash.durationMinutes)}` : "30 minutes",
-    kind === "flash" ? flash && euros(flash.price) : "free",
-    date && time && `${longDate(date)}, ${time}`,
-  ].filter(Boolean)
+  const line = summaryLine(rows, kind)
   return (
     <>
       <p className="booking-summary-line">
-        <strong>{title}</strong> {line.join(", ")}. <Link to={change.to}>{change.label}</Link>
+        <strong>{title}</strong> {line}. <Link to={change.to}>{change.label}</Link>
       </p>
       <aside className="slip on-paper booking-summary" aria-labelledby="booking-summary-title">
         <h2 id="booking-summary-title">Your booking</h2>
@@ -341,9 +336,9 @@ export function BookTime() {
   if (!linked) return null // one moment: the link's choice is on its way into the draft
   if (!ready) return <Navigate to="/book/choose" replace />
 
-  // Booked by someone else since the visitor saw it (their own unpaid booking holds it too: then the times decide)
-  const taken = draft.kind === "flash" && !draft.code && chosenFlash.data?.bookable === false
-  const gone = draft.kind === "flash" && !!chosenFlash.error
+  // Booked by someone else since the visitor saw it, or taken off the sheet (404); other load errors are just shown
+  const taken = draft.kind === "flash" && takenByOthers(draft, chosenFlash.data)
+  const gone = draft.kind === "flash" && chosenFlash.status === 404
   const summaryArtist = isConsultation
     ? (artists.data?.find((a) => a.id === draft.artistId)?.name ?? null)
     : (chosenFlash.data?.artistName ?? null)
@@ -375,7 +370,7 @@ export function BookTime() {
             </Link>
           </FormError>
         ) : (
-          <FormError>{availability.error || problem}</FormError>
+          <FormError>{availability.error || chosenFlash.error || problem}</FormError>
         )}
         <div className="booking-columns">
         <div className="booking-main">
@@ -467,7 +462,7 @@ async function releaseHold(code: string, phone: string) {
   } catch {
     // Gone already, or the lookup failed: the new booking simply goes ahead
   }
-  updateDraft({ code: null, phone: null })
+  updateDraft({ code: null, phone: null, heldFlashId: null })
 }
 
 /** Step 3: who is coming, the idea (consultations) and the confirmations. */
@@ -571,7 +566,7 @@ export function BookDetails() {
         photos.forEach((p) => data.append("photos", p.file))
         booking = await api<Booking>("/bookings/consultation", { method: "POST", body: data, token: customer?.token })
       }
-      updateDraft({ code: booking.code, phone: d.phone.trim() })
+      updateDraft({ code: booking.code, phone: d.phone.trim(), heldFlashId: kind === "flash" ? draft.flashId : null })
       navigate(kind === "flash" ? "/book/deposit" : `/booking/confirmed?code=${encodeURIComponent(booking.code)}`)
     } catch (reason) {
       if (reason instanceof ApiError) {

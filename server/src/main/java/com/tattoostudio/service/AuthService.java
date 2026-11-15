@@ -188,12 +188,11 @@ public class AuthService {
         }
         String email = normalize(request.email());
         boolean newEmail = !email.equals(user.getUsername());
-        if (newEmail && (request.password() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash()))) {
-            // 400, not 401: a typo must not sign the customer out
-            throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
-                    request.password() == null || request.password().isEmpty()
-                            ? "Enter your password to change your email."
-                            : "Your current password is not right.");
+        if (newEmail) {
+            if (request.password() == null || request.password().isEmpty()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Enter your password to change your email.");
+            }
+            checkPassword(user, request.password());
         }
         if (newEmail && users.findByUsername(email).isPresent()) {
             throw emailTaken();
@@ -228,11 +227,27 @@ public class AuthService {
     private User customerWithPassword(String userId, String password) {
         User user = users.findById(userId).filter(u -> u.getRole() == Role.USER)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "Please sign in again."));
+        checkPassword(user, password);
+        return user;
+    }
+
+    /**
+     * The current password, asked again before changing the email or password or deleting the
+     * account. Wrong answers count with wrong sign-ins for the same account (5 per 5 minutes), so a
+     * borrowed or stolen sign-in can't be used to guess the password either.
+     */
+    private void checkPassword(User user, String password) {
+        String key = normalize(user.getUsername());
+        if (failedByUsername.count(key) >= MAX_FAILED_PER_USERNAME) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.TOO_MANY_ATTEMPTS,
+                    "Too many wrong passwords for this account. Please wait 5 minutes and try again.");
+        }
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            failedByUsername.record(key);
+            log.info("Wrong current password for '{}'", key);
             // 400, not 401: a typo must not sign the customer out
             throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Your current password is not right.");
         }
-        return user;
     }
 
     private static ApiException emailTaken() {

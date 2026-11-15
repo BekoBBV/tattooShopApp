@@ -9,10 +9,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.tattoostudio.model.Artist;
 import com.tattoostudio.model.FlashDesign;
+import com.tattoostudio.model.Image;
 import com.tattoostudio.model.Message;
 import com.tattoostudio.model.Review;
 import com.tattoostudio.model.Role;
@@ -43,6 +46,50 @@ class DataSeederTest extends IntegrationTest {
         assertThat(flash.findAll()).hasSize(12);
         assertThat(flash("Tiger head").getPrice()).isEqualByComparingTo("260");
         assertThat(flash("Tiger head").getDurationMinutes()).isEqualTo(180);
+        // Each comes with a drawing that ships with the website
+        assertThat(flash("Tiger head").getImage()).isEqualTo(Image.bundled("flash/tiger-head.jpg"));
+        assertThat(flash("Tiger head").getImage().url()).isEqualTo("/images/flash/tiger-head.jpg");
+        assertThat(DataSeeder.FLASH_PICTURES).hasSize(12);
+        assertThat(flash.findAll()).allMatch(f -> f.getImage() != null);
+    }
+
+    @Test
+    void drawingsReachDesignsSeededBeforeThemButNeverReplaceAnUpload() {
+        Image uploaded = new Image("flash/own.png", "/uploads/flash/own.png", "/uploads/flash/own.png");
+        FlashDesign peony = flash("Peony");
+        FlashDesign koi = flash("Lucky koi");
+        Image peonyBefore = peony.getImage();
+        Image koiBefore = koi.getImage();
+        try {
+            // A database seeded before the drawings existed: no pictures, except one an artist uploaded
+            peony.setImage(null);
+            flash.save(peony);
+            koi.setImage(uploaded);
+            flash.save(koi);
+            mongo.remove(Query.query(Criteria.where("_id").is(DataSeeder.FLASH_PICTURES_MARKER)), "app_meta");
+
+            seeder.run(null);
+            seeder.run(null); // the next start changes nothing
+
+            assertThat(flash("Peony").getImage()).isEqualTo(Image.bundled("flash/peony.jpg"));
+            assertThat(flash("Lucky koi").getImage()).isEqualTo(uploaded);
+
+            // A drawing renamed since (older bundled path) is brought up to date on the next marker
+            FlashDesign stale = flash("Peony");
+            stale.setImage(Image.bundled("flash/old-peony.jpg"));
+            flash.save(stale);
+            mongo.remove(Query.query(Criteria.where("_id").is(DataSeeder.FLASH_PICTURES_MARKER)), "app_meta");
+            seeder.run(null);
+            assertThat(flash("Peony").getImage()).isEqualTo(Image.bundled("flash/peony.jpg"));
+            assertThat(flash("Lucky koi").getImage()).isEqualTo(uploaded);
+        } finally {
+            FlashDesign p = flash("Peony");
+            p.setImage(peonyBefore);
+            flash.save(p);
+            FlashDesign k = flash("Lucky koi");
+            k.setImage(koiBefore);
+            flash.save(k);
+        }
     }
 
     @Test

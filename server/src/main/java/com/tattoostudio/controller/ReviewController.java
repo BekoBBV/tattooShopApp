@@ -44,14 +44,16 @@ public class ReviewController {
 
     @GetMapping
     @Operation(summary = "Approved reviews, newest first, with the average rating",
-            description = "Give artistId for one artist's reviews (their page).")
-    public ReviewSummaryDto list(@Parameter(description = "Artist id") @RequestParam(required = false) String artistId) {
+            description = "Give artistId for one artist's reviews (their page), and limit to get only the newest few "
+                    + "(the home page); the average and count always cover all of them.")
+    public ReviewSummaryDto list(@Parameter(description = "Artist id") @RequestParam(required = false) String artistId,
+            @Parameter(description = "At most this many reviews (1-50)") @RequestParam(required = false) @Min(1) @Max(50) Integer limit) {
         List<Review> approved = artistId == null || artistId.isBlank()
                 ? reviews.findByApprovedTrueOrderByCreatedAtDesc()
                 : reviews.findByArtistIdAndApprovedTrueOrderByCreatedAtDesc(artistId);
         Double average = CatalogService.average(approved);
         return new ReviewSummaryDto(average == null ? 0 : average, approved.size(),
-                approved.stream().map(ReviewDto::from).toList());
+                approved.stream().limit(limit == null ? Long.MAX_VALUE : limit).map(ReviewDto::from).toList());
     }
 
     @GetMapping("/search")
