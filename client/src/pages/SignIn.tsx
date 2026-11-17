@@ -117,6 +117,9 @@ export function Register() {
           <TextField label="Date of birth" name="dateOfBirth" inputMode="numeric" placeholder="dd.mm.yyyy" autoComplete="bday" value={values.dateOfBirth} onChange={set("dateOfBirth")} error={checks.errorFor("dateOfBirth")} />
           <TextField label="Password" name="password" type="password" autoComplete="new-password" maxLength={limits["account.password"]} value={values.password} onChange={set("password")} error={checks.errorFor("password")} />
           <PasswordRules rules={passwordRules(values.password)} />
+          <p className="legal-link-note">
+            How your details are kept: see the <Link to="/privacy">privacy policy</Link>.
+          </p>
           <button className="button button-primary" type="submit" disabled={busy}>
             {busy ? "Creating..." : "Create account"}
           </button>

@@ -44,9 +44,6 @@ export default function BookingConfirmed() {
   const consultation = booking?.type === "CONSULTATION"
   return (
     <main>
-      <div className="page-banner" aria-hidden="true">
-        <img src="/images/footer-night.jpg" alt="" />
-      </div>
       <section className="confirmation-hero" aria-labelledby="confirmed-title">
         <div className="confirmation-seal">
           <img src="/images/seal-bb.png" alt="" />

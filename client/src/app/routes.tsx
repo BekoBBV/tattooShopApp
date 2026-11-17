@@ -12,7 +12,9 @@ import FlashGallery from "../pages/FlashGallery"
 import Home from "../pages/Home"
 import Manage from "../pages/Manage"
 import NotFound from "../pages/NotFound"
+import Privacy from "../pages/Privacy"
 import { Register, SignIn } from "../pages/SignIn"
+import Terms from "../pages/Terms"
 
 /** A page that is only downloaded when someone opens it (the staff area, which customers never see). */
 const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({ Component: (await load()).default })
@@ -52,6 +54,8 @@ export const routes: RouteObject[] = [
           { path: "/artists/:slug", Component: ArtistPage },
           { path: "/aftercare", Component: Aftercare },
           { path: "/credits", Component: Credits },
+          { path: "/privacy", Component: Privacy },
+          { path: "/terms", Component: Terms },
           { path: "/booking/confirmed", Component: BookingConfirmed },
           { path: "/manage", Component: Manage },
           { path: "/account", Component: Account },

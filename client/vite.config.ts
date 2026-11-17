@@ -12,6 +12,9 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://localhost:8080', xfwd: true },
       '/uploads': { target: 'http://localhost:8080' },
+      // robots.txt and the sitemap are written by the server, with the address the site is reached at
+      '/robots.txt': { target: 'http://localhost:8080', xfwd: true },
+      '/sitemap.xml': { target: 'http://localhost:8080', xfwd: true },
     },
   },
 })

@@ -252,3 +252,20 @@ describe("signing in", () => {
     expect(router.state.location.pathname).toBe("/staff/sign-in")
   }, 30_000)
 })
+
+describe("Privacy policy and booking terms", () => {
+  it("are linked from the footer and say what the site really does", async () => {
+    const { user, router } = open("/")
+    const footer = await screen.findByRole("contentinfo")
+    await user.click(within(footer).getByRole("link", { name: "Privacy policy" }))
+    await pageTitle("Privacy policy")
+    expect(router.state.location.pathname).toBe("/privacy")
+    expect(screen.getByText(/erased from a booking 180 days after the appointment/)).toBeTruthy()
+    expect(screen.getByText(/sets no cookies/)).toBeTruthy()
+    expect(document.querySelector('meta[name="description"]')?.getAttribute("content")).toMatch(/keeps about you/)
+
+    await user.click(screen.getByRole("link", { name: "booking terms" }))
+    await pageTitle("Booking terms")
+    expect(screen.getByText(/at least 48 hours before your appointment and the deposit is refunded/)).toBeTruthy()
+  }, 30_000)
+})

@@ -26,9 +26,21 @@ class SpaConfigTest extends ApiTest {
     }
 
     @Test
-    void missingFilesAndUnknownApiAddressesStay404() throws Exception {
+    void missingFilesStay404() throws Exception {
         mvc.perform(get("/assets/missing.js")).andExpect(status().isNotFound());
-        mvc.perform(get("/api/no-such-endpoint")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void theApiIsClosedByDefault() throws Exception {
+        // An /api address that is on no list is refused, whoever asks: not public by accident, not even for the admin
+        mvc.perform(get("/api/no-such-endpoint")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/no-such-endpoint").header("Authorization", adminBearer())).andExpect(status().isForbidden());
+        // The public lists stay open, and their write side stays closed to guests
+        mvc.perform(get("/api/artists")).andExpect(status().isOk());
+        mvc.perform(get("/api/reviews")).andExpect(status().isOk());
+        mvc.perform(get("/api/health")).andExpect(status().isOk());
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/flash/x"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

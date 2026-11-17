@@ -28,6 +28,7 @@ import com.tattoostudio.model.Role;
 import com.tattoostudio.model.User;
 import com.tattoostudio.repository.ArtistRepository;
 import com.tattoostudio.repository.UserRepository;
+import com.tattoostudio.util.LogSafe;
 import com.tattoostudio.util.Paging;
 import com.tattoostudio.util.PhoneNumbers;
 
@@ -92,7 +93,7 @@ public class AdminUserService {
         }
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         User saved = save(user);
-        log.info("Admin added {} login '{}'", saved.getRole(), saved.getUsername());
+        log.info("Admin added {} login {}", saved.getRole(), LogSafe.account(saved));
         return toDto(saved);
     }
 
@@ -135,7 +136,7 @@ public class AdminUserService {
             save(saved);
             throw conflict("The shop needs at least one active admin. Make someone else admin first.");
         }
-        log.info("Admin set '{}' to {}{}", saved.getUsername(), saved.getRole(), saved.isActive() ? "" : " (blocked)");
+        log.info("Admin set {} to {}{}", LogSafe.account(saved), saved.getRole(), saved.isActive() ? "" : " (blocked)");
         return toDto(saved);
     }
 
@@ -145,7 +146,7 @@ public class AdminUserService {
         mongo.updateFirst(Query.query(Criteria.where("_id").is(id)), new Update()
                 .set("passwordHash", passwordEncoder.encode(password))
                 .set("passwordChangedAt", clock.instant()), User.class); // signs out sessions using the old password
-        log.info("Admin reset the password of '{}'", user.getUsername());
+        log.info("Admin reset the password of {}", LogSafe.account(user));
     }
 
     /** Deletes a login. A customer's past bookings stay (for the shop's records) but leave the account. */
@@ -163,7 +164,7 @@ public class AdminUserService {
             throw conflict("The shop needs at least one active admin.");
         }
         mongo.updateMulti(Query.query(Criteria.where("userId").is(user.getId())), new Update().unset("userId"), Booking.class);
-        log.info("Admin deleted login '{}'", user.getUsername());
+        log.info("Admin deleted login {}", LogSafe.account(user));
     }
 
     private boolean isLastActiveAdmin(User user) {

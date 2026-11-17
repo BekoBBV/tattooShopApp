@@ -1,7 +1,7 @@
 import { Clock3, Paperclip, Phone, Send } from "lucide-react"
-import { useId, useState, type FormEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { Link } from "react-router"
-import { BrushStroke, KatanaDivider } from "../components/Layout"
+import { KatanaDivider, SectionRule } from "../components/Layout"
 import { KatanaCut } from "../components/KatanaCut"
 import { ArtistSeal, FlashCard, FormError, HangingScroll, ReviewCard, Stars } from "../components/Studio"
 import { api, ApiError } from "../lib/api"
@@ -11,18 +11,6 @@ import type { Artist, Flash, ReviewSummary } from "../lib/types"
 import { useLoad } from "../lib/useLoad"
 import { usePageTitle } from "../lib/usePageTitle"
 import { checkMessage, useFieldChecks } from "../lib/validation"
-
-/** What the classic motifs mean, and which artist tattoos them. */
-const MOTIFS = [
-  { name: "Koi", meaning: "Perseverance. The koi that swims up the waterfall turns into a dragon.", artist: "Kai" },
-  { name: "Dragon", meaning: "Strength and wisdom. In Japan the dragon is a water spirit that protects.", artist: "Kai" },
-  { name: "Tiger", meaning: "Courage. Worn to keep away bad luck and illness.", artist: "Kai" },
-  { name: "Hannya mask", meaning: "A woman turned demon by jealousy. Worn as protection against evil.", artist: "Dario" },
-  { name: "Samurai and kabuto", meaning: "Discipline, honour and resolve. The helmet stands for the warrior who wore it.", artist: "Dario" },
-  { name: "Peony", meaning: "Wealth and good fortune, and the nerve to live without fear.", artist: "Nika" },
-  { name: "Cherry blossom", meaning: "Beauty that does not last. The flower of the samurai, who knew life could be short.", artist: "Nika" },
-  { name: "Crane", meaning: "Long life and good fortune.", artist: "Nika" },
-]
 
 const FAQ = [
   { q: "Does it hurt?", a: "Yes, a little. Most people describe it as a hot scratch. Ribs, feet and the inner arm hurt more than the forearm, calf or thigh. You can take a break whenever you need one." },
@@ -50,10 +38,7 @@ export default function Home() {
   const sheet = useLoad<Flash[]>("/flash")
   const artists = useLoad<Artist[]>("/artists")
   const reviews = useLoad<ReviewSummary>("/reviews?limit=3")
-  const [allMotifs, setAllMotifs] = useState(false)
-  const motifsId = useId()
   const artistName = (id: string) => artists.data?.find((a) => a.id === id)?.name
-  const slugOf = (name: string) => artists.data?.find((a) => a.name === name)?.slug ?? name.toLowerCase()
 
   return (
     <main>
@@ -94,8 +79,8 @@ export default function Home() {
           <p>Every design is one of a kind. It is tattooed once, and when it is booked it comes off the sheet.</p>
         </div>
         <div className="flash-sheet">
-          <span className="washi-tape is-left" aria-hidden="true"></span>
-          <span className="washi-tape is-right" aria-hidden="true"></span>
+          <span className="sheet-pin is-left" aria-hidden="true"></span>
+          <span className="sheet-pin is-right" aria-hidden="true"></span>
           {sheet.error && <p className="state-note">{sheet.error}</p>}
           {sheet.data && sheet.data.length === 0 && <p className="state-note">Every design is booked right now. New flash comes soon.</p>}
           <div className="flash-grid">
@@ -136,7 +121,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-      <BrushStroke />
+      <SectionRule />
 
       {reviews.data && reviews.data.count > 0 && (
         <>
@@ -159,7 +144,7 @@ export default function Home() {
               ))}
             </div>
           </section>
-          <BrushStroke flipped />
+          <SectionRule />
         </>
       )}
 
@@ -180,44 +165,6 @@ export default function Home() {
             Book a free consultation
           </Link>
         </div>
-      </section>
-
-      <section className="content-section motif-section" aria-labelledby="motif-title">
-        <div className="section-heading">
-          <div>
-            <h2 id="motif-title">What the motifs mean</h2>
-          </div>
-          <p>
-            Traditional Japanese tattoos are chosen for what they stand for, not only for how they look. Waves, wind and
-            clouds fill the background and tie a piece together.
-          </p>
-        </div>
-        <dl className={`motif-list${allMotifs ? " is-open" : ""}`} id={motifsId}>
-          {MOTIFS.map((motif) => (
-            <div key={motif.name}>
-              <dt>{motif.name}</dt>
-              <dd>
-                <p>{motif.meaning}</p>
-                <Link to={`/artists/${slugOf(motif.artist)}`} className="motif-artist">
-                  <span className="seal-lockup">
-                    <ArtistSeal name={motif.artist} />
-                  </span>
-                  Tattooed by {motif.artist}
-                </Link>
-              </dd>
-            </div>
-          ))}
-        </dl>
-        {!allMotifs && (
-          <button className="button button-secondary motif-more" type="button" aria-controls={motifsId} aria-expanded="false"
-            onClick={() => {
-              setAllMotifs(true)
-              // The button goes away: keyboard focus moves on to the first motif it revealed
-              requestAnimationFrame(() => document.getElementById(motifsId)?.querySelectorAll<HTMLElement>("a")[4]?.focus())
-            }}>
-            Show all {MOTIFS.length} motifs
-          </button>
-        )}
       </section>
 
       <section className="content-section faq-section" aria-labelledby="faq-title">

@@ -395,3 +395,177 @@ button.staff-sign-out { border: 0; background: none; font: inherit; cursor: poin
 
 /* Flash drawings come on white paper; multiplied onto the frame's cream they look drawn on it (no white box) */
 .flash-frame .art-image, .flash-choice-thumb .art-image { mix-blend-mode: multiply; }
+
+/* Scrolls on the wall, simple and clean: a thin dark rod at the top and bottom (a little wider than
+   the canvas), one string from the top rod's ends up to a hidden nail, and the canvas between the
+   rods with nothing around it. Used for the page titles (Flash, Aftercare, Not found: a red sun and
+   an ink silhouette drawn for the site) and for the artists' scrolls (their name, piece and seal).
+   Parts are sized from the scroll's own width (cqi) so small and large scrolls match. */
+.wall-scroll { container-type: inline-size; padding-top: 30px; transform-origin: 50% 0; }
+.wall-scroll::before {
+  top: 0; left: -5px; width: auto; right: -5px; height: 30px; transform: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 30' preserveAspectRatio='none'%3E%3Cpath d='M0 30 50 1l50 29' fill='none' stroke='%23C9B79A' stroke-width='1.3' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+.wall-scroll::after { display: none; }
+.wall-scroll-rod { position: relative; z-index: 1; height: clamp(4px, 3.4cqi, 9px); margin: 0 -5px; border-radius: 1px;
+  background: linear-gradient(to bottom, #4A433B, #1E1A16 60%, #0F0D0B);
+  box-shadow: inset 0 1px 0 rgba(245, 228, 210, .3), 0 2px 3px rgba(0, 0, 0, .6); }
+.wall-scroll-canvas { position: relative; background: radial-gradient(ellipse 90% 70% at 50% 38%, #F5EAD6, #E5D3B4 80%); }
+.wall-scroll-canvas > svg { display: block; width: 100%; aspect-ratio: 1 / 2; }
+/* An artist's paper is the same beige canvas as the title scrolls */
+.wall-scroll .scroll-paper { border: 0; background: transparent; }
+
+/* Page titles with a scroll: title left, scroll right; on phones a small scroll the text wraps around */
+.page-intro.has-scroll { display: grid; grid-template-columns: minmax(0, 1fr) 170px; grid-template-areas: "text scroll"; align-items: center; column-gap: clamp(32px, 6vw, 96px); padding-top: 24px; padding-bottom: 40px; }
+.page-intro.has-scroll > .page-intro-text { grid-area: text; }
+.page-intro.has-scroll > .intro-scroll { grid-area: scroll; width: 100%; margin: 0; }
+@media (min-width: 1024px) {
+  .page-intro.has-scroll h1 { font-size: clamp(56px, 5.4vw, 76px); }
+}
+@media (max-width: 1023px) {
+  .page-intro.has-scroll { grid-template-columns: minmax(0, 1fr) 140px; }
+}
+@media (max-width: 599px) {
+  .page-intro.has-scroll { display: flow-root; padding-top: 12px; padding-bottom: 24px; }
+  .page-intro.has-scroll > .intro-scroll { float: right; width: 84px; margin: 0 4px 8px 18px; padding-top: 18px; }
+  .page-intro.has-scroll > .page-intro-text { padding-top: 14px; }
+  .intro-scroll::before { height: 18px; left: -3px; right: -3px; }
+  .intro-scroll .wall-scroll-rod { margin: 0 -3px; }
+}
+
+/* The page-title scroll is hung up as the page opens: one small sway that settles. An artist's
+   scroll sways a little when its link is pointed at or focused, and the name underlines (the
+   underline is the cue that stays with reduced motion, where nothing sways). */
+.intro-scroll { animation: wall-scroll-settle 1.8s cubic-bezier(.3, .6, .4, 1) both; }
+.artist-card:hover .wall-scroll, .artist-card:focus-visible .wall-scroll,
+.artist-scroll-link:hover .wall-scroll, .artist-scroll-link:focus-visible .wall-scroll { animation: wall-scroll-nudge 1.3s cubic-bezier(.3, .6, .4, 1); }
+.artist-card:hover h3, .artist-card:focus-visible h3,
+.artist-scroll-link:hover h2, .artist-scroll-link:focus-visible h2 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
+@keyframes wall-scroll-settle {
+  0% { transform: rotate(1.6deg); }
+  30% { transform: rotate(-0.9deg); }
+  58% { transform: rotate(0.4deg); }
+  80% { transform: rotate(-0.15deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes wall-scroll-nudge {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(0.9deg); }
+  48% { transform: rotate(-0.5deg); }
+  74% { transform: rotate(0.2deg); }
+  100% { transform: rotate(0deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wall-scroll, .artist-card:hover .wall-scroll, .artist-card:focus-visible .wall-scroll,
+  .artist-scroll-link:hover .wall-scroll, .artist-scroll-link:focus-visible .wall-scroll { animation: none; }
+}
+
+/* Flash page title: a coil tattoo machine beside the title instead of a scroll, drawn in cream line
+   like the flash drawings, its needle finishing a short red wave line. The line draws itself once as
+   the page opens (it is simply there with reduced motion). Same layout as the title scrolls. */
+.page-intro.has-art { display: grid; grid-template-columns: minmax(0, 1fr) 250px; grid-template-areas: "text art"; align-items: center; column-gap: clamp(32px, 6vw, 96px); padding-top: 20px; padding-bottom: 36px; }
+.page-intro.has-art > .page-intro-text { grid-area: text; }
+.page-intro.has-art > .intro-art { grid-area: art; }
+@media (min-width: 1024px) {
+  .page-intro.has-art h1 { font-size: clamp(56px, 5.4vw, 76px); }
+}
+@media (max-width: 1023px) {
+  .page-intro.has-art { grid-template-columns: minmax(0, 1fr) 190px; }
+}
+@media (max-width: 599px) {
+  .page-intro.has-art { display: flow-root; padding-top: 8px; padding-bottom: 20px; }
+  .page-intro.has-art > .intro-art { float: right; width: 116px; margin: 0 -6px 4px 12px; }
+  .page-intro.has-art > .page-intro-text { padding-top: 18px; }
+}
+.tattoo-machine { display: block; width: 100%; height: auto; overflow: visible; }
+.tattoo-machine-body * { fill: var(--sumi); stroke: var(--paper-on-sumi); stroke-width: var(--line-outline); vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.tattoo-machine-body line { stroke-width: var(--line-detail); }
+.tattoo-machine-body .is-cord, .tattoo-machine-body .is-spring { fill: none; }
+.tattoo-machine-body .is-cord, .tattoo-machine-body .is-spring, .tattoo-machine-body .is-needle { stroke-width: var(--line-inner); }
+.tattoo-machine-body .is-cord { stroke: var(--paper-on-sumi-soft); }
+.tattoo-machine-body .is-needle { stroke: var(--brass); }
+.tattoo-machine-body .is-wire { stroke: #B8955A; }
+.tattoo-machine-line { fill: none; stroke: var(--red); stroke-width: 3; stroke-linecap: round;
+  stroke-dasharray: 1; stroke-dashoffset: 0; animation: tattoo-line 1.5s .35s cubic-bezier(.45, 0, .2, 1) both; }
+.tattoo-machine-drop { fill: var(--red); animation: tattoo-drop .3s 1.7s ease-out both; }
+@keyframes tattoo-line { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes tattoo-drop { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .tattoo-machine-line, .tattoo-machine-drop { animation: none; }
+}
+
+/* The flash sheet is pinned to the wall with two brass pins at its top corners, instead of the drawn
+   grey tape (its roughened edges read as grey blobs). */
+.sheet-pin { position: absolute; top: 15px; width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 34% 32%, #EAD3A8 0 16%, var(--brass) 48%, #5A4528 100%); box-shadow: 0 0 0 1px rgba(32, 30, 26, .45), 2px 3px 3px rgba(32, 30, 26, .3); }
+.sheet-pin.is-left { left: 15px; }
+.sheet-pin.is-right { right: 15px; }
+@media (max-width: 767px) {
+  .sheet-pin { top: 11px; width: 11px; height: 11px; }
+  .sheet-pin.is-left { left: 11px; }
+  .sheet-pin.is-right { right: 11px; }
+}
+
+/* One line style for every drawing the site makes (the scroll pictures, the tattoo machine): three
+   weights, as flash is drawn: the outline, inner lines, fine detail. They stay the same on screen
+   whatever size a drawing is shown at, and step down together on phones, where drawings are small. */
+:root { --line-outline: 2px; --line-inner: 1.3px; --line-detail: .8px; }
+@media (max-width: 599px) {
+  .page-intro, .phone-menu-art { --line-outline: 1.4px; --line-inner: 1px; --line-detail: .6px; }
+}
+.scroll-art .art-sun { fill: var(--red); }
+.scroll-art .art-ink *, .scroll-art .art-ground * { fill: #F1E5CF; stroke: var(--ink); vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.scroll-art .art-ground * { fill: none; }
+.scroll-art .art-window { fill: #FBF2E8; }
+.scroll-art .line-outline { stroke-width: var(--line-outline); }
+.scroll-art .line-inner { stroke-width: var(--line-inner); }
+.scroll-art .line-detail { stroke-width: var(--line-detail); fill: none; }
+
+/* Between sections: a plain hairline in place of the roughened brush stroke */
+.section-rule { display: block; width: min(88%, 1080px); height: 0; margin: 0 auto; border: 0; border-top: 1px solid var(--rule-night); }
+
+/* The phone menu shows the tattoo machine drawing instead of a strip of painting */
+.phone-menu-art { display: flex; justify-content: center; align-items: flex-end; height: auto; padding: 28px 0 8px; }
+.phone-menu-art .tattoo-machine { width: 150px; }
+
+/* Footer, slimmed: no painting and no giant name. A hairline, then the seal with the name at its
+   normal size, where to find the studio (with a Maps link), how to reach it and the booking links.
+   The faint wave pattern at the bottom stays. */
+.site-footer { border-top: 1px solid var(--rule-night); }
+.site-footer .footer-inner { padding-top: 64px; }
+.footer-brand { display: flex; align-items: flex-start; gap: 16px; }
+.site-footer .footer-seal { width: 56px; height: 56px; margin: 0; flex: none; }
+.site-footer .footer-grid .footer-studio-name { margin: 2px 0 6px; font: 600 26px/1.15 'Zen Old Mincho', serif; color: var(--paper-on-sumi); }
+.site-footer .footer-grid .footer-hours { margin-top: 12px; }
+@media (max-width: 767px) {
+  .site-footer .footer-inner { padding-top: 40px; }
+}
+
+/* Aftercare timeline: each day is a small ring on the line, drawn in the inner line weight, instead of
+   the roughened paint dab */
+.timeline-marker { background: radial-gradient(circle at center, var(--sumi) 0 5.5px, var(--paper-on-sumi) 5.5px 7px, transparent 7.5px); }
+
+/* The header stays at the top while the page scrolls, so Book and the menu are always in reach
+   (most visitors book from a phone). Jump links stop below it, things that stay in view sit under it,
+   and the phone menu opens over the page under the header wherever the visitor has scrolled to. */
+.site-header { position: sticky; top: 0; }
+html { scroll-padding-top: 80px; }
+.account-section-nav { top: 88px; }
+@media (max-width: 1023px) {
+  .phone-menu.is-open { position: fixed; top: 64px; left: 0; right: 0; bottom: 0; z-index: 99; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+}
+@media (max-width: 767px) {
+  .phone-menu.is-open { top: 60px; }
+}
+
+/* Privacy policy and booking terms: plain reading pages, one column at a comfortable line length */
+.legal-page { max-width: calc(68ch + 10vw); }
+.legal-page h2 { margin: 40px 0 12px; font-size: clamp(24px, 2.4vw, 30px); }
+.legal-page h2:first-child { margin-top: 0; }
+.legal-page p, .legal-page li { max-width: 68ch; color: var(--paper-on-sumi); line-height: 1.65; }
+.legal-page ul { margin: 0; padding-left: 1.2em; display: grid; gap: 10px; list-style: disc; }
+.legal-page li::marker { color: var(--paper-on-sumi-soft); }
+.legal-page a, .legal-link-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.legal-page .legal-note { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule-night); color: var(--paper-on-sumi-soft); }
+.legal-link-note { margin: 12px 0 0; font-size: 15px; color: var(--ink-soft); }
+/* The footer's last row: the concept-studio line, then the policy and credits links */
+.site-footer .copyright-links { display: flex; flex-wrap: wrap; gap: 4px 24px; }

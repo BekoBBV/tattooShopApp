@@ -153,7 +153,29 @@ export function VerticalName({ name }: { name: string }) {
   )
 }
 
-/** A hanging scroll: wooden rods, the vertical name, the signature piece and the seal. */
+/**
+ * A scroll hanging on the wall: a thin rod at the top and bottom and a string from the top rod's
+ * ends to the nail. `children` is what is on the canvas: a picture, or an artist's paper.
+ */
+export function WallScroll({
+  className = "",
+  hidden,
+  children,
+}: {
+  className?: string
+  hidden?: boolean
+  children: ReactNode
+}) {
+  return (
+    <div className={`hanging-scroll wall-scroll ${className}`.trim()} aria-hidden={hidden || undefined}>
+      <div className="wall-scroll-rod"></div>
+      <div className="wall-scroll-canvas">{children}</div>
+      <div className="wall-scroll-rod"></div>
+    </div>
+  )
+}
+
+/** An artist's hanging scroll: the vertical name, the signature piece and the seal on the paper. */
 export function HangingScroll({
   name,
   signature,
@@ -163,13 +185,8 @@ export function HangingScroll({
   signature: Image | null
   variant?: "mini" | "normal" | "wide"
 }) {
-  const className = `hanging-scroll${variant === "mini" ? " is-mini" : variant === "wide" ? " is-wide" : ""}`
   return (
-    <div className={className} aria-hidden={variant === "mini" ? true : undefined}>
-      <div className="scroll-rod">
-        <i></i>
-        <i></i>
-      </div>
+    <WallScroll className={variant === "mini" ? "is-mini" : variant === "wide" ? "is-wide" : ""} hidden={variant === "mini"}>
       <div className="scroll-paper">
         <VerticalName name={name} />
         <div className="scroll-signature">
@@ -177,11 +194,7 @@ export function HangingScroll({
         </div>
         {variant !== "mini" && <ArtistSeal name={name} px={48} />}
       </div>
-      <div className="scroll-rod">
-        <i></i>
-        <i></i>
-      </div>
-    </div>
+    </WallScroll>
   )
 }
 

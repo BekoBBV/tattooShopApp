@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useParams } from "react-router"
-import { BrushStroke, PageIntro } from "../components/Layout"
+import { PageIntro, SectionRule } from "../components/Layout"
 import { Lightbox } from "../components/Lightbox"
 import { BookFlashButton, FlashCard, HangingScroll, ReviewCard, Stars } from "../components/Studio"
 import { euros } from "../lib/format"
@@ -17,7 +17,10 @@ export default function ArtistPage() {
   const works = useLoad<Work[]>(artist.data ? `/artists/${artist.data.slug}/works` : null)
   const reviews = useLoad<ReviewSummary>(artist.data ? `/reviews?artistId=${artist.data.id}` : null)
   const [viewing, setViewing] = useState<number | null>(null)
-  usePageTitle(artist.data?.name ?? "Artist")
+  usePageTitle(
+    artist.data?.name ?? "Artist",
+    artist.data ? `${artist.data.name}, Japanese tattooing at Blade & Brush in Sofia: ${artist.data.style.toLowerCase()}. See their flash and their work, and book online.` : undefined,
+  )
 
   if (artist.status === 404 && !artist.data) {
     return <NotFound />
@@ -26,7 +29,7 @@ export default function ArtistPage() {
   if (!a) {
     return (
       <main>
-        <PageIntro title={artist.error ? "This page didn't load" : " "} view="sky">
+        <PageIntro title={artist.error ? "This page didn't load" : " "}>
           {artist.error && (
             <p>
               {artist.error}{" "}
@@ -47,7 +50,7 @@ export default function ArtistPage() {
 
   return (
     <main>
-      <PageIntro title={a.name} view="sky">
+      <PageIntro title={a.name}>
         <p>{a.style}</p>
       </PageIntro>
       <section className="wrap page-body artist-hero" aria-label={`About ${a.name}`}>
@@ -67,7 +70,7 @@ export default function ArtistPage() {
           </div>
         </div>
       </section>
-      <BrushStroke />
+      <SectionRule />
       <section className="wrap artist-section" aria-labelledby="artist-flash-title">
         <h2 id="artist-flash-title">Flash by {a.name}</h2>
         {sheet.data && sheet.data.length === 0 ? (
@@ -77,8 +80,8 @@ export default function ArtistPage() {
           </p>
         ) : (
           <div className="flash-sheet">
-            <span className="washi-tape is-left" aria-hidden="true"></span>
-            <span className="washi-tape is-right" aria-hidden="true"></span>
+            <span className="sheet-pin is-left" aria-hidden="true"></span>
+            <span className="sheet-pin is-right" aria-hidden="true"></span>
             <div className="artist-flash-row">
               {(sheet.data ?? []).map((flash) => (
                 <FlashCard key={flash.id} flash={flash} action={<BookFlashButton flash={flash} />} />
@@ -87,7 +90,7 @@ export default function ArtistPage() {
           </div>
         )}
       </section>
-      <BrushStroke flipped />
+      <SectionRule />
       <section className="wrap artist-section" aria-labelledby="artist-work-title">
         <div className="section-heading">
           <div>
@@ -111,7 +114,7 @@ export default function ArtistPage() {
           )
         )}
       </section>
-      <BrushStroke />
+      <SectionRule />
       <section className="wrap artist-section reviews-section" aria-labelledby="artist-reviews-title">
         <div className="rating-block">
           <strong>{reviews.data && reviews.data.count > 0 ? reviews.data.averageRating.toFixed(1) : "New"}</strong>

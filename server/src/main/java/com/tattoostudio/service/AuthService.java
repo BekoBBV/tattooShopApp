@@ -37,6 +37,7 @@ import com.tattoostudio.model.Role;
 import com.tattoostudio.model.User;
 import com.tattoostudio.repository.ArtistRepository;
 import com.tattoostudio.repository.UserRepository;
+import com.tattoostudio.util.LogSafe;
 import com.tattoostudio.util.PhoneNumbers;
 import com.tattoostudio.util.SlidingWindowCounter;
 
@@ -108,14 +109,14 @@ public class AuthService {
         if (user == null || !passwordOk) {
             failedByUsername.record(key);
             failedByVisitor.record(visitor);
-            log.info("Failed login for '{}' from {}", key, visitor);
+            log.info("Failed login for '{}' from {}", LogSafe.mask(key), visitor);
             throw new ApiException(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_LOGIN,
                     key.contains("@") ? "Wrong email or password." : "Wrong username or password.");
         }
         // Only this field is written, so a password reset at the same moment is never undone
         mongo.updateFirst(Query.query(Criteria.where("_id").is(user.getId())),
                 new Update().set("lastLoginAt", clock.instant()).inc("loginCount", 1), User.class);
-        log.info("Login: {} ({})", user.getUsername(), user.getRole());
+        log.info("Login: {} ({})", LogSafe.account(user), user.getRole());
         return issueToken(user);
     }
 
@@ -158,7 +159,7 @@ public class AuthService {
             throw emailTaken(); // registered at the same moment
         }
         signupsByVisitor.record(visitor);
-        log.info("New customer account {}", email);
+        log.info("New {}", LogSafe.account(user));
         return issueToken(user);
     }
 
@@ -169,7 +170,7 @@ public class AuthService {
         mongo.updateFirst(Query.query(Criteria.where("_id").is(user.getId())), new Update()
                 .set("passwordHash", passwordEncoder.encode(newPassword))
                 .set("passwordChangedAt", now), User.class);
-        log.info("Customer {} changed their password", user.getUsername());
+        log.info("Customer {} changed their password", user.getId());
         return issueToken(user);
     }
 
@@ -221,7 +222,7 @@ public class AuthService {
         mongo.updateMulti(Query.query(Criteria.where("userId").is(user.getId())), new Update().unset("userId"),
                 Booking.class);
         users.delete(user);
-        log.info("Customer {} deleted their account", user.getUsername());
+        log.info("Customer {} deleted their account", user.getId());
     }
 
     private User customerWithPassword(String userId, String password) {
@@ -244,7 +245,7 @@ public class AuthService {
         }
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             failedByUsername.record(key);
-            log.info("Wrong current password for '{}'", key);
+            log.info("Wrong current password for {}", LogSafe.account(user));
             // 400, not 401: a typo must not sign the customer out
             throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Your current password is not right.");
         }

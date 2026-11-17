@@ -14,7 +14,7 @@ import { checkLookup, useFieldChecks } from "../lib/validation"
 
 /** Find a booking with its code and phone number: see it, pay a waiting deposit, cancel it or review it. */
 export default function Manage() {
-  usePageTitle("Manage a booking")
+  usePageTitle("Manage a booking", "See, cancel or pay the deposit for your Blade & Brush booking with your booking code and phone number.")
   const [params] = useSearchParams()
   const draft = getDraft()
   const linkCode = params.get("code") ?? ""

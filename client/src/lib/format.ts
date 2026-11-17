@@ -6,6 +6,10 @@ export const studio = {
   closed: "Closed on Monday",
   phone: "+359 88 000 0000",
   tel: "tel:+359880000000",
+  /** A Google Maps search for the address: needs no account or key, and follows the address when it changes */
+  get map() {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${this.name}, ${this.address}`)}`
+  },
 }
 
 /** 180 → "€180", 28.5 → "€28.50" */

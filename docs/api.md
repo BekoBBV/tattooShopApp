@@ -6,6 +6,8 @@ The REST API the React app talks to (the data behind it: [database.md](database.
 - Prices are numbers in EUR.
 - Date ranges (`from` / `to`) include both days.
 - Everything runs on a 30-minute grid: bookings start (and sessions end) on the hour or half hour.
+- The API is closed by default (`SecurityConfig`): the public endpoints below are listed by method and path, and any other `/api` address is refused (401 for guests, 403 when signed in), even for the admin, so a new endpoint is never public by accident.
+- Outside the API, the server also writes `/robots.txt` (the staff, admin, account and booking pages stay out of search results) and `/sitemap.xml` (the public pages and each artist's page), both with the address the site was reached at.
 
 ## How booking works
 

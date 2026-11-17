@@ -1,7 +1,10 @@
 import { ChevronRight, Menu, Phone, X } from "lucide-react"
-import { useEffect, useId, useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from "react-router"
 import { studio } from "../lib/format"
+import { ScrollArt, type ScrollArtKind } from "./ScrollArt"
+import { WallScroll } from "./Studio"
+import { TattooMachine } from "./TattooMachine"
 
 const NAV = [
   { to: "/flash", label: "Flash", menuLabel: "Flash designs" },
@@ -75,7 +78,7 @@ export function SiteHeader() {
           </Link>
         ))}
         <div className="phone-menu-art" aria-hidden="true">
-          <img src="/images/footer-night.jpg" alt="" />
+          <TattooMachine />
         </div>
         <div className="phone-menu-footer">
           <p>
@@ -96,21 +99,25 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="site-footer">
-      <div className="footer-river" aria-hidden="true"></div>
       <div className="footer-inner">
-        <p className="footer-name" aria-hidden="true">
-          Blade &amp; Brush
-        </p>
         <div className="footer-grid">
           <div className="footer-brand">
             <img className="footer-seal" src="/images/seal-bb.png" alt="" />
-            <p>Traditional Japanese tattooing in Sofia.</p>
+            <div>
+              <p className="footer-studio-name">Blade &amp; Brush</p>
+              <p>Traditional Japanese tattooing in Sofia.</p>
+            </div>
           </div>
           <div>
             <h2>Visit</h2>
             <p>
               {studio.address}
               <br />
+              <a href={studio.map} target="_blank" rel="noopener noreferrer">
+                Open in Maps
+              </a>
+            </p>
+            <p className="footer-hours">
               {studio.hours}
               <br />
               {studio.closed}
@@ -133,7 +140,11 @@ export function SiteFooter() {
         </div>
         <p className="copyright">
           <span>Blade &amp; Brush is a concept studio.</span>
-          <Link to="/credits">Image credits</Link>
+          <span className="copyright-links">
+            <Link to="/privacy">Privacy policy</Link>
+            <Link to="/terms">Booking terms</Link>
+            <Link to="/credits">Image credits</Link>
+          </span>
         </p>
       </div>
     </footer>
@@ -194,63 +205,48 @@ export function RootLayout() {
   )
 }
 
-/** The paintings a page banner can show, each with the part of it that fits the strip. */
-const BANNERS = {
-  night: { src: "/images/footer-night.jpg", position: undefined },
-  maples: { src: "/images/hero-landscape.jpg", position: "50% 90%" },
-  sky: { src: "/images/banner-sky.jpg", position: "50% 50%" },
-} as const
-
 /**
- * The strip of a painting and the page title under it (every page but the home page). Pages where
- * the visitor has something to do (booking, managing, signing in) are `compact`: no painting and
- * a smaller title, so the task starts near the top of the screen.
+ * The page title (every page but the home page). Pages that show a place rather than a task can
+ * hang a scroll beside the title with one of the site's sun-and-silhouette pictures (`painting`), or show
+ * a drawing of their own there (`art`: the tattoo machine on the Flash page). Pages where the
+ * visitor has something to do (booking, managing, signing in) are `compact`: a smaller title, so
+ * the task starts near the top of the screen. Pages whose content is already hanging scrolls (the
+ * artists) take neither.
  */
 export function PageIntro({
   title,
   children,
-  stroke = true,
   compact = false,
-  view = "night",
+  painting,
+  art,
 }: {
   title: string
   children?: ReactNode
-  stroke?: boolean
   compact?: boolean
-  view?: keyof typeof BANNERS
+  painting?: ScrollArtKind
+  art?: ReactNode
 }) {
+  const scroll = !compact && painting ? painting : null
+  const aside = !compact && !scroll && art ? art : null
   return (
-    <>
-      {!compact && (
-        <div className="page-banner" aria-hidden="true">
-          <img src={BANNERS[view].src} alt="" style={{ objectPosition: BANNERS[view].position }} />
-        </div>
+    <div className={`page-intro${compact ? " is-compact" : ""}${scroll ? " has-scroll" : ""}${aside ? " has-art" : ""}`}>
+      {scroll && (
+        <WallScroll className="intro-scroll" hidden>
+          <ScrollArt kind={scroll} />
+        </WallScroll>
       )}
-      <div className={`page-intro${compact ? " is-compact" : ""}`}>
+      {aside && <div className="intro-art">{aside}</div>}
+      <div className="page-intro-text">
         <h1>{title}</h1>
         {children}
       </div>
-      {stroke && !compact && <BrushStroke />}
-    </>
+    </div>
   )
 }
 
-/** A rough horizontal ink stroke between sections. */
-export function BrushStroke({ flipped = false }: { flipped?: boolean }) {
-  const id = `ink-${useId().replace(/:/g, "")}`
-  return (
-    <svg className={`brush-stroke${flipped ? " is-flipped" : ""}`} viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
-      <filter id={id} x="-2%" y="-60%" width="104%" height="220%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.035 0.6" numOctaves={3} seed={7}></feTurbulence>
-        <feDisplacementMap in="SourceGraphic" scale={9}></feDisplacementMap>
-      </filter>
-      <path
-        filter={`url(#${id})`}
-        fill="var(--paper)"
-        d="M8 22c90-9 210-13 360-12 190 1 330 6 500 3 120-2 220-6 324-4-90 7-200 13-330 16-170 4-330 1-520-1C210 22 100 26 8 22z"
-      ></path>
-    </svg>
-  )
+/** A plain hairline between sections. */
+export function SectionRule() {
+  return <hr className="section-rule" aria-hidden="true" />
 }
 
 /** The katana that divides the home page sections. */

@@ -692,6 +692,10 @@ export function BookDetails() {
                 and kept if I cancel later.
               </ConsentCheck>
             )}
+            <p className="legal-link-note">
+              Your details are used only for your booking: see the <Link to="/privacy">privacy policy</Link> and the{" "}
+              <Link to="/terms">booking terms</Link>.
+            </p>
           </section>
           <div className="form-actions">
             <button className="button button-primary" type="submit" disabled={sending}>

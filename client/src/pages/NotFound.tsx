@@ -6,7 +6,7 @@ export default function NotFound() {
   usePageTitle("Page not found")
   return (
     <main>
-      <PageIntro title="This page doesn't exist" stroke={false}>
+      <PageIntro title="This page doesn't exist" painting="pagoda">
         <p>The link may be old or mistyped.</p>
       </PageIntro>
       <section className="wrap not-found-shell">

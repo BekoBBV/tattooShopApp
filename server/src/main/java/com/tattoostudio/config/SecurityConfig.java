@@ -28,13 +28,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * Who may call what:
- * - public site API (services, availability, bookings, reviews, …): anyone
+ * Who may call what. The API is closed by default: an /api endpoint that is not listed here is refused,
+ * so a new one is never public by accident.
+ * - the public site API (artists, flash, availability, reviews, bookings by code, messages, the demo
+ *   payment page, health): anyone, by the method and path listed in PUBLIC_GET and PUBLIC_POST
  * - /api/auth/login, /api/auth/register: anyone; /api/auth/me: anyone signed in
  * - /api/account/**: customers with an account (role USER)
- * - /api/services|artists|reviews/search: anyone signed in (guests get the plain lists)
+ * - /api/artists|reviews/search: anyone signed in (guests get the plain lists)
  * - /api/staff/**: artists and the admin (Bearer token)
  * - /api/admin/**: the admin only
+ * - everything outside /api (the website's pages and files, robots.txt, the sitemap, /uploads): anyone
  */
 @Configuration
 public class SecurityConfig {
@@ -44,6 +47,15 @@ public class SecurityConfig {
             + "base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 
     static final String PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=()";
+
+    /** The public API that anyone may read. */
+    static final String[] PUBLIC_GET = { "/api/artists", "/api/artists/*", "/api/artists/*/works", "/api/flash",
+            "/api/flash/*", "/api/availability", "/api/reviews", "/api/payments/demo/*", "/api/health" };
+
+    /** The public API that anyone may send to: booking, finding, cancelling and paying by booking code, writing. */
+    static final String[] PUBLIC_POST = { "/api/auth/login", "/api/auth/register", "/api/bookings/flash",
+            "/api/bookings/consultation", "/api/bookings/lookup", "/api/bookings/cancel", "/api/bookings/deposit",
+            "/api/bookings/review", "/api/messages", "/api/payments/demo/*" };
 
     /** Where BookingController reads the customer's token itself (see bearerTokenResolver). */
     static final java.util.Set<String> BOOKING_ENDPOINTS = java.util.Set.of("/api/bookings/flash", "/api/bookings/consultation");
@@ -62,14 +74,18 @@ public class SecurityConfig {
                         .referrerPolicy(r -> r.policy(ReferrerPolicy.SAME_ORIGIN))
                         .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy", PERMISSIONS_POLICY)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers("/api/auth/**").authenticated()
+                        .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/staff/**").hasAnyRole("ARTIST", "ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/account/**").hasRole("USER")
                         // Searching, sorting and paging the public lists is for signed-in visitors (any role)
                         .requestMatchers(HttpMethod.GET, "/api/artists/search", "/api/reviews/search")
                         .authenticated()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET).permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_POST).permitAll()
+                        // Browsers ask before cross-origin calls (CORS answers them); the rest of the API is closed
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                        .requestMatchers("/api/**").denyAll()
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(rs -> rs
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(roleConverter()))

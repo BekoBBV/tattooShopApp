@@ -7,11 +7,11 @@ import { usePageTitle } from "../lib/usePageTitle"
 
 /** The artists as hanging scrolls, each linking to their page. */
 export default function Artists() {
-  usePageTitle("Artists")
+  usePageTitle("Artists", "Meet the three artists at Blade & Brush in Sofia: bold traditional colour, black and grey, and fine line Japanese tattooing.")
   const artists = useLoad<Artist[]>("/artists")
   return (
     <main>
-      <PageIntro title="Our artists" view="sky">
+      <PageIntro title="Our artists">
         <p>Three artists, one shared foundation, and three very different hands.</p>
       </PageIntro>
       <section className="wrap page-body" aria-label="Artists">
