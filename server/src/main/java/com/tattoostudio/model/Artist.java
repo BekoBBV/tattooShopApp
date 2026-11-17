@@ -25,6 +25,8 @@ public class Artist {
     /** One short line, e.g. "Bold traditional colour". */
     private String style;
     private String bio;
+    /** Instagram handle without the @, e.g. "kai.bladeandbrush"; null when the artist has none. */
+    private String instagram;
     /** Custom work per hour, e.g. 90 (EUR). */
     private BigDecimal hourlyRate;
     /** A full day on a large piece, e.g. 550 (EUR). */
@@ -62,6 +64,8 @@ public class Artist {
     public void setStyle(String style) { this.style = style; }
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
+    public String getInstagram() { return instagram; }
+    public void setInstagram(String instagram) { this.instagram = instagram; }
     public BigDecimal getHourlyRate() { return hourlyRate; }
     public void setHourlyRate(BigDecimal hourlyRate) { this.hourlyRate = hourlyRate; }
     public BigDecimal getDayRate() { return dayRate; }

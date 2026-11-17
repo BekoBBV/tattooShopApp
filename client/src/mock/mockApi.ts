@@ -29,6 +29,7 @@ import type {
   Work,
   WorkingHours,
 } from "../lib/types"
+import { INSTAGRAM_HANDLE } from "../lib/format"
 
 type Stored = Booking & { phone: string; email: string; userId: string | null; slots: number[]; reviewed: boolean; notes?: string | null; createdAt?: string }
 
@@ -72,6 +73,7 @@ const artists: Artist[] = [
     slug: "kai",
     style: "Bold traditional colour",
     bio: "Kai tattoos in the bold traditional Japanese style: heavy outlines, solid colour, and backgrounds of wind and water. Most of Kai's work is large: sleeves, backs and chest pieces.",
+    instagram: "kai.bladeandbrush",
     hourlyRate: 90,
     dayRate: 550,
     signaturePiece: null,
@@ -86,6 +88,7 @@ const artists: Artist[] = [
     slug: "dario",
     style: "Black and grey, ink wash",
     bio: "Dario works only in black and grey: masks, demons and warriors, shaded like ink on paper.",
+    instagram: "dario.bladeandbrush",
     hourlyRate: 80,
     dayRate: 500,
     signaturePiece: null,
@@ -100,6 +103,7 @@ const artists: Artist[] = [
     slug: "nika",
     style: "Fine line",
     bio: "Nika works with the finest needles: flowers, cranes and waves in thin black lines with small touches of red. A good choice for a first tattoo.",
+    instagram: "nika.bladeandbrush",
     hourlyRate: 70,
     dayRate: 420,
     signaturePiece: null,
@@ -919,6 +923,7 @@ const adminArtistDto = (a: Artist): AdminArtist => ({
   slug: a.slug,
   style: a.style,
   bio: a.bio,
+  instagram: a.instagram,
   hourlyRate: a.hourlyRate,
   dayRate: a.dayRate,
   signaturePiece: a.signaturePiece,
@@ -1085,15 +1090,18 @@ async function staffRoutes(method: string, path: string, q: URLSearchParams, hea
     const d = await json()
     const name = String(d.name ?? "").trim()
     if (!name) return fail(400, "VALIDATION_FAILED", "Please check the highlighted fields", { name: "must not be blank" })
+    const instagram = String(d.instagram ?? "").trim()
+    if (instagram && !INSTAGRAM_HANDLE.test(instagram))
+      return fail(400, "VALIDATION_FAILED", "Please check the highlighted fields", { instagram: "use an Instagram handle: letters, numbers, dots and underscores, up to 30" })
     const existing = method === "PUT" ? artists.find((a) => a.id === m![1]) : null
     if (method === "PUT" && !existing) return fail(404, "ARTIST_NOT_FOUND", "Artist not found")
     const slug = String(d.slug || existing?.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `artist-${Date.now()}`)
     if (artists.some((a) => a.slug === slug && a !== existing)) return fail(409, "CONFLICT", "Another artist already has this page address.")
     if (existing && d.active === false && artistExtra[existing.id].active && upcomingFor(existing.id))
       return fail(409, "CONFLICT", `${existing.name} has upcoming bookings. Cancel or move them first.`)
-    const a: Artist = existing ?? { id: slug, name, slug, style: "", bio: "", hourlyRate: null, dayRate: null, signaturePiece: null, weeklyHours: [], exceptions: [], averageRating: null, reviewCount: 0 }
+    const a: Artist = existing ?? { id: slug, name, slug, style: "", bio: "", instagram: null, hourlyRate: null, dayRate: null, signaturePiece: null, weeklyHours: [], exceptions: [], averageRating: null, reviewCount: 0 }
     Object.assign(a, {
-      name, slug, style: String(d.style ?? ""), bio: String(d.bio ?? ""),
+      name, slug, style: String(d.style ?? ""), bio: String(d.bio ?? ""), instagram: instagram ? instagram.replace(/^@/, "").toLowerCase() : null,
       hourlyRate: d.hourlyRate == null ? null : Number(d.hourlyRate), dayRate: d.dayRate == null ? null : Number(d.dayRate),
       weeklyHours: (d.weeklyHours as WorkingHours[]) ?? a.weeklyHours, exceptions: (d.exceptions as DayException[]) ?? a.exceptions,
     })

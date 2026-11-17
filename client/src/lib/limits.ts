@@ -37,6 +37,7 @@ export const limits = {
   "artist.slug": 40,
   "artist.style": 60,
   "artist.bio": 600,
+  "artist.instagram": 31,
   "artistLogin.username": 30,
   "user.username": 30,
   "user.name": 60,

@@ -269,3 +269,24 @@ describe("Privacy policy and booking terms", () => {
     expect(screen.getByText(/at least 48 hours before your appointment and the deposit is refunded/)).toBeTruthy()
   }, 30_000)
 })
+
+describe("Instagram and studio details", () => {
+  it("links each artist's Instagram and the studio's, and answers the house rules", async () => {
+    open("/artists/kai")
+    await pageTitle("Kai")
+    const link = screen.getByRole("link", { name: "@kai.bladeandbrush on Instagram" })
+    expect(link.getAttribute("href")).toBe("https://www.instagram.com/kai.bladeandbrush/")
+    expect(link.getAttribute("target")).toBe("_blank")
+    const footer = screen.getByRole("contentinfo")
+    expect(within(footer).getByRole("link", { name: "@bladeandbrush.sofia on Instagram" })).toBeTruthy()
+    expect(within(footer).getByText(/14 Mastilo Street/)).toBeTruthy()
+    cleanup()
+
+    open("/")
+    await screen.findByRole("heading", { name: "Before your first tattoo" })
+    for (const question of ["What should I bring?", "Do you take walk-ins?", "How do I pay?"]) {
+      expect(screen.getByText(question)).toBeTruthy()
+    }
+    expect(screen.getByText(/the rest you pay in the studio by card or in cash/)).toBeTruthy()
+  }, 30_000)
+})

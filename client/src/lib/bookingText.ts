@@ -1,4 +1,4 @@
-import { euros, hours, longDate, size } from "./format"
+import { euros, hours, longDate, size, studio } from "./format"
 import type { Booking, Flash } from "./types"
 
 /** The words the site uses for a booking's state, and how its stamp looks. */
@@ -69,7 +69,7 @@ export function calendarFile(b: Booking) {
     `DTEND:${stamp(b.endsAt)}`,
     `SUMMARY:${titleOf(b).replace(/[,;]/g, " ")} at Blade & Brush`,
     `DESCRIPTION:Booking code ${b.code}. Bring an ID.`,
-    "LOCATION:Blade & Brush\\, Central Sofia",
+    `LOCATION:${`${studio.name}, ${studio.address}`.replace(/[,;]/g, (c) => `\\${c}`)}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ]

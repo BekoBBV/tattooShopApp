@@ -68,6 +68,7 @@ class LimitsSyncTest {
         field("artist.slug", ArtistRequest.class, "slug");
         field("artist.style", ArtistRequest.class, "style");
         field("artist.bio", ArtistRequest.class, "bio");
+        field("artist.instagram", ArtistRequest.class, "instagram");
         field("artistLogin.username", ArtistLoginRequest.class, "username");
         field("user.username", AdminUserRequest.class, "username");
         field("user.name", AdminUserRequest.class, "name");

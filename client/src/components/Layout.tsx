@@ -1,7 +1,7 @@
 import { ChevronRight, Menu, Phone, X } from "lucide-react"
 import { useEffect, useState, type ReactNode } from "react"
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from "react-router"
-import { studio } from "../lib/format"
+import { instagramUrl, studio } from "../lib/format"
 import { ScrollArt, type ScrollArtKind } from "./ScrollArt"
 import { WallScroll } from "./Studio"
 import { TattooMachine } from "./TattooMachine"
@@ -129,6 +129,14 @@ export function SiteFooter() {
               <a href={studio.tel}>{studio.phone}</a>
               <br />
               <Link to="/#contact">Write to the studio</Link>
+              {studio.instagram && (
+                <>
+                  <br />
+                  <a href={instagramUrl(studio.instagram)} target="_blank" rel="noopener noreferrer">
+                    @{studio.instagram} on Instagram
+                  </a>
+                </>
+              )}
             </p>
           </div>
           <nav aria-label="Footer navigation">

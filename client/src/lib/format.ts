@@ -1,16 +1,29 @@
-/** The studio's details, as on every page (the footer, the phone menu, the booking steps). */
+/**
+ * The studio's details, as on every page (the footer, the phone menu, the booking steps). Blade & Brush
+ * is a concept studio: the street, the phone number and the Instagram handle are made up.
+ */
 export const studio = {
   name: "Blade & Brush",
-  address: "Central Sofia, Bulgaria",
+  address: "14 Mastilo Street, 1000 Sofia",
   hours: "Tuesday to Sunday, 11:00 to 23:00",
   closed: "Closed on Monday",
-  phone: "+359 88 000 0000",
-  tel: "tel:+359880000000",
+  phone: "+359 88 123 4567",
+  tel: "tel:+359881234567",
+  /** Instagram handle, without the @ */
+  instagram: "bladeandbrush.sofia",
+  /** How the rest of the price is paid in the studio */
+  payment: "by card or in cash",
   /** A Google Maps search for the address: needs no account or key, and follows the address when it changes */
   get map() {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${this.name}, ${this.address}`)}`
   },
 }
+
+/** An Instagram handle as the server checks it: up to 30 letters, numbers, dots and underscores, with or without the @. */
+export const INSTAGRAM_HANDLE = /^@?(?![.])(?!.*[.][.])[A-Za-z0-9._]{1,30}(?<![.])$/
+
+/** "kai.bladeandbrush" → its Instagram page */
+export const instagramUrl = (handle: string) => `https://www.instagram.com/${encodeURIComponent(handle)}/`
 
 /** 180 → "€180", 28.5 → "€28.50" */
 export function euros(amount: number | null | undefined) {

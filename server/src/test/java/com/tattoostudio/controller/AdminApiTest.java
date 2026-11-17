@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -454,6 +455,24 @@ class AdminApiTest extends ApiTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
         send(post("/api/admin/artists"), artistJson("Test Artist", ",\"breakMinutes\":20"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void instagramHandlesAreCheckedTidiedAndShownPublicly() throws Exception {
+        mvc.perform(get("/api/artists/kai")).andExpect(jsonPath("$.instagram").value("kai.bladeandbrush"));
+        for (String bad : List.of("has space", ".starts.with.dot", "two..dots", "ends.with.dot.", "a".repeat(31), "no#signs")) {
+            send(post("/api/admin/artists"), artistJson("Test Artist", ",\"instagram\":\"%s\"".formatted(bad)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors.instagram").exists());
+        }
+        String id = JsonPath.read(send(post("/api/admin/artists"), artistJson("Test Artist", ",\"instagram\":\"@Test_Artist.Ink\""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.instagram").value("test_artist.ink"))
+                .andReturn().getResponse().getContentAsString(), "$.id");
+        mvc.perform(get("/api/artists/test-artist")).andExpect(jsonPath("$.instagram").value("test_artist.ink"));
+        send(put("/api/admin/artists/" + id), artistJson("Test Artist", ",\"instagram\":\"\""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.instagram").doesNotExist());
     }
 
     @Test

@@ -219,6 +219,8 @@ Deliberate differences from the drawings:
 
 ## Still open
 
+- **Made-up studio details:** Blade & Brush is a concept studio, so its address (14 Mastilo Street, Sofia), phone (+359 88 123 4567) and Instagram handles are invented: the studio's `bladeandbrush.sofia` in `client/src/lib/format.ts`, and the artists' `<name>.bladeandbrush`, given to the sample artists once per database by `DataSeeder`. The handles end in an unusual suffix so they are unlikely to be anyone's real account, but they are not checked against Instagram: replace them with real ones, or empty them, before the site is public. The hours (11:00 to 23:00) are the artists' bookable hours and are unchanged.
+
 - The image credits list the paintings' author, source and licence as "To be confirmed" until the final images are chosen.
 - **Flash drawings:** all twelve sample designs have a drawing that ships with the website (`client/public/images/flash`, given to the designs once per database by `DataSeeder`; a picture an artist uploads is never replaced). To change one, replace the file under the same name (nothing else needed), or give it a new name in `DataSeeder.FLASH_PICTURES` and raise `FLASH_PICTURES_MARKER` by one: designs still showing a bundled drawing then get the new one, and pictures the artists uploaded stay. An artist can also upload a new picture in the staff area.
 - **Picture rights:** the sample drawings and the paintings are listed as "To be confirmed" on the credits page. Before the site is public, each needs a known source and a licence that allows this use, or a replacement.

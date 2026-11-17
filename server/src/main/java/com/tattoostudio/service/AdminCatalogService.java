@@ -208,6 +208,7 @@ public class AdminCatalogService {
         }
         artist.setStyle(trimToEmpty(r.style()));
         artist.setBio(trimToEmpty(r.bio()));
+        artist.setInstagram(instagramHandle(r.instagram()));
         artist.setHourlyRate(r.hourlyRate());
         artist.setDayRate(r.dayRate());
         if (r.breakMinutes() != null) {
@@ -218,6 +219,15 @@ public class AdminCatalogService {
         if (r.active() != null) {
             artist.setActive(r.active());
         }
+    }
+
+    /** "@Kai.Ink " → "kai.ink" (Instagram handles ignore case); blank → null. */
+    static String instagramHandle(String handle) {
+        if (handle == null || handle.isBlank()) {
+            return null;
+        }
+        String plain = handle.trim();
+        return (plain.startsWith("@") ? plain.substring(1) : plain).toLowerCase(Locale.ROOT);
     }
 
     /** "Kai" → "kai", "Ana María" → "ana-maria". */

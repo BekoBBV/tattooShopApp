@@ -81,6 +81,16 @@ public class DataSeeder implements ApplicationRunner {
             java.util.Map.entry("Peony", "flash/peony.jpg"),
             java.util.Map.entry("Cherry blossom branch", "flash/cherry-blossom-branch.jpg"),
             java.util.Map.entry("Small wave", "flash/small-wave.jpg"));
+    /**
+     * The sample artists' Instagram handles. Blade & Brush is a concept studio, so these are made up
+     * (each ends in ".bladeandbrush" so it is unlikely to be someone's real account).
+     */
+    static final java.util.Map<String, String> INSTAGRAM = java.util.Map.of(
+            "Kai", "kai.bladeandbrush",
+            "Dario", "dario.bladeandbrush",
+            "Nika", "nika.bladeandbrush");
+    /** Set once the sample artists were given their handles, so a handle the admin removes stays removed. */
+    static final String INSTAGRAM_MARKER = "artist-instagram-1";
     /** Start the server with --reset-demo to go back to the original demo data (e.g. before presenting). */
     static final String RESET_OPTION = "reset-demo";
     static final String DEMO_CUSTOMER_EMAIL = "mira@example.com";
@@ -124,6 +134,7 @@ public class DataSeeder implements ApplicationRunner {
         }
         seedDemoDataOnce();
         giveFlashTheirPicturesOnce();
+        giveArtistsTheirInstagramOnce();
         ensureAdmin();
         ensureDemoLogins();
     }
@@ -160,7 +171,7 @@ public class DataSeeder implements ApplicationRunner {
                 Artist.class)) {
             mongo.remove(new Query(), type);
         }
-        mongo.remove(Query.query(Criteria.where("_id").in(DEMO_DATA_MARKER, FLASH_PICTURES_MARKER)), META_COLLECTION);
+        mongo.remove(Query.query(Criteria.where("_id").in(DEMO_DATA_MARKER, FLASH_PICTURES_MARKER, INSTAGRAM_MARKER)), META_COLLECTION);
         images.deleteAll(pictures.stream().filter(p -> p != null).toList());
     }
 
@@ -185,6 +196,24 @@ public class DataSeeder implements ApplicationRunner {
         }
         mongo.save(new Document("_id", FLASH_PICTURES_MARKER).append("at", new Date()), META_COLLECTION);
         log.info("Gave {} sample flash designs their drawings", given);
+    }
+
+    /**
+     * Gives the sample artists their Instagram handles, once per database: a fresh one right after the
+     * demo data, an existing one on its next start. An artist who already has a handle keeps it.
+     */
+    private void giveArtistsTheirInstagramOnce() {
+        if (mongo.exists(Query.query(Criteria.where("_id").is(INSTAGRAM_MARKER)), META_COLLECTION)) {
+            return;
+        }
+        long given = 0;
+        for (var entry : INSTAGRAM.entrySet()) {
+            given += mongo.updateFirst(Query.query(new Criteria().andOperator(Criteria.where("name").is(entry.getKey()),
+                    Criteria.where("instagram").is(null))),
+                    new Update().set("instagram", entry.getValue()), Artist.class).getModifiedCount();
+        }
+        mongo.save(new Document("_id", INSTAGRAM_MARKER).append("at", new Date()), META_COLLECTION);
+        log.info("Gave {} sample artists their Instagram handles", given);
     }
 
     /** The studio's hours: Tuesday to Sunday, 11:00 to 23:00; closed on Monday. */

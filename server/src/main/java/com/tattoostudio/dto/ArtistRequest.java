@@ -17,6 +17,7 @@ import jakarta.validation.constraints.Size;
  * An artist as the admin creates or edits them. Hours and exceptions are checked like an artist's
  * own schedule. {@code slug} (the page address) is made from the name when a new artist has none, and
  * stays as it is when left empty on an edit;
+ * {@code instagram} is a handle with or without the @ (stored without it, in lower case; empty removes it);
  * {@code breakMinutes} and {@code active} are optional (null keeps the current value).
  */
 public record ArtistRequest(
@@ -25,10 +26,18 @@ public record ArtistRequest(
         @Schema(example = "kai", nullable = true) String slug,
         @Size(max = 60) @Schema(example = "Bold traditional colour") String style,
         @Size(max = 600) String bio,
+        @Size(max = 31) @Pattern(regexp = INSTAGRAM, message = "use an Instagram handle: letters, numbers, dots and underscores, up to 30")
+        @Schema(example = "kai.bladeandbrush", nullable = true) String instagram,
         @DecimalMin("0") @DecimalMax("1000") @Schema(example = "90", nullable = true) BigDecimal hourlyRate,
         @DecimalMin("0") @DecimalMax("5000") @Schema(example = "550", nullable = true) BigDecimal dayRate,
         @Schema(example = "30", nullable = true) Integer breakMinutes,
         @Size(max = 7) List<WorkingHours> weeklyHours,
         @Size(max = 100) List<DayException> exceptions,
         Boolean active) {
+
+    /**
+     * An Instagram handle, with or without the @: up to 30 letters, numbers, dots and underscores, not
+     * starting or ending with a dot and without two dots in a row. Empty means none.
+     */
+    public static final String INSTAGRAM = "(@?(?![.])(?!.*[.][.])[A-Za-z0-9._]{1,30}(?<![.]))?";
 }

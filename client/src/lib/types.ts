@@ -22,6 +22,8 @@ export type Artist = {
   slug: string
   style: string
   bio: string
+  /** Instagram handle without the @; null when the artist has none */
+  instagram: string | null
   hourlyRate: number | null
   dayRate: number | null
   signaturePiece: Image | null
@@ -282,6 +284,8 @@ export type AdminArtist = {
   slug: string
   style: string
   bio: string
+  /** Instagram handle without the @; null when the artist has none */
+  instagram: string | null
   hourlyRate: number | null
   dayRate: number | null
   signaturePiece: Image | null

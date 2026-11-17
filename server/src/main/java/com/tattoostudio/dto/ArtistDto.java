@@ -11,12 +11,12 @@ import com.tattoostudio.model.Image;
 import com.tattoostudio.model.WorkingHours;
 
 /**
- * An artist as shown to customers: profile, rates, signature piece, regular weekly hours (Monday
+ * An artist as shown to customers: profile, Instagram handle (without the @, null if none), rates, signature piece, regular weekly hours (Monday
  * first), upcoming days off or special hours, and their rating from approved reviews
  * ({@code averageRating} is null without reviews).
  */
-public record ArtistDto(String id, String name, String slug, String style, String bio, BigDecimal hourlyRate,
-        BigDecimal dayRate, Image signaturePiece, List<WorkingHours> weeklyHours, List<DayException> exceptions,
+public record ArtistDto(String id, String name, String slug, String style, String bio, String instagram,
+        BigDecimal hourlyRate, BigDecimal dayRate, Image signaturePiece, List<WorkingHours> weeklyHours, List<DayException> exceptions,
         Double averageRating, int reviewCount) {
 
     public static ArtistDto from(Artist a, LocalDate today, Double averageRating, int reviewCount) {
@@ -27,7 +27,7 @@ public record ArtistDto(String id, String name, String slug, String style, Strin
                 .filter(e -> !e.date().isBefore(today))
                 .sorted(Comparator.comparing(DayException::date))
                 .toList();
-        return new ArtistDto(a.getId(), a.getName(), a.getSlug(), a.getStyle(), a.getBio(), a.getHourlyRate(),
+        return new ArtistDto(a.getId(), a.getName(), a.getSlug(), a.getStyle(), a.getBio(), a.getInstagram(), a.getHourlyRate(),
                 a.getDayRate(), a.getSignaturePiece(), hours, upcoming, averageRating, reviewCount);
     }
 }

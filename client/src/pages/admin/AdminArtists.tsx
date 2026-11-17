@@ -3,7 +3,7 @@ import { useMemo, useState, type FormEvent } from "react"
 import { ConfirmDialog, StaffHeader, StaffState, StaffSwitch, StatusLine } from "../../components/StaffUi"
 import { ArtistSeal, Dialog, FormError, SelectField, TextAreaField, TextField } from "../../components/Studio"
 import { ApiError } from "../../lib/api"
-import { euros } from "../../lib/format"
+import { euros, INSTAGRAM_HANDLE } from "../../lib/format"
 import { limits } from "../../lib/limits"
 import { json, multipart, PICTURE_TYPES, pictureProblem, staffApi, usePreviewUrls, useStaff } from "../../lib/staff"
 import { hoursSummary } from "../../lib/staffText"
@@ -79,6 +79,10 @@ export default function AdminArtists() {
                 <dd>{a.hourlyRate || a.dayRate ? [a.hourlyRate && `${euros(a.hourlyRate)} per hour`, a.dayRate && `${euros(a.dayRate)} full day`].filter(Boolean).join(", ") : "Not set"}</dd>
               </div>
               <div>
+                <dt>Instagram</dt>
+                <dd>{a.instagram ? `@${a.instagram}` : "None"}</dd>
+              </div>
+              <div>
                 <dt>Staff login</dt>
                 <dd>{a.username ?? "None yet"}</dd>
               </div>
@@ -146,6 +150,7 @@ function ArtistDialog({ artist, onClose, onSaved }: { artist: AdminArtist | null
     slug: artist?.slug ?? "",
     style: artist?.style ?? "",
     bio: artist?.bio ?? "",
+    instagram: artist?.instagram ? `@${artist.instagram}` : "",
     hourlyRate: artist?.hourlyRate != null ? String(artist.hourlyRate) : "",
     dayRate: artist?.dayRate != null ? String(artist.dayRate) : "",
     breakMinutes: String(artist?.breakMinutes ?? 30),
@@ -165,6 +170,8 @@ function ArtistDialog({ artist, onClose, onSaved }: { artist: AdminArtist | null
     const found: Record<string, string> = {}
     if (!values.name.trim()) found.name = "Enter the artist's name."
     if (values.slug && !/^[a-z0-9-]+$/.test(values.slug)) found.slug = "Use lower-case letters, digits and dashes."
+    if (values.instagram.trim() && !INSTAGRAM_HANDLE.test(values.instagram.trim()))
+      found.instagram = "Use an Instagram handle: letters, numbers, dots and underscores, up to 30."
     for (const field of ["hourlyRate", "dayRate"] as const) {
       if (values[field] !== "" && !(Number(values[field]) >= 0)) found[field] = "Enter an amount in euros, or leave it empty."
     }
@@ -175,6 +182,7 @@ function ArtistDialog({ artist, onClose, onSaved }: { artist: AdminArtist | null
       slug: values.slug.trim() || null,
       style: values.style.trim(),
       bio: values.bio.trim(),
+      instagram: values.instagram.trim(),
       hourlyRate: values.hourlyRate === "" ? null : Number(values.hourlyRate),
       dayRate: values.dayRate === "" ? null : Number(values.dayRate),
       breakMinutes: Number(values.breakMinutes),
@@ -210,6 +218,8 @@ function ArtistDialog({ artist, onClose, onSaved }: { artist: AdminArtist | null
         helper={`/artists/${values.slug || "made-from-the-name"}`} />
       <TextField label="Style" name="style" placeholder="Bold traditional colour" maxLength={limits["artist.style"]} value={values.style} onChange={set("style")} />
       <TextAreaField label="About" name="bio" rows={4} maxLength={limits["artist.bio"]} value={values.bio} onChange={set("bio")} />
+      <TextField label="Instagram" name="instagram" placeholder="@handle" autoComplete="off" maxLength={limits["artist.instagram"]} value={values.instagram}
+        onChange={set("instagram")} error={errors.instagram} helper="Shown on the artist's page. Leave empty for none." />
       <div className="panel-row dialog-row">
         <TextField label="Per hour €" name="hourlyRate" type="number" inputMode="decimal" min={0} value={values.hourlyRate} onChange={set("hourlyRate")} error={errors.hourlyRate} />
         <TextField label="Full day €" name="dayRate" type="number" inputMode="decimal" min={0} value={values.dayRate} onChange={set("dayRate")} error={errors.dayRate} />

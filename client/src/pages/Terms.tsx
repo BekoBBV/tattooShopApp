@@ -28,7 +28,7 @@ export default function Terms() {
         <ul>
           <li>The price on the flash sheet is the price of the tattoo. Each design is tattooed only once.</li>
           <li>
-            When you book, you pay a €30 deposit online. It is taken off the price, and the rest you pay in the studio. Pay within
+            When you book, you pay a €30 deposit online. It is taken off the price, and the rest you pay in the studio {studio.payment}. Pay within
             15 minutes of booking, or the design and the time go back on the sheet.
           </li>
         </ul>

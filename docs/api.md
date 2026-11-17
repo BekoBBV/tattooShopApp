@@ -103,6 +103,7 @@ type WorkingHours = { day: "MONDAY" | … | "SUNDAY"; start: string; end: string
 type DayException = { date: string; closed: boolean; start: string | null; end: string | null; note: string | null }
 type Artist = {
   id: string; name: string; slug: string; style: string; bio: string
+  instagram: string | null          // handle without the @, null if none
   hourlyRate: number | null; dayRate: number | null
   signaturePiece: Image | null      // the picture on the hanging scroll
   weeklyHours: WorkingHours[]       // Monday first
@@ -244,7 +245,7 @@ type AdminFlash = Omit<Flash, "deposit" | "bookable"> & {
 | `POST /admin/flash` | multipart: part `flash` (as for staff, plus `artistId`) + optional `image` | `201 AdminFlash` |
 | `PUT /admin/flash/{id}`, `PATCH /admin/flash/{id}`, `PUT /admin/flash/{id}/image`, `DELETE /admin/flash/{id}` | as for `/staff/flash` | |
 | `GET /admin/artists` | *page* + `active`, `day`; `q` = name, style, bio; sort `order`, `name` | `Page<AdminArtist>` (including inactive ones) |
-| `POST /admin/artists` | `{ name, slug \| null (made from the name; kept on edits when left out), style, bio, hourlyRate, dayRate, breakMinutes, weeklyHours, exceptions }` | `201 AdminArtist`; `409` if the page address is taken |
+| `POST /admin/artists` | `{ name, slug \| null (made from the name; kept on edits when left out), style, bio, instagram (a handle, with or without the @: up to 30 letters, numbers, dots and underscores; stored without the @ in lower case; empty removes it), hourlyRate, dayRate, breakMinutes, weeklyHours, exceptions }` | `201 AdminArtist`; `409` if the page address is taken |
 | `GET /admin/artists/options` | | `ArtistOption[]`: every artist (inactive too) by name, `{ id, name, active, username }`, for pickers |
 | `PUT /admin/artists/{id}` | same, plus optional `active` (`false` deactivates them, blocks their login and takes their designs off the sheet; `409` while they have upcoming bookings) | `AdminArtist` |
 | `PATCH /admin/artists/{id}` | `{ active }`: (de)activates them, hours stay as they are | `AdminArtist` |

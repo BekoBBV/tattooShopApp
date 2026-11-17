@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router"
 import { PageIntro, SectionRule } from "../components/Layout"
 import { Lightbox } from "../components/Lightbox"
 import { BookFlashButton, FlashCard, HangingScroll, ReviewCard, Stars } from "../components/Studio"
-import { euros } from "../lib/format"
+import { euros, instagramUrl } from "../lib/format"
 import type { Artist, Flash, ReviewSummary, Work } from "../lib/types"
 import { useLoad } from "../lib/useLoad"
 import { usePageTitle } from "../lib/usePageTitle"
@@ -58,6 +58,14 @@ export default function ArtistPage() {
         <div>
           <h2>About</h2>
           <p>{a.bio}</p>
+          {a.instagram && (
+            <p className="artist-instagram">
+              More of {a.name}'s work:{" "}
+              <a href={instagramUrl(a.instagram)} target="_blank" rel="noopener noreferrer">
+                @{a.instagram} on Instagram
+              </a>
+            </p>
+          )}
           <h2>Rates</h2>
           <p>Flash at fixed prices.{rates.length > 0 && ` Custom work ${rates.join(", ")}.`}</p>
           <div className="artist-actions">
