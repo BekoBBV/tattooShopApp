@@ -11,9 +11,10 @@ set "URL=http://localhost:8080"
 rem Already running? Then just open it.
 netstat -ano | findstr /r /c:":8080 .*LISTENING" >nul
 if not errorlevel 1 (
-    echo Tattoo Studio is already running.
+    echo Tattoo Studio is already running, with the site as it was built when it started.
+    echo To see newer changes, close the server's window and run start.bat again.
     if not defined FS_NO_BROWSER start "" "%URL%"
-    timeout /t 3 >nul
+    timeout /t 8 >nul
     exit /b 0
 )
 
