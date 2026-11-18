@@ -17,7 +17,7 @@ export default function Aftercare() {
   usePageTitle("Aftercare", "How to look after a new tattoo, day by day: washing, cream, what to avoid while it heals, and sun care after the first month.")
   return (
     <main>
-      <PageIntro title="Aftercare" painting="lantern">
+      <PageIntro title="Aftercare" painting="seal">
         <p>A simple healing routine protects the line, colour and skin beneath your tattoo.</p>
       </PageIntro>
       <section className="wrap page-body aftercare-layout" aria-label="Healing stages">

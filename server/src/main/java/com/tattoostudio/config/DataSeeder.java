@@ -91,6 +91,16 @@ public class DataSeeder implements ApplicationRunner {
             "Nika", "nika.bladeandbrush");
     /** Set once the sample artists were given their handles, so a handle the admin removes stays removed. */
     static final String INSTAGRAM_MARKER = "artist-instagram-1";
+    /**
+     * The sample artists' signature pieces that ship with the website (client/public/images/artists),
+     * by artist name. Adding or changing one means raising the number in SIGNATURE_PICTURES_MARKER.
+     */
+    public static final java.util.Map<String, String> SIGNATURE_PICTURES = java.util.Map.of(
+            "Kai", "artists/kai-dragon-colour.webp",
+            "Dario", "artists/dario-mask.webp",
+            "Nika", "artists/nika-crane.webp");
+    /** Set once the sample artists were given their signature pieces (raise the number for new ones). */
+    static final String SIGNATURE_PICTURES_MARKER = "signature-pictures-3";
     /** Start the server with --reset-demo to go back to the original demo data (e.g. before presenting). */
     static final String RESET_OPTION = "reset-demo";
     static final String DEMO_CUSTOMER_EMAIL = "mira@example.com";
@@ -135,6 +145,7 @@ public class DataSeeder implements ApplicationRunner {
         seedDemoDataOnce();
         giveFlashTheirPicturesOnce();
         giveArtistsTheirInstagramOnce();
+        giveArtistsTheirSignaturePiecesOnce();
         ensureAdmin();
         ensureDemoLogins();
     }
@@ -171,7 +182,8 @@ public class DataSeeder implements ApplicationRunner {
                 Artist.class)) {
             mongo.remove(new Query(), type);
         }
-        mongo.remove(Query.query(Criteria.where("_id").in(DEMO_DATA_MARKER, FLASH_PICTURES_MARKER, INSTAGRAM_MARKER)), META_COLLECTION);
+        mongo.remove(Query.query(Criteria.where("_id").in(DEMO_DATA_MARKER, FLASH_PICTURES_MARKER, INSTAGRAM_MARKER,
+                SIGNATURE_PICTURES_MARKER)), META_COLLECTION);
         images.deleteAll(pictures.stream().filter(p -> p != null).toList());
     }
 
@@ -214,6 +226,28 @@ public class DataSeeder implements ApplicationRunner {
         }
         mongo.save(new Document("_id", INSTAGRAM_MARKER).append("at", new Date()), META_COLLECTION);
         log.info("Gave {} sample artists their Instagram handles", given);
+    }
+
+    /**
+     * Gives the sample artists their signature pieces, once per database (per
+     * SIGNATURE_PICTURES_MARKER), like giveFlashTheirPicturesOnce: an artist without a piece, or still
+     * showing an older bundled one, gets the current one; a piece an artist uploaded is never replaced.
+     */
+    private void giveArtistsTheirSignaturePiecesOnce() {
+        if (mongo.exists(Query.query(Criteria.where("_id").is(SIGNATURE_PICTURES_MARKER)), META_COLLECTION)) {
+            return;
+        }
+        long given = 0;
+        for (var entry : SIGNATURE_PICTURES.entrySet()) {
+            Image piece = Image.bundled(entry.getValue());
+            Criteria noUpload = new Criteria().orOperator(Criteria.where("signaturePiece").is(null),
+                    Criteria.where("signaturePiece.id").regex("^" + java.util.regex.Pattern.quote(Image.BUNDLED)));
+            given += mongo.updateFirst(Query.query(new Criteria().andOperator(Criteria.where("name").is(entry.getKey()),
+                    noUpload, Criteria.where("signaturePiece.id").ne(piece.id()))),
+                    new Update().set("signaturePiece", piece), Artist.class).getModifiedCount();
+        }
+        mongo.save(new Document("_id", SIGNATURE_PICTURES_MARKER).append("at", new Date()), META_COLLECTION);
+        log.info("Gave {} sample artists their signature pieces", given);
     }
 
     /** The studio's hours: Tuesday to Sunday, 11:00 to 23:00; closed on Monday. */

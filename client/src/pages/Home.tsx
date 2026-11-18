@@ -3,7 +3,8 @@ import { useState, type FormEvent } from "react"
 import { Link } from "react-router"
 import { KatanaDivider, SectionRule } from "../components/Layout"
 import { KatanaCut } from "../components/KatanaCut"
-import { ArtistSeal, FlashCard, FormError, HangingScroll, ReviewCard, Stars } from "../components/Studio"
+import { ScrollArt } from "../components/ScrollArt"
+import { ArtistSeal, FlashCard, FormError, HangingScroll, ReviewCard, Stars, WallScroll } from "../components/Studio"
 import { api, ApiError } from "../lib/api"
 import { instagramUrl, studio } from "../lib/format"
 import { limits } from "../lib/limits"
@@ -150,15 +151,12 @@ export default function Home() {
         </>
       )}
 
-      <section className="custom-cta" aria-labelledby="custom-title">
-        <div className="noren">
-          <div className="noren-rod" aria-hidden="true"></div>
-          <div className="noren-cloth">
-            <h2 id="custom-title">Want something of your own?</h2>
-            <img className="noren-crest" src="/images/seal-bb.png" alt="" />
-          </div>
-        </div>
+      <section className="custom-cta has-scroll" aria-labelledby="custom-title">
+        <WallScroll className="cta-scroll" hidden>
+          <ScrollArt kind="seal" />
+        </WallScroll>
         <div className="custom-cta-body">
+          <h2 id="custom-title">Want something of your own?</h2>
           <p>
             Bigger and custom pieces start with a free 30-minute consultation. Bring your idea and reference photos, and
             your artist will plan the piece and the sessions with you.
@@ -176,12 +174,17 @@ export default function Home() {
           </div>
           <p>The questions people ask most. Anything else, write to the studio.</p>
         </div>
-        <div className="faq-list">
-          {FAQ.map((item) => (
-            <details key={item.q}>
-              <summary>{item.q}</summary>
-              <p>{item.a}</p>
-            </details>
+        {/* Two fixed halves, so opening an answer never moves a question to the other column */}
+        <div className="faq-list is-split">
+          {[FAQ.slice(0, Math.ceil(FAQ.length / 2)), FAQ.slice(Math.ceil(FAQ.length / 2))].map((half, i) => (
+            <div className="faq-column" key={i}>
+              {half.map((item) => (
+                <details key={item.q}>
+                  <summary>{item.q}</summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
+            </div>
           ))}
         </div>
       </section>

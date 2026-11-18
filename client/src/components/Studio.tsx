@@ -21,11 +21,14 @@ export function Art({
   image,
   alt = "",
   fit = "contain",
+  focus,
   waiting,
 }: {
   image: Image | null | undefined
   alt?: string
   fit?: "contain" | "cover"
+  /** With "cover": the point of the picture to keep in view, as a CSS object-position */
+  focus?: string
   waiting?: string
 }) {
   if (!image) {
@@ -35,7 +38,7 @@ export function Art({
       </div>
     )
   }
-  return <img className={`art-image is-${fit}`} src={image.thumbUrl} alt={alt} loading="lazy" />
+  return <img className={`art-image is-${fit}`} src={image.thumbUrl} alt={alt} loading="lazy" style={focus ? { objectPosition: focus } : undefined} />
 }
 
 /** One design on a flash sheet: picture, name, the artist's seal, size, time and price. */
@@ -175,6 +178,15 @@ export function WallScroll({
   )
 }
 
+/**
+ * Where to centre the signature pieces that ship with the site (by id) when the tall scroll crops
+ * them: the creature's head. A piece an artist uploads is centred.
+ */
+const PIECE_FOCUS: Record<string, string> = {
+  "bundled:artists/kai-dragon-colour.webp": "55% 28%",
+  "bundled:artists/nika-crane.webp": "95% 30%",
+}
+
 /** An artist's hanging scroll: the vertical name, the signature piece and the seal on the paper. */
 export function HangingScroll({
   name,
@@ -190,7 +202,7 @@ export function HangingScroll({
       <div className="scroll-paper">
         <VerticalName name={name} />
         <div className="scroll-signature">
-          <Art image={signature} alt={`A signature piece by ${name}`} />
+          <Art image={signature} alt={`A signature piece by ${name}`} fit="cover" focus={signature ? PIECE_FOCUS[signature.id] : undefined} />
         </div>
         {variant !== "mini" && <ArtistSeal name={name} px={48} />}
       </div>

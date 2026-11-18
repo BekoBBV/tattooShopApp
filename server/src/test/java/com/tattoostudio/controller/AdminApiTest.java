@@ -505,7 +505,7 @@ class AdminApiTest extends ApiTest {
                         .header("Authorization", admin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.url").exists());
-        assertThat(artist("Kai").getSignaturePiece()).isNotNull();
+        assertThat(artist("Kai").getSignaturePiece().isBundled()).isFalse(); // the upload replaced the shipped dragon
         call(delete("/api/admin/artists/" + kai + "/signature")).andExpect(status().isNoContent());
         assertThat(artist("Kai").getSignaturePiece()).isNull();
     }

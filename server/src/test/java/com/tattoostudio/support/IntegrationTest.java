@@ -81,13 +81,16 @@ public abstract class IntegrationTest {
                 flash.save(f);
             }
         });
-        // Undo day exceptions, breaks and deactivations a previous test made
+        // Undo day exceptions, breaks, deactivations and signature pieces a previous test changed
         artists.findAll().forEach(a -> {
-            if (!a.getExceptions().isEmpty() || a.getBreakMinutes() != 30 || !a.isActive() || a.getSignaturePiece() != null) {
+            String shipped = com.tattoostudio.config.DataSeeder.SIGNATURE_PICTURES.get(a.getName());
+            com.tattoostudio.model.Image piece = shipped == null ? null : com.tattoostudio.model.Image.bundled(shipped);
+            if (!a.getExceptions().isEmpty() || a.getBreakMinutes() != 30 || !a.isActive()
+                    || !java.util.Objects.equals(a.getSignaturePiece(), piece)) {
                 a.getExceptions().clear();
                 a.setBreakMinutes(30);
                 a.setActive(true);
-                a.setSignaturePiece(null);
+                a.setSignaturePiece(piece);
                 artists.save(a);
             }
         });

@@ -51,6 +51,10 @@ class DataSeederTest extends IntegrationTest {
         assertThat(flash("Tiger head").getImage().url()).isEqualTo("/images/flash/tiger-head.jpg");
         assertThat(DataSeeder.FLASH_PICTURES).hasSize(12);
         assertThat(flash.findAll()).allMatch(f -> f.getImage() != null);
+        // Each artist's scroll shows a picture that ships with the website
+        assertThat(artist("Kai").getSignaturePiece()).isEqualTo(Image.bundled("artists/kai-dragon-colour.webp"));
+        assertThat(artist("Dario").getSignaturePiece()).isEqualTo(Image.bundled("artists/dario-mask.webp"));
+        assertThat(artist("Nika").getSignaturePiece()).isEqualTo(Image.bundled("artists/nika-crane.webp"));
     }
 
     @Test

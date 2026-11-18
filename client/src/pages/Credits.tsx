@@ -5,7 +5,8 @@ import { usePageTitle } from "../lib/usePageTitle"
 const CREDITS = [
   { file: "Night torii painting (home page)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
   { file: "Sample flash drawings (all twelve designs on the flash sheet)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
-  { file: "Tattoo machine drawing (Flash page, phone menu) and scroll pictures: stone lantern, pagoda (Aftercare and Not found)", author: "Blade & Brush", source: "Drawn for the site", licence: "All rights reserved" },
+  { file: "Artists' scroll pictures: dragon (Kai), demon mask (Dario), crane (Nika)", author: "Blade & Brush", source: "AI-generated for the site", licence: "Under the image tool's terms" },
+  { file: "Tattoo machine drawing (phone menu) and scroll pictures: the studio scroll (home, Flash, Aftercare), pagoda (Not found)", author: "Blade & Brush", source: "Drawn for the site", licence: "All rights reserved" },
   { file: "BB seal (logo)", author: "Blade & Brush", source: "Studio artwork", licence: "All rights reserved" },
   { file: "Flash designs and portfolio photos the artists upload", author: "The studio's artists", source: "Their own work", licence: "All rights reserved" },
 ]

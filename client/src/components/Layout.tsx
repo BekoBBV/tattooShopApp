@@ -216,7 +216,7 @@ export function RootLayout() {
 /**
  * The page title (every page but the home page). Pages that show a place rather than a task can
  * hang a scroll beside the title with one of the site's sun-and-silhouette pictures (`painting`), or show
- * a drawing of their own there (`art`: the tattoo machine on the Flash page). Pages where the
+ * a drawing of their own there (`art`). Pages where the
  * visitor has something to do (booking, managing, signing in) are `compact`: a smaller title, so
  * the task starts near the top of the screen. Pages whose content is already hanging scrolls (the
  * artists) take neither.

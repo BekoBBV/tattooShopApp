@@ -66,6 +66,9 @@ const hoursWeek = (["TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "S
   end: "23:00",
 }))
 
+/** A signature piece that ships with the website (client/public/images/artists) */
+const piece = (file: string): Image => ({ id: `bundled:artists/${file}`, url: `/images/artists/${file}`, thumbUrl: `/images/artists/${file}` })
+
 const artists: Artist[] = [
   {
     id: "kai",
@@ -76,7 +79,7 @@ const artists: Artist[] = [
     instagram: "kai.bladeandbrush",
     hourlyRate: 90,
     dayRate: 550,
-    signaturePiece: null,
+    signaturePiece: piece("kai-dragon-colour.webp"),
     weeklyHours: hoursWeek,
     exceptions: [],
     averageRating: null,
@@ -91,7 +94,7 @@ const artists: Artist[] = [
     instagram: "dario.bladeandbrush",
     hourlyRate: 80,
     dayRate: 500,
-    signaturePiece: null,
+    signaturePiece: piece("dario-mask.webp"),
     weeklyHours: hoursWeek,
     exceptions: [],
     averageRating: null,
@@ -106,7 +109,7 @@ const artists: Artist[] = [
     instagram: "nika.bladeandbrush",
     hourlyRate: 70,
     dayRate: 420,
-    signaturePiece: null,
+    signaturePiece: piece("nika-crane.webp"),
     weeklyHours: hoursWeek,
     exceptions: [],
     averageRating: null,
