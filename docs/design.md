@@ -78,7 +78,7 @@ Red has one job: actions, the seal and stamps. Never use red for text on black (
 | Image | Where it's used | Original |
 |---|---|---|
 | Night torii painting | home hero (the only painting left on the site) | `assets-incoming/footer-night.png` |
-| Scroll pictures (the studio scroll: the BB seal and the name; stone lantern, pagoda) | the studio scroll on Home, Flash and Aftercare; the pagoda on Not found (the lantern is kept but unused) | drawn in code, `client/src/components/ScrollArt.tsx` |
+| Scroll pictures (the studio scroll: the BB seal and the name; stone lantern, pagoda) | the studio scroll on Aftercare; the pagoda on Not found (the lantern is kept but unused) | drawn in code, `client/src/components/ScrollArt.tsx` |
 | Tattoo machine | beside the Flash page title, and in the phone menu | drawn in code, `client/src/components/TattooMachine.tsx` |
 | BB seal | logo, favicon source, confirmation stamp | `assets-incoming/seal-bb.png` |
 
@@ -223,7 +223,7 @@ Deliberate differences from the drawings:
 - **A shorter home page:** hero, flash (one row of four), Recent work (four photos on phones), the artists as compact cards (signature piece, name, style, first line of the bio), reviews, a slim custom-piece banner and the contact form. Desktop went from 7,280 to about 5,500px, phones from 8,850 to about 6,600px. *Before your first tattoo* moved to the Aftercare page (the home page links to it).
 - **The Artists page** gives each artist the first line of their bio, their hourly rate, *Book with …* (their flash) and *See …'s work*. An artist's own page drops the seal from its big scroll (the title already names them), and on phones shows About, the rates and the Book buttons before the scroll.
 - **Lighter images:** every picture that ships with the site has a small WebP copy for lists and cards (`images/artists/small`, `images/work/small`, `images/flash/small`; given out as the image's `thumbUrl` by `DataSeeder`), and the hero is a WebP (212 KB instead of 359 KB). The phone home page went from about 2.5 MB of images to about 1 MB. `hero-portrait.jpg` and `banner-sky.jpg` are gone; `hero-landscape.jpg` stays only because the design's CSS still names it.
-- **No logo scroll:** Flash has the tattoo machine again and Aftercare the lantern; the BB seal is the header and footer mark.
+- **The studio scroll only on Aftercare:** the home page and Flash dropped it (Flash has the tattoo machine again); Aftercare kept it in place of the lantern, which reads better beside a care guide.
 - **Smaller fixes:** nine sample reviews of two or three sentences (three per artist), booking opens on the first day with three or more free times, an artist's four photos fill one row, headings never leave one word alone, "colours", the footer's Instagram link on one line, a full tap height for the notice's link, and the admin's date filter typed as dd.mm.yyyy.
 
 ## Still open
