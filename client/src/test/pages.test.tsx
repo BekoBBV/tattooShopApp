@@ -211,6 +211,27 @@ describe("signing in", () => {
     await pageTitle("My account")
   }, 30_000)
 
+  it("lets a customer sign out from My account and from the menu", async () => {
+    const { user, router } = open("/account/sign-in")
+    await pageTitle("Sign in")
+    await user.type(screen.getByLabelText("Email"), "mira@example.com")
+    await user.type(screen.getByLabelText("Password"), "any-password-1")
+    await user.click(screen.getByRole("button", { name: "Sign in" }))
+    await pageTitle("My account")
+
+    // The menu offers it while signed in
+    expect(within(document.getElementById("phone-menu")!).getByRole("button", { name: "Sign out", hidden: true })).toBeTruthy()
+
+    // At the bottom of the side column, the only one on the page
+    await user.click(screen.getByRole("button", { name: "Sign out" }))
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"))
+    expect(within(document.getElementById("phone-menu")!).queryByRole("button", { name: "Sign out", hidden: true })).toBeNull()
+
+    // Signed out: My account asks to sign in again
+    await router.navigate("/account")
+    await pageTitle("Sign in")
+  }, 30_000)
+
   it("takes an artist to their calendar and keeps them out of the admin pages", async () => {
     const { user, router } = open("/staff/sign-in")
     await pageTitle("Staff sign-in")

@@ -34,8 +34,16 @@ export default function Account() {
   const [note, setNote] = useState("")
   const [problem, setProblem] = useState("")
   const [paying, setPaying] = useState<string | null>(null)
+  // Signing out goes to the home page; without this the page would first send them to sign in again
+  const [signingOut, setSigningOut] = useState(false)
 
-  if (!customer) return <Navigate to="/account/sign-in?next=/account" replace />
+  if (!customer) return signingOut ? null : <Navigate to="/account/sign-in?next=/account" replace />
+
+  const signOut = () => {
+    setSigningOut(true)
+    setCustomer(null)
+    navigate("/")
+  }
 
   const reload = () => {
     upcoming.reload()
@@ -125,11 +133,15 @@ export default function Account() {
         <p>Your appointments, consultation ideas and account details.</p>
       </PageIntro>
       <div className="wrap account-layout">
+        {/* The account menu: the sections, then Sign out as its last row, in red */}
         <nav className="account-section-nav" aria-label="Account sections">
           <a href="#upcoming">Upcoming</a>
           <a href="#consultations">Consultations</a>
           <a href="#past">Past</a>
           <a href="#account-details">Account details</a>
+          <button className="account-sign-out" type="button" onClick={signOut}>
+            <LogOut className="icon" size={18} aria-hidden="true" /> Sign out
+          </button>
         </nav>
         <div>
           <FormError>{problem || loadError}</FormError>
@@ -222,16 +234,6 @@ export default function Account() {
                 </button>
                 <button className="button button-secondary" type="button" onClick={() => setDialog({ kind: "password" })}>
                   <LockKeyhole className="icon" size={18} aria-hidden="true" /> Change password
-                </button>
-                <button
-                  className="button button-secondary"
-                  type="button"
-                  onClick={() => {
-                    setCustomer(null)
-                    navigate("/")
-                  }}
-                >
-                  <LogOut className="icon" size={18} aria-hidden="true" /> Sign out
                 </button>
               </div>
               <div className="delete-account">
