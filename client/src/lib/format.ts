@@ -13,10 +13,12 @@ export const studio = {
   instagram: "bladeandbrush.sofia",
   /** How the rest of the price is paid in the studio */
   payment: "by card or in cash",
-  /** A Google Maps search for the address: needs no account or key, and follows the address when it changes */
-  get map() {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${this.name}, ${this.address}`)}`
-  },
+  /**
+   * Google Maps at the centre of Sofia (Sveta Nedelya Square), as a pin from its coordinates: the street
+   * above is made up, so a search for it would find nothing. With a real address, search for that instead:
+   * `query=${encodeURIComponent(`${name}, ${address}`)}`. Needs no account or key.
+   */
+  map: "https://www.google.com/maps/search/?api=1&query=42.6967%2C23.3217",
 }
 
 /** An Instagram handle as the server checks it: up to 30 letters, numbers, dots and underscores, with or without the @. */

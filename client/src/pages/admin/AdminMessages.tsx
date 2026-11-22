@@ -106,8 +106,9 @@ export default function AdminMessages() {
                     {reply.label}
                   </a>
                 )}
-                <button className="staff-text-button" type="button" onClick={() => setDeleting(m)}>Delete</button>
                 {m.read && m.readAt && <span className="message-handled">Handled: {whenAt(m.readAt)}</span>}
+                {/* Last, in the card's bottom-right corner and in red, away from the everyday actions */}
+                <button className="staff-text-button message-delete" type="button" onClick={() => setDeleting(m)}>Delete</button>
               </div>
             </article>
           )

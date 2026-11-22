@@ -610,3 +610,21 @@ html { scroll-padding-top: 80px; }
 .site-footer .concept-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .compact-concept-note { margin: 0; padding-bottom: 16px; font-size: 13px; color: var(--paper-on-sumi-soft); }
 .credits-about { padding-top: 0; }
+
+/* Dialogs taller than the window (Add artist, a design with its picture) scroll inside themselves:
+   the backdrop is fixed and never scrolls, so without this the bottom fields and Save were out of
+   reach. The close button stays at the top corner while the rest scrolls under it. */
+.dialog { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; }
+.dialog-close { position: sticky; top: 0; float: right; margin: -10px -10px 0 12px; z-index: 1; background: var(--paper); }
+@media (max-width: 767px) {
+  .dialog { max-height: calc(100dvh - 24px); }
+  .dialog-close { margin: -14px -6px 0 12px; }
+}
+
+/* Text links styled as staff text buttons (Reply by email, Call) centre their words in the 44px tap
+   height, as the buttons beside them do, so a row of them lines up */
+a.staff-text-button { display: inline-flex; align-items: center; }
+
+/* Messages: Delete sits apart in the card's bottom-right corner, in the studio red */
+.message-actions .message-delete { margin-left: auto; }
+.on-paper .staff-text-button.message-delete { color: var(--red); }
