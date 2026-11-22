@@ -602,3 +602,11 @@ html { scroll-padding-top: 80px; }
 .recent-work-grid a:hover .recent-work-caption, .recent-work-grid a:focus-visible .recent-work-caption { text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 1023px) { .recent-work-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 599px) { .recent-work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
+.recent-work-section .example-note { margin: 20px 0 0; font-size: 14px; color: var(--paper-on-sumi-soft); }
+
+/* The concept-project notice: a few quiet lines above the footer's bottom row, and one line under
+   the booking steps' footer */
+.site-footer .concept-note { max-width: 78ch; margin: 0 0 16px; font-size: 13px; line-height: 1.6; color: var(--paper-on-sumi-soft); }
+.site-footer .concept-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.compact-concept-note { margin: 0; padding-bottom: 16px; font-size: 13px; color: var(--paper-on-sumi-soft); }
+.credits-about { padding-top: 0; }

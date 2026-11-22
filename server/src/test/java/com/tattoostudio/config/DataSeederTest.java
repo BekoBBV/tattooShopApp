@@ -97,6 +97,20 @@ class DataSeederTest extends IntegrationTest {
     }
 
     @Test
+    void samplePortfolioPhotosAreAddedOnceToTheirArtists() {
+        // (each test starts with empty portfolios) a database that has not had the sample photos yet
+        mongo.remove(Query.query(Criteria.where("_id").is(DataSeeder.SAMPLE_WORKS_MARKER)), "app_meta");
+        seeder.run(null);
+        seeder.run(null); // the next start adds nothing
+        assertThat(works.count()).isEqualTo(DataSeeder.SAMPLE_WORKS.size()).isEqualTo(13);
+        assertThat(works.findByArtistIdOrderByCreatedAtDesc(artist("Kai").getId()))
+                .extracting(com.tattoostudio.model.Work::getCaption)
+                .containsExactly("Koi half sleeve", "Kabuki warrior, upper arm", "Phoenix back piece",
+                        "Koi and chrysanthemum sleeve");
+        assertThat(works.findAll()).allMatch(w -> w.getImage().isBundled() && !w.getCaption().isBlank());
+    }
+
+    @Test
     void deletedDemoDataDoesNotComeBackOnRestart() {
         List<Review> saved = reviews.findAll();
         try {

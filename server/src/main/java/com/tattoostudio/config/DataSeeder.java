@@ -101,6 +101,27 @@ public class DataSeeder implements ApplicationRunner {
             "Nika", "artists/nika-crane.webp");
     /** Set once the sample artists were given their signature pieces (raise the number for new ones). */
     static final String SIGNATURE_PICTURES_MARKER = "signature-pictures-3";
+    /**
+     * The sample portfolio photos that ship with the website (client/public/images/work), newest first:
+     * artist name, file, caption. Collected for this concept studio (see the Image credits page).
+     * Adding or changing one means raising the number in SAMPLE_WORKS_MARKER.
+     */
+    public static final List<String[]> SAMPLE_WORKS = List.of(
+            new String[] { "Nika", "work/nika-dragon-sleeve.jpg", "Fine-line dragon sleeve" },
+            new String[] { "Kai", "work/kai-koi-half-sleeve.jpg", "Koi half sleeve" },
+            new String[] { "Dario", "work/dario-dragon-hannya-sleeve.jpg", "Dragon and hannya sleeve" },
+            new String[] { "Nika", "work/nika-koi-lotus-forearm.jpg", "Koi and lotus forearm" },
+            new String[] { "Kai", "work/kai-kabuki-warrior.jpg", "Kabuki warrior, upper arm" },
+            new String[] { "Dario", "work/dario-oni-snake-back.jpg", "Oni and snake back piece" },
+            new String[] { "Kai", "work/kai-phoenix-back.jpg", "Phoenix back piece" },
+            new String[] { "Nika", "work/nika-peony-fan-calf.jpg", "Peony fan on the calf" },
+            new String[] { "Dario", "work/dario-hannya-snake-leg.jpg", "Hannya and snake leg sleeve" },
+            new String[] { "Kai", "work/kai-koi-chrysanthemum-sleeve.jpg", "Koi and chrysanthemum sleeve" },
+            new String[] { "Nika", "work/nika-koi-pagoda-forearm.jpg", "Koi and pagoda forearm" },
+            new String[] { "Nika", "work/nika-tiger-red-sun-sleeve.jpg", "Tiger and red sun sleeve" },
+            new String[] { "Dario", "work/dario-manga-panel-sleeve.jpg", "Manga panel sleeve" });
+    /** Set once the sample portfolio photos were added (raise the number for new ones). */
+    static final String SAMPLE_WORKS_MARKER = "sample-works-2";
     /** Start the server with --reset-demo to go back to the original demo data (e.g. before presenting). */
     static final String RESET_OPTION = "reset-demo";
     static final String DEMO_CUSTOMER_EMAIL = "mira@example.com";
@@ -146,6 +167,7 @@ public class DataSeeder implements ApplicationRunner {
         giveFlashTheirPicturesOnce();
         giveArtistsTheirInstagramOnce();
         giveArtistsTheirSignaturePiecesOnce();
+        addSampleWorksOnce();
         ensureAdmin();
         ensureDemoLogins();
     }
@@ -183,7 +205,7 @@ public class DataSeeder implements ApplicationRunner {
             mongo.remove(new Query(), type);
         }
         mongo.remove(Query.query(Criteria.where("_id").in(DEMO_DATA_MARKER, FLASH_PICTURES_MARKER, INSTAGRAM_MARKER,
-                SIGNATURE_PICTURES_MARKER)), META_COLLECTION);
+                SIGNATURE_PICTURES_MARKER, SAMPLE_WORKS_MARKER)), META_COLLECTION);
         images.deleteAll(pictures.stream().filter(p -> p != null).toList());
     }
 
@@ -248,6 +270,36 @@ public class DataSeeder implements ApplicationRunner {
         }
         mongo.save(new Document("_id", SIGNATURE_PICTURES_MARKER).append("at", new Date()), META_COLLECTION);
         log.info("Gave {} sample artists their signature pieces", given);
+    }
+
+    /**
+     * Adds the sample portfolio photos, once per database (per SAMPLE_WORKS_MARKER), newest first a day
+     * apart. A photo already in an artist's portfolio is not added twice, and one the admin or an
+     * artist removed stays removed until the marker is raised.
+     */
+    private void addSampleWorksOnce() {
+        if (mongo.exists(Query.query(Criteria.where("_id").is(SAMPLE_WORKS_MARKER)), META_COLLECTION)) {
+            return;
+        }
+        java.time.Instant newest = java.time.Instant.now();
+        int added = 0;
+        for (int i = 0; i < SAMPLE_WORKS.size(); i++) {
+            String[] sample = SAMPLE_WORKS.get(i);
+            Image photo = Image.bundled(sample[1]);
+            Artist artist = mongo.findOne(Query.query(Criteria.where("name").is(sample[0])), Artist.class);
+            if (artist == null || mongo.exists(Query.query(Criteria.where("image.id").is(photo.id())), Work.class)) {
+                continue;
+            }
+            Work work = new Work();
+            work.setArtistId(artist.getId());
+            work.setImage(photo);
+            work.setCaption(sample[2]);
+            work.setCreatedAt(newest.minus(java.time.Duration.ofDays(i)));
+            mongo.save(work);
+            added++;
+        }
+        mongo.save(new Document("_id", SAMPLE_WORKS_MARKER).append("at", new Date()), META_COLLECTION);
+        log.info("Added {} sample portfolio photos", added);
     }
 
     /** The studio's hours: Tuesday to Sunday, 11:00 to 23:00; closed on Monday. */

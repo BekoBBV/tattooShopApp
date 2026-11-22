@@ -684,19 +684,27 @@ const artistExtra: Record<string, { breakMinutes: number; active: boolean; sortO
 )
 const hiddenFlash: string[] = []
 const picture = (name: string, i: number): Image => ({ id: `${name}-${i}`, url: `/images/${name}.jpg`, thumbUrl: `/images/${name}.jpg` })
-/** Two portfolio photos per artist. Sample mode has no tattoo photos, so they borrow the flash drawings. */
-const sampleWork: [artistId: string, drawingId: string, caption: string][] = [
-  ["nika", "crane-in-flight", "Crane on the ribs"],
-  ["kai", "koi-and-wave", "Koi and wave forearm"],
-  ["dario", "hannya-mask", "Hannya mask on the shoulder"],
-  ["kai", "tiger-head", "Tiger head on the calf"],
-  ["nika", "peony", "Peony on the thigh"],
-  ["dario", "oni", "Oni on the upper arm"],
+/** The sample portfolio photos, newest first (the same as the server's DataSeeder.SAMPLE_WORKS) */
+const sampleWork: [artistId: string, file: string, caption: string][] = [
+  ["nika", "nika-dragon-sleeve", "Fine-line dragon sleeve"],
+  ["kai", "kai-koi-half-sleeve", "Koi half sleeve"],
+  ["dario", "dario-dragon-hannya-sleeve", "Dragon and hannya sleeve"],
+  ["nika", "nika-koi-lotus-forearm", "Koi and lotus forearm"],
+  ["kai", "kai-kabuki-warrior", "Kabuki warrior, upper arm"],
+  ["dario", "dario-oni-snake-back", "Oni and snake back piece"],
+  ["kai", "kai-phoenix-back", "Phoenix back piece"],
+  ["nika", "nika-peony-fan-calf", "Peony fan on the calf"],
+  ["dario", "dario-hannya-snake-leg", "Hannya and snake leg sleeve"],
+  ["kai", "kai-koi-chrysanthemum-sleeve", "Koi and chrysanthemum sleeve"],
+  ["nika", "nika-koi-pagoda-forearm", "Koi and pagoda forearm"],
+  ["nika", "nika-tiger-red-sun-sleeve", "Tiger and red sun sleeve"],
+  ["dario", "dario-manga-panel-sleeve", "Manga panel sleeve"],
 ]
-const works: Work[] = sampleWork.map(([artistId, drawingId, caption], i) => ({
+const photo = (file: string): Image => ({ id: `bundled:work/${file}.jpg`, url: `/images/work/${file}.jpg`, thumbUrl: `/images/work/${file}.jpg` })
+const works: Work[] = sampleWork.map(([artistId, file, caption], i) => ({
   id: `work-${artistId}-${i}`,
   artistId,
-  image: drawing(drawingId),
+  image: photo(file),
   caption,
   createdAt: new Date(Date.parse(SEEDED) - i * 86_400_000).toISOString(),
 }))

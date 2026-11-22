@@ -146,8 +146,14 @@ export function SiteFooter() {
             <Link to="/staff/sign-in">Staff sign-in</Link>
           </nav>
         </div>
+        <p className="concept-note">
+          Blade &amp; Brush is a concept: a website built as a project, not a real tattoo studio. The address, phone number,
+          Instagram handles, artists and reviews are made up, bookings are not real and no money is taken. The tattoo photos
+          are examples by other artists, collected from Pinterest; the artists' scroll pictures are AI-generated. See{" "}
+          <Link to="/credits">Image credits</Link> for every picture's source.
+        </p>
         <p className="copyright">
-          <span>Blade &amp; Brush is a concept studio.</span>
+          <span>Blade &amp; Brush, a concept project.</span>
           <span className="copyright-links">
             <Link to="/privacy">Privacy policy</Link>
             <Link to="/terms">Booking terms</Link>
@@ -174,6 +180,7 @@ export function CompactFooter() {
         </p>
         <Link to="/manage">Manage a booking</Link>
       </div>
+      <p className="wrap compact-concept-note">A concept project: bookings and payments on this site are not real.</p>
     </footer>
   )
 }

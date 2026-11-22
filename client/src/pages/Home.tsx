@@ -123,6 +123,7 @@ export default function Home() {
               </li>
             ))}
           </ul>
+          <p className="example-note">Example work: Blade &amp; Brush is a concept studio.</p>
         </section>
       )}
       <KatanaDivider />

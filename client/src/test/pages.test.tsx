@@ -296,9 +296,9 @@ describe("Recent work", () => {
     const { user, router } = open("/")
     const strip = await screen.findByRole("region", { name: "Recent work" })
     const photos = within(strip).getAllByRole("link")
-    expect(photos).toHaveLength(6)
+    expect(photos).toHaveLength(8) // the newest 8 of the 13
     // Newest first, described by its caption
-    expect(within(photos[0]).getByRole("img", { name: "Crane on the ribs" })).toBeTruthy()
+    expect(within(photos[0]).getByRole("img", { name: "Fine-line dragon sleeve" })).toBeTruthy()
     expect(within(photos[0]).getByText("by Nika")).toBeTruthy()
     await user.click(photos[0])
     await pageTitle("Nika")
