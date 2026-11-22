@@ -164,20 +164,20 @@ export function SiteFooter() {
             <Link to="/staff/sign-in">Staff sign-in</Link>
           </nav>
         </div>
-        <p className="concept-note">
-          Blade &amp; Brush is a concept: a website built as a project, not a real tattoo studio. The address, phone number,
-          Instagram handles, artists and reviews are made up, bookings are not real and no money is taken. The tattoo photos
-          are examples by other artists, collected from Pinterest; the artists' scroll pictures are AI-generated. See{" "}
-          <Link to="/credits">Image credits</Link> for every picture's source.
-        </p>
-        <p className="copyright">
-          <span>Blade &amp; Brush, a concept project.</span>
+        {/* Under the line: the concept notice across the full width, then the policy and credits links */}
+        <div className="copyright">
+          <p className="concept-note">
+            Blade &amp; Brush is a concept: a website built as a project, not a real tattoo studio. The address, phone number,
+            Instagram handles, artists and reviews are made up, bookings are not real and no money is taken. The tattoo photos
+            are examples by other artists, collected from Pinterest; the artists' scroll pictures are AI-generated. See{" "}
+            <Link to="/credits">Image credits</Link> for every picture's source.
+          </p>
           <span className="copyright-links">
             <Link to="/privacy">Privacy policy</Link>
             <Link to="/terms">Booking terms</Link>
             <Link to="/credits">Image credits</Link>
           </span>
-        </p>
+        </div>
       </div>
     </footer>
   )

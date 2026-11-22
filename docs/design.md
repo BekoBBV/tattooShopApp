@@ -228,7 +228,7 @@ Deliberate differences from the drawings:
 
 ## Still open
 
-- **Concept notice:** every page's footer says in a few quiet lines that Blade & Brush is a concept project, not a real studio (made-up details, no real bookings or payments, tattoo photos from Pinterest by other artists, AI-generated scroll pictures), the booking steps' footer says bookings and payments are not real, and the Image credits page has an *About this project* section listing every kind of asset, including the fonts and icons.
+- **Concept notice:** every page's footer says, under its closing line and across the full width, that Blade & Brush is a concept project, not a real studio (made-up details, no real bookings or payments, tattoo photos from Pinterest by other artists, AI-generated scroll pictures), the booking steps' footer says bookings and payments are not real, and the Image credits page has an *About this project* section listing every kind of asset, including the fonts and icons.
 
 - **Made-up studio details:** Blade & Brush is a concept studio, so its address (14 Mastilo Street, Sofia), phone (+359 88 123 4567) and Instagram handles are invented: the studio's `bladeandbrush.sofia` in `client/src/lib/format.ts`, and the artists' `<name>.bladeandbrush`, given to the sample artists once per database by `DataSeeder`. The handles end in an unusual suffix so they are unlikely to be anyone's real account, but they are not checked against Instagram: replace them with real ones, or empty them, before the site is public. The hours (11:00 to 23:00) are the artists' bookable hours and are unchanged.
 

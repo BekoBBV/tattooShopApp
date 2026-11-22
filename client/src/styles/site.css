@@ -706,3 +706,8 @@ h1, h2, h3 { text-wrap: balance; }
 /* The studio's scroll (ScrollArt "seal", on Aftercare): the seal, and the name in the display face in ink */
 .scroll-art .art-lettering text { fill: var(--ink); stroke: none; font-family: 'Zen Old Mincho', serif; font-size: 13px; font-weight: 600; text-anchor: middle; }
 .scroll-art .art-lettering .art-city { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 7px; font-weight: 500; letter-spacing: .12em; }
+
+/* The footer's bottom row: the concept notice sits under the line across the full width, with the
+   policy and credits links below it */
+.site-footer .copyright { flex-direction: column; align-items: stretch; gap: 4px; }
+.site-footer .copyright .concept-note { max-width: none; margin: 0; font-size: 14px; }
