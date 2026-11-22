@@ -1,4 +1,4 @@
-import { AtSign, Clock3, MapPin, Paperclip, Phone, Send } from "lucide-react"
+import { AtSign, Clock3, MapPin, Paperclip, Phone, Send, X } from "lucide-react"
 import { useState, type FormEvent } from "react"
 import { Link } from "react-router"
 import { KatanaDivider, SectionRule } from "../components/Layout"
@@ -190,6 +190,8 @@ export default function Home() {
 function ContactSection() {
   const [values, setValues] = useState({ name: "", contact: "", text: "" })
   const [photos, setPhotos] = useState<File[]>([])
+  // Set when a pick went past the five-photo limit and some of it was left out
+  const [photoNote, setPhotoNote] = useState("")
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [problem, setProblem] = useState("")
@@ -216,12 +218,21 @@ function ContactSection() {
       setSent(true)
       setValues({ name: "", contact: "", text: "" })
       setPhotos([])
+      setPhotoNote("")
     } catch (reason) {
       if (reason instanceof ApiError && reason.errors) setServerErrors(reason.errors)
       setProblem(reason instanceof Error ? reason.message : "Something went wrong. Please try again.")
     } finally {
       setSending(false)
     }
+  }
+
+  /** Each pick adds to the photos already attached (a second pick used to replace the first), up to 5 */
+  function addPhotos(files: FileList | null) {
+    const picked = [...(files ?? [])]
+    const room = 5 - photos.length
+    setPhotos([...photos, ...picked.slice(0, Math.max(room, 0))])
+    setPhotoNote(picked.length > room ? "You can attach up to 5 photos, so the rest were left out." : "")
   }
 
   return (
@@ -317,12 +328,34 @@ function ContactSection() {
               name="photos"
               multiple
               accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif"
-              onChange={(e) => setPhotos([...(e.target.files ?? [])])}
+              onChange={(e) => {
+                addPhotos(e.target.files)
+                e.target.value = ""
+              }}
             />
           </label>
-          <p className="helper">
-            {photos.length > 0 ? `${photos.length} ${photos.length === 1 ? "photo" : "photos"} attached. ` : ""}
-            Up to 5 photos, 10 MB each.
+          {photos.length > 0 && (
+            <ul className="attached-photos" aria-label="Attached photos">
+              {photos.map((photo, i) => (
+                <li key={`${photo.name}-${i}`}>
+                  <span>{photo.name}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${photo.name}`}
+                    onClick={() => {
+                      setPhotos(photos.filter((_, j) => j !== i))
+                      setPhotoNote("")
+                    }}
+                  >
+                    <X className="icon" size={18} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="helper" aria-live="polite">
+            {photos.length > 0 ? `${photos.length} of 5 photos attached. ` : "Up to 5 photos, 10 MB each. "}
+            {photoNote}
           </p>
           {checks.errorFor("photos") && <p className="field-error">{checks.errorFor("photos")}</p>}
         </div>

@@ -382,10 +382,11 @@ button.staff-sign-out { border: 0; background: none; font: inherit; cursor: poin
   .hero-copy h1 { font-size: 32px; }
 }
 
-/* Review stars: red on paper, cream on the night background (red alone is too dim there) */
-.stars { position: relative; display: inline-flex; vertical-align: middle; color: var(--paper-on-sumi); }
+/* Review stars: red everywhere. On the night background they use the lighter red (#E5484D, about 5:1
+   on black, as Sign out does); the studio red itself only reaches about 3:1 there */
+.stars { position: relative; display: inline-flex; vertical-align: middle; color: #E5484D; }
 .stars .stars-row { display: flex; gap: 3px; margin: 0; }
-.stars-row svg { flex: none; fill: none; stroke-width: 1.5; opacity: .45; }
+.stars-row svg { flex: none; fill: none; stroke-width: 1.5; opacity: .6; }
 .stars-row.is-filled { position: absolute; inset: 0 auto 0 0; overflow: hidden; }
 .stars-row.is-filled svg { fill: currentColor; opacity: 1; }
 .on-paper .stars { color: var(--red); }
@@ -707,3 +708,11 @@ h1, h2, h3 { text-wrap: balance; }
    policy and credits links below it */
 .site-footer .copyright { flex-direction: column; align-items: stretch; gap: 4px; }
 .site-footer .copyright .concept-note { max-width: none; margin: 0; font-size: 14px; }
+
+/* Write to the studio: the attached photos, one row each with a remove button. Every pick adds to
+   the list (up to 5) instead of replacing it. */
+.attached-photos { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.attached-photos li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-left: 12px; border: 1px solid var(--rule-night); }
+.attached-photos span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.attached-photos button { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: inherit; cursor: pointer; }
+.attached-photos button:hover { color: #E5484D; }
