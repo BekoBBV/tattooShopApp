@@ -61,7 +61,12 @@ public class DataSeeder implements ApplicationRunner {
     private static final String META_COLLECTION = "app_meta";
     private static final String DEMO_DATA_MARKER = "demo-data-seeded";
     /** Set once the sample flash drawings were given to the sample designs (raise the number for new ones). */
-    static final String FLASH_PICTURES_MARKER = "flash-pictures-3";
+    static final String FLASH_PICTURES_MARKER = "flash-pictures-4";
+
+    /** A sample flash drawing with its small copy (flash/small/, WebP) for the flash cards. */
+    public static Image flashDrawing(String path) {
+        return Image.bundled(path, path.replace("flash/", "flash/small/").replace(".jpg", ".webp"));
+    }
 
     /**
      * The drawings that ship with the website (client/public/images/flash), by design name, one for
@@ -100,7 +105,21 @@ public class DataSeeder implements ApplicationRunner {
             "Dario", "artists/dario-mask.webp",
             "Nika", "artists/nika-crane.webp");
     /** Set once the sample artists were given their signature pieces (raise the number for new ones). */
-    static final String SIGNATURE_PICTURES_MARKER = "signature-pictures-3";
+    static final String SIGNATURE_PICTURES_MARKER = "signature-pictures-4";
+
+    /**
+     * The picture an artist's scroll ships with (null for an artist without one): the full picture, and
+     * a small copy (artists/small/, about 60 KB instead of 400) for the small scrolls and cards.
+     */
+    public static Image shippedSignaturePiece(String artistName) {
+        String path = SIGNATURE_PICTURES.get(artistName);
+        return path == null ? null : Image.bundled(path, path.replace("artists/", "artists/small/"));
+    }
+
+    /** A sample portfolio photo with its small copy (work/small/, WebP) for the photo grids. */
+    static Image samplePhoto(String path) {
+        return Image.bundled(path, path.replace("work/", "work/small/").replace(".jpg", ".webp"));
+    }
     /**
      * The sample portfolio photos that ship with the website (client/public/images/work), newest first:
      * artist name, file, caption. Collected for this concept studio (see the Image credits page).
@@ -121,7 +140,26 @@ public class DataSeeder implements ApplicationRunner {
             new String[] { "Nika", "work/nika-tiger-red-sun-sleeve.jpg", "Tiger and red sun sleeve" },
             new String[] { "Dario", "work/dario-manga-panel-sleeve.jpg", "Manga panel sleeve" });
     /** Set once the sample portfolio photos were added (raise the number for new ones). */
-    static final String SAMPLE_WORKS_MARKER = "sample-works-2";
+    static final String SAMPLE_WORKS_MARKER = "sample-works-3";
+    /**
+     * The sample reviews, three per artist (artist name, reviewer, stars, text, days ago). They read as
+     * real reviews do: the piece, the placement, the healing.
+     */
+    record SampleReview(String artist, String name, int rating, String text, int daysAgo) {
+    }
+
+    static final List<SampleReview> SAMPLE_REVIEWS = List.of(
+            new SampleReview("Kai", "Petar", 5, "Kai did a koi and wave half sleeve on my forearm over two sessions. The colour healed bright and solid, and the outlines are as crisp as the drawing. He explained every step of the aftercare.", 4),
+            new SampleReview("Kai", "Martin", 5, "I booked the Small dragon flash and was done in two hours. Kai placed it perfectly on my calf and checked the stencil with me twice before starting.", 16),
+            new SampleReview("Kai", "Desislava", 4, "A big back piece in progress with Kai, three sessions so far. The work is excellent; the only reason for four stars is that his next free day was a month away.", 33),
+            new SampleReview("Dario", "Elena", 5, "Dario tattooed a hannya mask on my shoulder in black and grey. The shading is so soft it looks painted, and it healed without a single patch. Careful, clear and beautifully done.", 2),
+            new SampleReview("Dario", "Georgi", 5, "My first black and grey piece, an oni on the upper arm. Dario talked me through the size and placement, and the session felt calm the whole time.", 12),
+            new SampleReview("Dario", "Radoslav", 5, "I came in with a rough idea for a samurai, and at the consultation Dario turned it into something far better. Worth every euro.", 27),
+            new SampleReview("Nika", "Sofia", 4, "A calm studio and excellent line work. Nika's crane on my ribs is delicate, but every line is clean. It took a little longer than planned, which I'd rather have than a rushed job.", 8),
+            new SampleReview("Nika", "Ivana", 5, "My first tattoo, a small cherry blossom branch on the wrist. Nika was patient with all my questions, and the red touches still look fresh after two months.", 20),
+            new SampleReview("Nika", "Kalina", 5, "A fine line peony on my thigh. Nika suggested making it slightly bigger so the lines would age well, and she was right.", 40));
+    /** Set once the longer sample reviews were added (raise the number when they change). */
+    static final String SAMPLE_REVIEWS_MARKER = "sample-reviews-1";
     /** Start the server with --reset-demo to go back to the original demo data (e.g. before presenting). */
     static final String RESET_OPTION = "reset-demo";
     static final String DEMO_CUSTOMER_EMAIL = "mira@example.com";
@@ -168,6 +206,7 @@ public class DataSeeder implements ApplicationRunner {
         giveArtistsTheirInstagramOnce();
         giveArtistsTheirSignaturePiecesOnce();
         addSampleWorksOnce();
+        addSampleReviewsOnce();
         ensureAdmin();
         ensureDemoLogins();
     }
@@ -179,7 +218,6 @@ public class DataSeeder implements ApplicationRunner {
         if (artists.count() == 0 && flash.count() == 0 && reviews.count() == 0) {
             List<Artist> crew = seedArtists();
             seedFlash(crew);
-            seedReviews(crew);
         } else {
             log.info("Existing data found; not adding demo data");
         }
@@ -205,7 +243,7 @@ public class DataSeeder implements ApplicationRunner {
             mongo.remove(new Query(), type);
         }
         mongo.remove(Query.query(Criteria.where("_id").in(DEMO_DATA_MARKER, FLASH_PICTURES_MARKER, INSTAGRAM_MARKER,
-                SIGNATURE_PICTURES_MARKER, SAMPLE_WORKS_MARKER)), META_COLLECTION);
+                SIGNATURE_PICTURES_MARKER, SAMPLE_WORKS_MARKER, SAMPLE_REVIEWS_MARKER)), META_COLLECTION);
         images.deleteAll(pictures.stream().filter(p -> p != null).toList());
     }
 
@@ -221,11 +259,12 @@ public class DataSeeder implements ApplicationRunner {
         }
         long given = 0;
         for (var entry : FLASH_PICTURES.entrySet()) {
-            Image drawing = Image.bundled(entry.getValue());
+            Image drawing = flashDrawing(entry.getValue());
             Criteria noUpload = new Criteria().orOperator(Criteria.where("image").is(null),
                     Criteria.where("image.id").regex("^" + java.util.regex.Pattern.quote(Image.BUNDLED)));
             given += mongo.updateFirst(Query.query(new Criteria().andOperator(Criteria.where("name").is(entry.getKey()),
-                    noUpload, Criteria.where("image.id").ne(drawing.id()))),
+                    noUpload, new Criteria().orOperator(Criteria.where("image.id").ne(drawing.id()),
+                            Criteria.where("image.thumbUrl").ne(drawing.thumbUrl())))),
                     new Update().set("image", drawing), FlashDesign.class).getModifiedCount();
         }
         mongo.save(new Document("_id", FLASH_PICTURES_MARKER).append("at", new Date()), META_COLLECTION);
@@ -261,11 +300,14 @@ public class DataSeeder implements ApplicationRunner {
         }
         long given = 0;
         for (var entry : SIGNATURE_PICTURES.entrySet()) {
-            Image piece = Image.bundled(entry.getValue());
+            Image piece = shippedSignaturePiece(entry.getKey());
             Criteria noUpload = new Criteria().orOperator(Criteria.where("signaturePiece").is(null),
                     Criteria.where("signaturePiece.id").regex("^" + java.util.regex.Pattern.quote(Image.BUNDLED)));
+            // A different shipped picture, or the same one without its small copy yet
+            Criteria outdated = new Criteria().orOperator(Criteria.where("signaturePiece.id").ne(piece.id()),
+                    Criteria.where("signaturePiece.thumbUrl").ne(piece.thumbUrl()));
             given += mongo.updateFirst(Query.query(new Criteria().andOperator(Criteria.where("name").is(entry.getKey()),
-                    noUpload, Criteria.where("signaturePiece.id").ne(piece.id()))),
+                    noUpload, outdated)),
                     new Update().set("signaturePiece", piece), Artist.class).getModifiedCount();
         }
         mongo.save(new Document("_id", SIGNATURE_PICTURES_MARKER).append("at", new Date()), META_COLLECTION);
@@ -274,8 +316,8 @@ public class DataSeeder implements ApplicationRunner {
 
     /**
      * Adds the sample portfolio photos, once per database (per SAMPLE_WORKS_MARKER), newest first a day
-     * apart. A photo already in an artist's portfolio is not added twice, and one the admin or an
-     * artist removed stays removed until the marker is raised.
+     * apart. A photo already in an artist's portfolio is not added twice (it only gets its small copy
+     * if it has none yet), and one the admin or an artist removed stays removed until the marker is raised.
      */
     private void addSampleWorksOnce() {
         if (mongo.exists(Query.query(Criteria.where("_id").is(SAMPLE_WORKS_MARKER)), META_COLLECTION)) {
@@ -285,9 +327,14 @@ public class DataSeeder implements ApplicationRunner {
         int added = 0;
         for (int i = 0; i < SAMPLE_WORKS.size(); i++) {
             String[] sample = SAMPLE_WORKS.get(i);
-            Image photo = Image.bundled(sample[1]);
+            Image photo = samplePhoto(sample[1]);
             Artist artist = mongo.findOne(Query.query(Criteria.where("name").is(sample[0])), Artist.class);
-            if (artist == null || mongo.exists(Query.query(Criteria.where("image.id").is(photo.id())), Work.class)) {
+            if (artist == null) {
+                continue;
+            }
+            if (mongo.exists(Query.query(Criteria.where("image.id").is(photo.id())), Work.class)) {
+                mongo.updateMulti(Query.query(new Criteria().andOperator(Criteria.where("image.id").is(photo.id()),
+                        Criteria.where("image.thumbUrl").ne(photo.thumbUrl()))), new Update().set("image", photo), Work.class);
                 continue;
             }
             Work work = new Work();
@@ -367,13 +414,38 @@ public class DataSeeder implements ApplicationRunner {
         return d;
     }
 
-    private void seedReviews(List<Artist> crew) {
+    /**
+     * Adds the sample reviews, once per database (per SAMPLE_REVIEWS_MARKER): a fresh one right after
+     * the demo data, an existing one on its next start. A reviewer who already has a review for that
+     * artist keeps theirs, but one still showing the first short sample text gets the longer one.
+     */
+    private void addSampleReviewsOnce() {
+        if (mongo.exists(Query.query(Criteria.where("_id").is(SAMPLE_REVIEWS_MARKER)), META_COLLECTION)) {
+            return;
+        }
+        List<String> firstSamples = List.of("Careful, clear and beautifully done.", "A calm studio and excellent line work.",
+                "The colour healed bright and solid.");
         Instant now = Instant.now();
-        reviews.saveAll(List.of(
-                new Review(crew.get(1).getId(), "Elena", 5, "Careful, clear and beautifully done.", true, now.minus(3, ChronoUnit.DAYS)),
-                new Review(crew.get(2).getId(), "Sofia", 4, "A calm studio and excellent line work.", true, now.minus(9, ChronoUnit.DAYS)),
-                new Review(crew.get(0).getId(), "Petar", 5, "The colour healed bright and solid.", true, now.minus(20, ChronoUnit.DAYS))));
-        log.info("Seeded reviews");
+        int added = 0;
+        for (SampleReview sample : SAMPLE_REVIEWS) {
+            Artist artist = mongo.findOne(Query.query(Criteria.where("name").is(sample.artist())), Artist.class);
+            if (artist == null) {
+                continue;
+            }
+            Query same = Query.query(new Criteria().andOperator(Criteria.where("artistId").is(artist.getId()),
+                    Criteria.where("name").is(sample.name()), Criteria.where("bookingId").is(null)));
+            if (mongo.exists(same, Review.class)) {
+                mongo.updateMulti(same.addCriteria(Criteria.where("text").in(firstSamples)),
+                        new Update().set("text", sample.text()).set("rating", sample.rating())
+                                .set("createdAt", now.minus(sample.daysAgo(), ChronoUnit.DAYS)), Review.class);
+                continue;
+            }
+            reviews.save(new Review(artist.getId(), sample.name(), sample.rating(), sample.text(), true,
+                    now.minus(sample.daysAgo(), ChronoUnit.DAYS)));
+            added++;
+        }
+        mongo.save(new Document("_id", SAMPLE_REVIEWS_MARKER).append("at", new Date()), META_COLLECTION);
+        log.info("Added {} sample reviews", added);
     }
 
     /** Creates the admin login if there is none. Refuses to start without a chosen password. */

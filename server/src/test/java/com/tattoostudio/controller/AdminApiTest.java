@@ -523,7 +523,7 @@ class AdminApiTest extends ApiTest {
                 .andExpect(jsonPath("$.items[0].artistId").value(artist("Kai").getId()))
                 .andExpect(jsonPath("$.items[0].approved").value(false));
         call(get("/api/admin/reviews").param("artistId", artist("Nika").getId()))
-                .andExpect(jsonPath("$.items.length()").value(2));
+                .andExpect(jsonPath("$.items.length()").value(4)); // her three sample reviews and this one
         send(patch("/api/admin/reviews/" + pending.getId()), "{\"approved\":true}")
                 .andExpect(jsonPath("$.approved").value(true));
         call(get("/api/admin/reviews").param("status", "pending")).andExpect(jsonPath("$.items.length()").value(0));

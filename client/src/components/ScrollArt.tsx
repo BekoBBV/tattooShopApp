@@ -5,7 +5,7 @@
  * are filled with the canvas colour so the lines in front cover the sun behind.
  * Each is 100 wide and 200 tall, the shape of the scroll's canvas.
  */
-export type ScrollArtKind = "lantern" | "pagoda" | "seal"
+export type ScrollArtKind = "lantern" | "pagoda"
 
 /** The ground both pictures stand on: a horizon line and a few shorter lines under it */
 function Ground() {
@@ -81,28 +81,10 @@ function Pagoda() {
   )
 }
 
-/**
- * The studio's own scroll: the red BB seal where the other pictures have their sun, and the name
- * written under it in ink, with a fine rule and the city
- */
-function Seal() {
-  return (
-    <>
-      <image className="art-seal" href="/images/seal-bb.png" x="22" y="40" width="56" height="56" />
-      <g className="art-ink art-lettering">
-        <text x="50" y="124">Blade &amp;</text>
-        <text x="50" y="140">Brush</text>
-        <path className="line-detail" d="M36 150 H64" />
-        <text className="art-city" x="50" y="163">Sofia</text>
-      </g>
-    </>
-  )
-}
-
 export function ScrollArt({ kind }: { kind: ScrollArtKind }) {
   return (
     <svg className="scroll-art" viewBox="0 0 100 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-      {kind === "lantern" ? <Lantern /> : kind === "pagoda" ? <Pagoda /> : <Seal />}
+      {kind === "lantern" ? <Lantern /> : <Pagoda />}
     </svg>
   )
 }

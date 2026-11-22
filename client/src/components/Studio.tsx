@@ -3,6 +3,7 @@ import { useEffect, useRef, type FocusEvent, type FormEvent, type InputHTMLAttri
 import { Link } from "react-router"
 import { euros, hours, plainDate, size } from "../lib/format"
 import type { Flash, Image, Review } from "../lib/types"
+import { PIECE_FOCUS } from "../lib/pieces"
 
 /** An artist's seal: a red frame with their initial (filled red on black backgrounds, see the CSS). */
 export function ArtistSeal({ name, px = 32 }: { name: string; px?: 32 | 48 }) {
@@ -178,15 +179,6 @@ export function WallScroll({
   )
 }
 
-/**
- * Where to centre the signature pieces that ship with the site (by id) when the tall scroll crops
- * them: the creature's head. A piece an artist uploads is centred.
- */
-const PIECE_FOCUS: Record<string, string> = {
-  "bundled:artists/kai-dragon-colour.webp": "55% 28%",
-  "bundled:artists/nika-crane.webp": "95% 30%",
-}
-
 /** An artist's hanging scroll: the vertical name, the signature piece and the seal on the paper. */
 export function HangingScroll({
   name,
@@ -202,9 +194,11 @@ export function HangingScroll({
       <div className="scroll-paper">
         <VerticalName name={name} />
         <div className="scroll-signature">
-          <Art image={signature} alt={`A signature piece by ${name}`} fit="cover" focus={signature ? PIECE_FOCUS[signature.id] : undefined} />
+          <Art image={signature && variant === "wide" ? { ...signature, thumbUrl: signature.url } : signature} alt={`A signature piece by ${name}`}
+            fit="cover" focus={signature ? PIECE_FOCUS[signature.id] : undefined} />
         </div>
-        {variant !== "mini" && <ArtistSeal name={name} px={48} />}
+        {/* The seal on the Artists page; not on the small scrolls, nor on the artist's own page, whose title names them */}
+        {variant === "normal" && <ArtistSeal name={name} px={48} />}
       </div>
     </WallScroll>
   )

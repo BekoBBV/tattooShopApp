@@ -1,6 +1,7 @@
 import { Fragment, useSyncExternalStore } from "react"
 import { Link, useSearchParams } from "react-router"
 import { PageIntro } from "../components/Layout"
+import { TattooMachine } from "../components/TattooMachine"
 import { ArtistSeal, BookFlashButton, FlashCard } from "../components/Studio"
 import type { Artist, Flash, FlashSize } from "../lib/types"
 import { useLoad } from "../lib/useLoad"
@@ -71,7 +72,7 @@ export default function FlashGallery() {
 
   return (
     <main>
-      <PageIntro title="Flash designs" painting="seal">
+      <PageIntro title="Flash designs" art={<TattooMachine />}>
         <p>One-of-a-kind designs at a fixed price. Each is tattooed once: when it is booked, it comes off the sheet.</p>
       </PageIntro>
       <section className="wrap page-body" aria-label="Flash designs">

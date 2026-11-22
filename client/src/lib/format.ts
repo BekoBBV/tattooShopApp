@@ -27,6 +27,12 @@ export const INSTAGRAM_HANDLE = /^@?(?![.])(?!.*[.][.])[A-Za-z0-9._]{1,30}(?<![.
 /** "kai.bladeandbrush" → its Instagram page */
 export const instagramUrl = (handle: string) => `https://www.instagram.com/${encodeURIComponent(handle)}/`
 
+/** "Kai tattoos in the bold traditional Japanese style: heavy outlines, ..." → its first sentence. */
+export function firstSentence(text: string) {
+  const end = text.search(/[.!?](\s|$)/)
+  return end > 0 ? text.slice(0, end + 1) : text
+}
+
 /** 180 → "€180", 28.5 → "€28.50" */
 export function euros(amount: number | null | undefined) {
   if (amount === null || amount === undefined) return ""

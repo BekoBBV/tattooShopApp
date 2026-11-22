@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { StaffBookingPanel } from "../../components/StaffBookingPanel"
 import { ConfirmDialog, NightStamp, Pager, StaffHeader, StaffState, StatusLine } from "../../components/StaffUi"
-import { euros } from "../../lib/format"
+import { euros, parseTypedDate } from "../../lib/format"
 import { limits } from "../../lib/limits"
 import { json, staffApi, useStaff } from "../../lib/staff"
 import { canCancel, depositStamp, statusLabel, tableDate, typeLabel } from "../../lib/staffText"
@@ -25,6 +25,8 @@ export default function AdminBookings() {
   const staff = useStaff()
   const token = staff?.token
   const [filters, setFilters] = useState({ date: "", artistId: "", type: "", status: "", deposit: "" })
+  // The date as typed (dd.mm.yyyy); it filters once it is a whole date, and an empty box shows every day
+  const [typedDate, setTypedDate] = useState("")
   const [typed, setTyped] = useState("")
   const [q, setQ] = useState("")
   const [page, setPage] = useState(0)
@@ -90,7 +92,20 @@ export default function AdminBookings() {
       <div className="admin-filters">
         <label>
           Date
-          <input type="date" value={filters.date} onChange={setFilter("date")} />
+          <input
+            inputMode="numeric"
+            placeholder="dd.mm.yyyy"
+            value={typedDate}
+            aria-invalid={typedDate.trim() !== "" && !parseTypedDate(typedDate) ? true : undefined}
+            onChange={(e) => {
+              setTypedDate(e.target.value)
+              const date = e.target.value.trim() === "" ? "" : parseTypedDate(e.target.value)
+              if (date !== null && date !== filters.date) {
+                setFilters({ ...filters, date })
+                setPage(0)
+              }
+            }}
+          />
         </label>
         <label>
           Artist

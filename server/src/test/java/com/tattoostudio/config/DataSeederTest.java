@@ -47,14 +47,16 @@ class DataSeederTest extends IntegrationTest {
         assertThat(flash("Tiger head").getPrice()).isEqualByComparingTo("260");
         assertThat(flash("Tiger head").getDurationMinutes()).isEqualTo(180);
         // Each comes with a drawing that ships with the website
-        assertThat(flash("Tiger head").getImage()).isEqualTo(Image.bundled("flash/tiger-head.jpg"));
+        assertThat(flash("Tiger head").getImage()).isEqualTo(DataSeeder.flashDrawing("flash/tiger-head.jpg"));
+        assertThat(flash("Tiger head").getImage().thumbUrl()).isEqualTo("/images/flash/small/tiger-head.webp");
         assertThat(flash("Tiger head").getImage().url()).isEqualTo("/images/flash/tiger-head.jpg");
         assertThat(DataSeeder.FLASH_PICTURES).hasSize(12);
         assertThat(flash.findAll()).allMatch(f -> f.getImage() != null);
         // Each artist's scroll shows a picture that ships with the website
-        assertThat(artist("Kai").getSignaturePiece()).isEqualTo(Image.bundled("artists/kai-dragon-colour.webp"));
-        assertThat(artist("Dario").getSignaturePiece()).isEqualTo(Image.bundled("artists/dario-mask.webp"));
-        assertThat(artist("Nika").getSignaturePiece()).isEqualTo(Image.bundled("artists/nika-crane.webp"));
+        assertThat(artist("Kai").getSignaturePiece()).isEqualTo(
+                Image.bundled("artists/kai-dragon-colour.webp", "artists/small/kai-dragon-colour.webp"));
+        assertThat(artist("Dario").getSignaturePiece().thumbUrl()).isEqualTo("/images/artists/small/dario-mask.webp");
+        assertThat(artist("Nika").getSignaturePiece().url()).isEqualTo("/images/artists/nika-crane.webp");
     }
 
     @Test
@@ -75,7 +77,7 @@ class DataSeederTest extends IntegrationTest {
             seeder.run(null);
             seeder.run(null); // the next start changes nothing
 
-            assertThat(flash("Peony").getImage()).isEqualTo(Image.bundled("flash/peony.jpg"));
+            assertThat(flash("Peony").getImage()).isEqualTo(DataSeeder.flashDrawing("flash/peony.jpg"));
             assertThat(flash("Lucky koi").getImage()).isEqualTo(uploaded);
 
             // A drawing renamed since (older bundled path) is brought up to date on the next marker
@@ -84,7 +86,7 @@ class DataSeederTest extends IntegrationTest {
             flash.save(stale);
             mongo.remove(Query.query(Criteria.where("_id").is(DataSeeder.FLASH_PICTURES_MARKER)), "app_meta");
             seeder.run(null);
-            assertThat(flash("Peony").getImage()).isEqualTo(Image.bundled("flash/peony.jpg"));
+            assertThat(flash("Peony").getImage()).isEqualTo(DataSeeder.flashDrawing("flash/peony.jpg"));
             assertThat(flash("Lucky koi").getImage()).isEqualTo(uploaded);
         } finally {
             FlashDesign p = flash("Peony");
@@ -108,6 +110,9 @@ class DataSeederTest extends IntegrationTest {
                 .containsExactly("Koi half sleeve", "Kabuki warrior, upper arm", "Phoenix back piece",
                         "Koi and chrysanthemum sleeve");
         assertThat(works.findAll()).allMatch(w -> w.getImage().isBundled() && !w.getCaption().isBlank());
+        // Each with a small WebP copy for the photo grids
+        assertThat(works.findAll()).allMatch(w -> w.getImage().thumbUrl().startsWith("/images/work/small/")
+                && w.getImage().thumbUrl().endsWith(".webp"));
     }
 
     @Test

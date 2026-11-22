@@ -218,6 +218,14 @@ Deliberate differences from the drawings:
 - Every confirmation that loses something starts with the safe choice focused, like the customer site.
 - **The signature piece can be removed** (*Remove picture* under it, with a confirmation); the drawing only had *Replace picture*. The scroll then shows the studio seal again.
 
+## Second design critique (November 2026)
+
+- **A shorter home page:** hero, flash (one row of four), Recent work (four photos on phones), the artists as compact cards (signature piece, name, style, first line of the bio), reviews, a slim custom-piece banner and the contact form. Desktop went from 7,280 to about 5,500px, phones from 8,850 to about 6,600px. *Before your first tattoo* moved to the Aftercare page (the home page links to it).
+- **The Artists page** gives each artist the first line of their bio, their hourly rate, *Book with …* (their flash) and *See …'s work*. An artist's own page drops the seal from its big scroll (the title already names them), and on phones shows About, the rates and the Book buttons before the scroll.
+- **Lighter images:** every picture that ships with the site has a small WebP copy for lists and cards (`images/artists/small`, `images/work/small`, `images/flash/small`; given out as the image's `thumbUrl` by `DataSeeder`), and the hero is a WebP (212 KB instead of 359 KB). The phone home page went from about 2.5 MB of images to about 1 MB. `hero-portrait.jpg` and `banner-sky.jpg` are gone; `hero-landscape.jpg` stays only because the design's CSS still names it.
+- **No logo scroll:** Flash has the tattoo machine again and Aftercare the lantern; the BB seal is the header and footer mark.
+- **Smaller fixes:** nine sample reviews of two or three sentences (three per artist), booking opens on the first day with three or more free times, an artist's four photos fill one row, headings never leave one word alone, "colours", the footer's Instagram link on one line, a full tap height for the notice's link, and the admin's date filter typed as dd.mm.yyyy.
+
 ## Still open
 
 - **Concept notice:** every page's footer says in a few quiet lines that Blade & Brush is a concept project, not a real studio (made-up details, no real bookings or payments, tattoo photos from Pinterest by other artists, AI-generated scroll pictures), the booking steps' footer says bookings and payments are not real, and the Image credits page has an *About this project* section listing every kind of asset, including the fonts and icons.

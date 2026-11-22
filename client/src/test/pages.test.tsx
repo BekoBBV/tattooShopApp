@@ -303,7 +303,8 @@ describe("Instagram and studio details", () => {
     expect(within(footer).getByText(/14 Mastilo Street/)).toBeTruthy()
     cleanup()
 
-    open("/")
+    // The questions live on the Aftercare page; the home page links to them
+    open("/aftercare")
     await screen.findByRole("heading", { name: "Before your first tattoo" })
     for (const question of ["What should I bring?", "Do you take walk-ins?", "How do I pay?"]) {
       expect(screen.getByText(question)).toBeTruthy()
@@ -324,5 +325,23 @@ describe("Recent work", () => {
     await user.click(photos[0])
     await pageTitle("Nika")
     expect(router.state.location.pathname).toBe("/artists/nika")
+  }, 30_000)
+})
+
+describe("Artists page", () => {
+  it("gives each artist a line about them, their rate, and a way to book them", async () => {
+    const { user, router } = open("/artists")
+    await pageTitle("Our artists")
+    const kai = (await screen.findByRole("heading", { name: "Kai" })).closest("article")!
+    expect(within(kai).getByText(/bold traditional Japanese style/)).toBeTruthy()
+    expect(within(kai).getByText("Custom work from €90 per hour")).toBeTruthy()
+    expect(within(kai).getByRole("link", { name: "See Kai's work" }).getAttribute("href")).toBe("/artists/kai")
+
+    await user.click(within(kai).getByRole("link", { name: "Book with Kai" }))
+    await pageTitle("Flash designs")
+    expect(router.state.location.search).toBe("?artist=kai")
+    // Only Kai's designs are on the sheet
+    await waitFor(() => expect(screen.getAllByText("By Kai").length).toBeGreaterThan(0))
+    expect(screen.queryByText("By Dario")).toBeNull()
   }, 30_000)
 })

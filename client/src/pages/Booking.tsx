@@ -326,7 +326,8 @@ export function BookTime() {
   const [problem, setProblem] = useState("")
 
   const days = availability.data?.days ?? []
-  const firstOpen = days.find((d) => d.slots.length > 0)?.date ?? days[0]?.date ?? null
+  // The first day with a real choice (3 or more start times), else the first with any
+  const firstOpen = (days.find((d) => d.slots.length >= 3) ?? days.find((d) => d.slots.length > 0) ?? days[0])?.date ?? null
   const selectedDate = draft.date && days.some((d) => d.date === draft.date) ? draft.date : firstOpen
   const day = days.find((d) => d.date === selectedDate)
   const artistName = artists.data?.find((a) => a.id === availability.data?.artistId)?.name ?? "the artist"

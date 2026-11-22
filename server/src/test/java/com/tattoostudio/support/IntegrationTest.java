@@ -83,8 +83,7 @@ public abstract class IntegrationTest {
         });
         // Undo day exceptions, breaks, deactivations and signature pieces a previous test changed
         artists.findAll().forEach(a -> {
-            String shipped = com.tattoostudio.config.DataSeeder.SIGNATURE_PICTURES.get(a.getName());
-            com.tattoostudio.model.Image piece = shipped == null ? null : com.tattoostudio.model.Image.bundled(shipped);
+            com.tattoostudio.model.Image piece = com.tattoostudio.config.DataSeeder.shippedSignaturePiece(a.getName());
             if (!a.getExceptions().isEmpty() || a.getBreakMinutes() != 30 || !a.isActive()
                     || !java.util.Objects.equals(a.getSignaturePiece(), piece)) {
                 a.getExceptions().clear();

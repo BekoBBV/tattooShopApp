@@ -99,12 +99,12 @@ class ListApiTest extends ApiTest {
     void reviewsFilterByStarsTextAndArtist() throws Exception {
         String lia = customer();
         mvc.perform(as(lia, get("/api/reviews/search").param("minRating", "5")))
-                .andExpect(jsonPath("$.totalItems").value(2));
+                .andExpect(jsonPath("$.totalItems").value(7));
         mvc.perform(as(lia, get("/api/reviews/search").param("q", "line work").param("sort", "rating,asc")))
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.items[0].name").value("Sofia"));
         mvc.perform(as(lia, get("/api/reviews/search").param("artistId", artist("Dario").getId())))
-                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.totalItems").value(3))
                 .andExpect(jsonPath("$.items[0].name").value("Elena"));
     }
 

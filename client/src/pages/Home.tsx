@@ -3,35 +3,24 @@ import { useState, type FormEvent } from "react"
 import { Link } from "react-router"
 import { KatanaDivider, SectionRule } from "../components/Layout"
 import { KatanaCut } from "../components/KatanaCut"
-import { ScrollArt } from "../components/ScrollArt"
-import { ArtistSeal, FlashCard, FormError, HangingScroll, ReviewCard, Stars, WallScroll } from "../components/Studio"
+import { Art, ArtistSeal, FlashCard, FormError, ReviewCard, Stars } from "../components/Studio"
+import { PIECE_FOCUS } from "../lib/pieces"
 import { api, ApiError } from "../lib/api"
-import { instagramUrl, studio } from "../lib/format"
+import { firstSentence, instagramUrl, studio } from "../lib/format"
 import { limits } from "../lib/limits"
 import type { Artist, Flash, RecentWork, ReviewSummary } from "../lib/types"
 import { useLoad } from "../lib/useLoad"
 import { usePageTitle } from "../lib/usePageTitle"
 import { checkMessage, useFieldChecks } from "../lib/validation"
 
-const FAQ = [
-  { q: "Does it hurt?", a: "Yes, a little. Most people describe it as a hot scratch. Ribs, feet and the inner arm hurt more than the forearm, calf or thigh. You can take a break whenever you need one." },
-  { q: "How clean is the studio?", a: "Needles, ink caps and gloves are single-use and opened in front of you. The station is disinfected and covered in fresh film before every client." },
-  { q: "What should I bring?", a: "A photo ID that shows you are 18 or older. Eat beforehand, and wear clothes that leave the spot free. For a custom piece, bring your reference pictures." },
-  { q: "Do you take walk-ins?", a: "Sometimes. If an artist has a free hour, they can tattoo a small flash design the same day, so call the studio first. To be sure of a time, book online." },
-  { q: "How do I pay?", a: `For a flash design you pay a €30 deposit online when you book, with Revolut, a card, Apple Pay or Google Pay. It is taken off the price, and the rest you pay in the studio ${studio.payment}. For a custom piece, your artist tells you the price of each session and its deposit.` },
-  { q: "Can I bring my own design?", a: "Yes. Book a free consultation and your artist will redraw your idea in their own style. We don't copy another artist's tattoo." },
-  { q: "How long does healing take?", a: "The surface heals in two to four weeks and the skin settles within a month or two. The aftercare guide walks you through each day." },
-  { q: "Can you cover an old tattoo?", a: "Often, yes. Bring photos to a free consultation and the artist will tell you what is possible." },
-]
-
-/** Six designs for the home page sheet, taking turns between the artists. */
-function pickSix(sheet: Flash[]) {
+/** Designs for the home page sheet (four, one row), taking turns between the artists. */
+function pickDesigns(sheet: Flash[], count = 4) {
   const byArtist = new Map<string, Flash[]>()
   sheet.forEach((f) => byArtist.set(f.artistId, [...(byArtist.get(f.artistId) ?? []), f]))
   const queues = [...byArtist.values()]
   const picked: Flash[] = []
-  for (let round = 0; picked.length < 6 && queues.some((q) => q.length > round); round++) {
-    queues.forEach((q) => q[round] && picked.length < 6 && picked.push(q[round]))
+  for (let round = 0; picked.length < count && queues.some((q) => q.length > round); round++) {
+    queues.forEach((q) => q[round] && picked.length < count && picked.push(q[round]))
   }
   return picked
 }
@@ -51,7 +40,7 @@ export default function Home() {
               <div className="hero-image">
                 <div className="scene-base">
                   <picture className="hero-picture">
-
+                    <source srcSet="/images/hero-night.webp" type="image/webp" />
                     <img src="/images/footer-night.jpg" alt="A red torii gate in a misty night mountain landscape" />
                   </picture>
                 </div>
@@ -87,8 +76,8 @@ export default function Home() {
           <span className="sheet-pin is-right" aria-hidden="true"></span>
           {sheet.error && <p className="state-note">{sheet.error}</p>}
           {sheet.data && sheet.data.length === 0 && <p className="state-note">Every design is booked right now. New flash comes soon.</p>}
-          <div className="flash-grid">
-            {pickSix(sheet.data ?? []).map((flash) => (
+          <div className="flash-grid is-one-row">
+            {pickDesigns(sheet.data ?? []).map((flash) => (
               <FlashCard key={flash.id} flash={flash} byline={false} aboutTime={false} href={`/book/time?flash=${flash.id}`} />
             ))}
           </div>
@@ -136,17 +125,20 @@ export default function Home() {
           </div>
           <p>Kai works in bold colour, Dario in black and grey, Nika in fine line.</p>
         </div>
-        <div className="artist-grid">
+        {/* Compact cards: the signature piece, the name and style, and the first line of the bio */}
+        <div className="artist-cards">
           {(artists.data ?? []).map((artist) => (
-            <Link key={artist.id} to={`/artists/${artist.slug}`} className="artist-card">
-              <HangingScroll name={artist.name} signature={artist.signaturePiece} variant="mini" />
-              <div>
-                <span className="seal-lockup">
-                  <ArtistSeal name={artist.name} />
-                </span>
-                <h3>{artist.name}</h3>
+            <Link key={artist.id} to={`/artists/${artist.slug}`} className="artist-compact">
+              <div className="artist-compact-art">
+                <Art image={artist.signaturePiece} fit="cover" focus={artist.signaturePiece ? PIECE_FOCUS[artist.signaturePiece.id] : undefined} />
               </div>
-              <p>{artist.style}</p>
+              <div className="artist-compact-text">
+                <h3>
+                  <ArtistSeal name={artist.name} /> {artist.name}
+                </h3>
+                <p className="artist-compact-style">{artist.style}</p>
+                <p>{firstSentence(artist.bio)}</p>
+              </div>
             </Link>
           ))}
         </div>
@@ -178,42 +170,15 @@ export default function Home() {
         </>
       )}
 
-      <section className="custom-cta has-scroll" aria-labelledby="custom-title">
-        <WallScroll className="cta-scroll" hidden>
-          <ScrollArt kind="seal" />
-        </WallScroll>
-        <div className="custom-cta-body">
+      {/* A slim banner: custom pieces start with a consultation */}
+      <section className="custom-banner" aria-labelledby="custom-title">
+        <div className="custom-banner-text">
           <h2 id="custom-title">Want something of your own?</h2>
-          <p>
-            Bigger and custom pieces start with a free 30-minute consultation. Bring your idea and reference photos, and
-            your artist will plan the piece and the sessions with you.
-          </p>
-          <Link className="button button-primary" to="/book/choose?type=consultation">
-            Book a free consultation
-          </Link>
+          <p>Custom pieces start with a free 30-minute consultation. Bring your idea and reference photos.</p>
         </div>
-      </section>
-
-      <section className="content-section faq-section" aria-labelledby="faq-title">
-        <div className="section-heading">
-          <div>
-            <h2 id="faq-title">Before your first tattoo</h2>
-          </div>
-          <p>The questions people ask most. Anything else, write to the studio.</p>
-        </div>
-        {/* Two fixed halves, so opening an answer never moves a question to the other column */}
-        <div className="faq-list is-split">
-          {[FAQ.slice(0, Math.ceil(FAQ.length / 2)), FAQ.slice(Math.ceil(FAQ.length / 2))].map((half, i) => (
-            <div className="faq-column" key={i}>
-              {half.map((item) => (
-                <details key={item.q}>
-                  <summary>{item.q}</summary>
-                  <p>{item.a}</p>
-                </details>
-              ))}
-            </div>
-          ))}
-        </div>
+        <Link className="button button-primary" to="/book/choose?type=consultation">
+          Book a free consultation
+        </Link>
       </section>
 
       <ContactSection />
@@ -266,6 +231,9 @@ function ContactSection() {
         <p>
           Questions about placement, size or an existing tattoo? Tell us what you have in mind. We usually reply within two
           working days.
+        </p>
+        <p className="contact-faq-link">
+          First tattoo? Read <Link to="/aftercare#before-your-first-tattoo">the questions people ask most</Link>.
         </p>
         <div className="contact-detail">
           <Clock3 className="icon" size={20} aria-hidden="true" />

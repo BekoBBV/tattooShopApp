@@ -67,7 +67,7 @@ const hoursWeek = (["TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "S
 }))
 
 /** A signature piece that ships with the website (client/public/images/artists) */
-const piece = (file: string): Image => ({ id: `bundled:artists/${file}`, url: `/images/artists/${file}`, thumbUrl: `/images/artists/${file}` })
+const piece = (file: string): Image => ({ id: `bundled:artists/${file}`, url: `/images/artists/${file}`, thumbUrl: `/images/artists/small/${file}` })
 
 const artists: Artist[] = [
   {
@@ -135,7 +135,7 @@ const design = (id: string, artistId: string, name: string, w: number, h: number
 
 /** Every sample design has a drawing that ships with the website, named after its id (the server gives the same
  * ones out: DataSeeder.FLASH_PICTURES; flashDrawings.test.ts checks the two match). */
-const drawing = (id: string): Image => ({ id: `bundled:flash/${id}.jpg`, url: `/images/flash/${id}.jpg`, thumbUrl: `/images/flash/${id}.jpg` })
+const drawing = (id: string): Image => ({ id: `bundled:flash/${id}.jpg`, url: `/images/flash/${id}.jpg`, thumbUrl: `/images/flash/small/${id}.webp` })
 
 const flash: Flash[] = [
   design("lucky-koi", "kai", "Lucky koi", 6, 8, 90, 140),
@@ -152,10 +152,17 @@ const flash: Flash[] = [
   design("small-wave", "nika", "Small wave", 5, 5, 60, 80),
 ].map((f) => ({ ...f, image: drawing(f.id) }))
 
+/** The sample reviews, three per artist (the same as the server's DataSeeder.SAMPLE_REVIEWS) */
 const reviews: (Review & { approved: boolean })[] = [
-  { id: "r1", artistId: "dario", name: "Elena", rating: 5, text: "Careful, clear and beautifully done.", createdAt: "2026-10-28T10:00:00Z", approved: true },
-  { id: "r2", artistId: "nika", name: "Sofia", rating: 4, text: "A calm studio and excellent line work.", createdAt: "2026-10-20T10:00:00Z", approved: true },
-  { id: "r3", artistId: "kai", name: "Petar", rating: 5, text: "The colour healed bright and solid.", createdAt: "2026-10-12T10:00:00Z", approved: true },
+  { id: "r1", artistId: "kai", name: "Petar", rating: 5, text: "Kai did a koi and wave half sleeve on my forearm over two sessions. The colour healed bright and solid, and the outlines are as crisp as the drawing. He explained every step of the aftercare.", createdAt: "2026-10-28T10:00:00Z", approved: true },
+  { id: "r2", artistId: "kai", name: "Martin", rating: 5, text: "I booked the Small dragon flash and was done in two hours. Kai placed it perfectly on my calf and checked the stencil with me twice before starting.", createdAt: "2026-10-16T10:00:00Z", approved: true },
+  { id: "r3", artistId: "kai", name: "Desislava", rating: 4, text: "A big back piece in progress with Kai, three sessions so far. The work is excellent; the only reason for four stars is that his next free day was a month away.", createdAt: "2026-09-29T10:00:00Z", approved: true },
+  { id: "r4", artistId: "dario", name: "Elena", rating: 5, text: "Dario tattooed a hannya mask on my shoulder in black and grey. The shading is so soft it looks painted, and it healed without a single patch. Careful, clear and beautifully done.", createdAt: "2026-10-30T10:00:00Z", approved: true },
+  { id: "r5", artistId: "dario", name: "Georgi", rating: 5, text: "My first black and grey piece, an oni on the upper arm. Dario talked me through the size and placement, and the session felt calm the whole time.", createdAt: "2026-10-20T10:00:00Z", approved: true },
+  { id: "r6", artistId: "dario", name: "Radoslav", rating: 5, text: "I came in with a rough idea for a samurai, and at the consultation Dario turned it into something far better. Worth every euro.", createdAt: "2026-10-05T10:00:00Z", approved: true },
+  { id: "r7", artistId: "nika", name: "Sofia", rating: 4, text: "A calm studio and excellent line work. Nika's crane on my ribs is delicate, but every line is clean. It took a little longer than planned, which I'd rather have than a rushed job.", createdAt: "2026-10-24T10:00:00Z", approved: true },
+  { id: "r8", artistId: "nika", name: "Ivana", rating: 5, text: "My first tattoo, a small cherry blossom branch on the wrist. Nika was patient with all my questions, and the red touches still look fresh after two months.", createdAt: "2026-10-12T10:00:00Z", approved: true },
+  { id: "r9", artistId: "nika", name: "Kalina", rating: 5, text: "A fine line peony on my thigh. Nika suggested making it slightly bigger so the lines would age well, and she was right.", createdAt: "2026-09-22T10:00:00Z", approved: true },
 ]
 
 const bookings: Stored[] = []
@@ -320,7 +327,7 @@ function seedDemoCustomer() {
   makeBooking({ ...mira, type: "CONSULTATION", status: "BOOKED", artistId: "nika", date: nextOpen(12), time: "12:30", minutes: 30,
     title: null, price: null, deposit: null, depositStatus: "NONE",
     consultation: { idea: "I would like a flowing koi sleeve with red maple leaves, mostly black line work with a small amount of colour near the wrist.",
-      placement: "FULL_SLEEVE", sizeCm: null, colour: "NOT_SURE", photos: ["hero-landscape", "banner-sky", "hero-portrait"].map((name) => ({ id: `ref-${name}`, url: `/images/${name}.jpg`, thumbUrl: `/images/${name}.jpg` })) } })
+      placement: "FULL_SLEEVE", sizeCm: null, colour: "NOT_SURE", photos: ["kai-koi-half-sleeve", "kai-phoenix-back", "dario-oni-snake-back"].map((name) => ({ id: `ref-${name}`, url: `/images/work/${name}.jpg`, thumbUrl: `/images/work/small/${name}.webp` })) } })
   const peony = makeBooking({ ...mira, type: "FLASH", status: "DONE", artistId: "nika", date: addDays(today, -19), time: "13:00", minutes: 60,
     title: "Peony", flashId: "peony", price: 90, deposit: 30, depositStatus: "PAID" })
   peony.slots = []
@@ -334,7 +341,7 @@ function seedDemoCustomer() {
   makeBooking({ ...guest("Petar Ivanov", "+359889001122", "petar@example.com"), type: "CONSULTATION", status: "BOOKED", artistId: "kai",
     date: nextOpen(2), time: "15:00", minutes: 30, title: null, price: null, deposit: null, depositStatus: "NONE",
     consultation: { idea: "Blackwork back piece with a dragon climbing through clouds.", placement: "BACK", sizeCm: 45, colour: "BLACK_AND_GREY",
-      photos: ["footer-night", "hero-landscape"].map((name) => ({ id: `ref-petar-${name}`, url: `/images/${name}.jpg`, thumbUrl: `/images/${name}.jpg` })) } })
+      photos: ["kai-koi-chrysanthemum-sleeve", "kai-kabuki-warrior"].map((name) => ({ id: `ref-petar-${name}`, url: `/images/work/${name}.jpg`, thumbUrl: `/images/work/small/${name}.webp` })) } })
   makeBooking({ ...guest("Sofia Koleva", "+359885550199", "sofia@example.com"), type: "SESSION", status: "BOOKED", artistId: "kai",
     date: addDays(today, -1), time: "12:00", minutes: 180, title: "Koi sleeve, session 2 of 4", price: 360, deposit: 80, depositStatus: "PAID" }).slots = []
   makeBooking({ ...guest("Nikolay Petrov", "+359884443322", "nikolay@example.com"), type: "SESSION", status: "BOOKED", artistId: "dario",
@@ -516,7 +523,9 @@ async function handle(method: string, url: URL, headers: Headers, body: BodyInit
     return f ? ok(sheetDto(f)) : fail(404, "FLASH_NOT_FOUND", "This flash design doesn't exist (any more)")
   }
   if (method === "GET" && path === "/reviews") {
-    const list = reviews.filter((r) => r.approved && (!q.get("artistId") || r.artistId === q.get("artistId")))
+    const list = reviews
+      .filter((r) => r.approved && (!q.get("artistId") || r.artistId === q.get("artistId")))
+      .sort((x, y) => y.createdAt.localeCompare(x.createdAt)) // newest first, as the server answers
     const avg = list.length ? Math.round((list.reduce((s, r) => s + r.rating, 0) / list.length) * 10) / 10 : 0
     const limit = Number(q.get("limit") ?? "") || list.length
     return ok({ averageRating: avg, count: list.length, reviews: list.slice(0, limit) })
@@ -683,7 +692,6 @@ const artistExtra: Record<string, { breakMinutes: number; active: boolean; sortO
   artists.map((a, i) => [a.id, { breakMinutes: 30, active: true, sortOrder: i }]),
 )
 const hiddenFlash: string[] = []
-const picture = (name: string, i: number): Image => ({ id: `${name}-${i}`, url: `/images/${name}.jpg`, thumbUrl: `/images/${name}.jpg` })
 /** The sample portfolio photos, newest first (the same as the server's DataSeeder.SAMPLE_WORKS) */
 const sampleWork: [artistId: string, file: string, caption: string][] = [
   ["nika", "nika-dragon-sleeve", "Fine-line dragon sleeve"],
@@ -700,7 +708,7 @@ const sampleWork: [artistId: string, file: string, caption: string][] = [
   ["nika", "nika-tiger-red-sun-sleeve", "Tiger and red sun sleeve"],
   ["dario", "dario-manga-panel-sleeve", "Manga panel sleeve"],
 ]
-const photo = (file: string): Image => ({ id: `bundled:work/${file}.jpg`, url: `/images/work/${file}.jpg`, thumbUrl: `/images/work/${file}.jpg` })
+const photo = (file: string): Image => ({ id: `bundled:work/${file}.jpg`, url: `/images/work/${file}.jpg`, thumbUrl: `/images/work/small/${file}.webp` })
 const works: Work[] = sampleWork.map(([artistId, file, caption], i) => ({
   id: `work-${artistId}-${i}`,
   artistId,
@@ -714,7 +722,7 @@ const messages: (Message & { handledAt?: string })[] = [
     name: "Ivana",
     contact: "ivana@example.com",
     text: "Could this old shoulder tattoo be covered with a peony and dark leaves?",
-    photos: [picture("hero-portrait", 9)],
+    photos: [{ id: "reference-9", url: "/images/work/kai-koi-half-sleeve.jpg", thumbUrl: "/images/work/small/kai-koi-half-sleeve.webp" }],
     read: false,
     readAt: null,
     createdAt: new Date(Date.now() - 3 * 60 * MIN).toISOString(),

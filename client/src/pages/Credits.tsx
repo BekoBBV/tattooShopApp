@@ -8,7 +8,7 @@ const CREDITS = [
   { file: "Sample flash drawings (all twelve designs on the flash sheet)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
   { file: "Artists' scroll pictures: dragon (Kai), demon mask (Dario), crane (Nika)", author: "Blade & Brush", source: "AI-generated for the site", licence: "Under the image tool's terms" },
   { file: "Photos of finished tattoos (Recent work and the artists' Work)", author: "Other tattoo artists, not credited", source: "Collected from Pinterest for this concept project", licence: "Not licensed: examples only" },
-  { file: "Tattoo machine drawing (phone menu) and scroll pictures: the studio scroll (home, Flash, Aftercare), pagoda (Not found)", author: "Blade & Brush", source: "Drawn for the site", licence: "All rights reserved" },
+  { file: "Tattoo machine drawing (Flash page, phone menu) and scroll pictures: stone lantern (Aftercare), pagoda (Not found)", author: "Blade & Brush", source: "Drawn for the site", licence: "All rights reserved" },
   { file: "BB seal (logo)", author: "Blade & Brush", source: "Studio artwork", licence: "All rights reserved" },
   { file: "Flash designs and portfolio photos the artists upload", author: "The studio's artists", source: "Their own work", licence: "All rights reserved" },
 ]
@@ -62,7 +62,7 @@ export default function Credits() {
             <strong>AI-generated:</strong> the pictures on the artists' scrolls (the dragon, the demon mask and the crane).
           </li>
           <li>
-            <strong>Drawn for the site:</strong> the BB seal, the studio scroll, the pagoda and the tattoo machine.
+            <strong>Drawn for the site:</strong> the BB seal, the lantern and pagoda scrolls, and the tattoo machine.
           </li>
           <li>
             <strong>Fonts and icons:</strong> Zen Old Mincho and Zen Kaku Gothic New (SIL Open Font License, through

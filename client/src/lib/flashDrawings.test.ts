@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest"
  * server's list that gives them to the designs (DataSeeder.FLASH_PICTURES) and the sample data,
  * which names each design's drawing after its id. This keeps the three in step.
  */
-const files = readdirSync(new URL("../../public/images/flash", import.meta.url)).sort()
+// (the drawings themselves; their small copies are in flash/small)
+const files = readdirSync(new URL("../../public/images/flash", import.meta.url)).filter((f) => f.endsWith(".jpg")).sort()
 const seeder = readFileSync(
   new URL("../../../server/src/main/java/com/tattoostudio/config/DataSeeder.java", import.meta.url),
   "utf8",

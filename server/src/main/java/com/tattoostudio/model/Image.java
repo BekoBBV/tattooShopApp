@@ -23,6 +23,14 @@ public record Image(String id, String url, String thumbUrl) {
         return new Image(BUNDLED + path, url, url);
     }
 
+    /**
+     * A picture that ships with the website, with a smaller copy for lists and thumbnails (e.g. the
+     * artists' scroll pictures: the full one on the artist's page, the small one everywhere else).
+     */
+    public static Image bundled(String path, String thumbPath) {
+        return new Image(BUNDLED + path, "/images/" + path, "/images/" + thumbPath);
+    }
+
     public boolean isBundled() {
         return id != null && id.startsWith(BUNDLED);
     }

@@ -150,7 +150,8 @@ export function SiteFooter() {
                 <>
                   <br />
                   <a href={instagramUrl(studio.instagram)} target="_blank" rel="noopener noreferrer">
-                    @{studio.instagram} on Instagram
+                    @{studio.instagram}{" "}
+                    <span className="visually-hidden">on Instagram</span>
                   </a>
                 </>
               )}

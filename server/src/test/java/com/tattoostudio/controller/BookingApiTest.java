@@ -38,8 +38,8 @@ class BookingApiTest extends ApiTest {
                 .andExpect(jsonPath("$[0].dayRate").value(550))
                 .andExpect(jsonPath("$[0].weeklyHours.length()").value(6))
                 .andExpect(jsonPath("$[0].weeklyHours[0].start").value("11:00"))
-                .andExpect(jsonPath("$[0].averageRating").value(5.0))
-                .andExpect(jsonPath("$[0].reviewCount").value(1));
+                .andExpect(jsonPath("$[0].averageRating").value(4.7))
+                .andExpect(jsonPath("$[0].reviewCount").value(3));
         mvc.perform(get("/api/artists/kai")).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Kai"));
         mvc.perform(get("/api/artists/kai/works")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
         mvc.perform(get("/api/artists/nobody")).andExpect(status().isNotFound())
@@ -222,14 +222,14 @@ class BookingApiTest extends ApiTest {
         postJson("/api/bookings/review", review).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("REVIEW_NOT_ALLOWED"));
         // A new review waits for approval, so the public count is unchanged
-        mvc.perform(get("/api/reviews")).andExpect(jsonPath("$.count").value(3));
+        mvc.perform(get("/api/reviews")).andExpect(jsonPath("$.count").value(9));
         // The home page asks for the newest few; the count and average still cover all of them
         mvc.perform(get("/api/reviews").param("limit", "2"))
-                .andExpect(jsonPath("$.count").value(3))
+                .andExpect(jsonPath("$.count").value(9))
                 .andExpect(jsonPath("$.reviews.length()").value(2));
         mvc.perform(get("/api/reviews").param("limit", "0")).andExpect(status().isBadRequest());
         mvc.perform(get("/api/reviews").param("artistId", artist("Kai").getId()))
-                .andExpect(jsonPath("$.count").value(1))
+                .andExpect(jsonPath("$.count").value(3))
                 .andExpect(jsonPath("$.reviews[0].name").value("Petar"));
     }
 

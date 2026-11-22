@@ -1,5 +1,6 @@
 import { Link } from "react-router"
 import { PageIntro } from "../components/Layout"
+import { FAQ } from "../lib/faq"
 import { usePageTitle } from "../lib/usePageTitle"
 
 const STAGES = [
@@ -10,14 +11,14 @@ const STAGES = [
   { range: "Days 2 to 3", text: "Wash twice a day, apply a thin layer of cream, and wear loose clean clothes over it." },
   { range: "Days 4 to 14", text: "Peeling and itching are normal. Don't scratch or pick. No swimming, sauna or sunbathing." },
   { range: "Days 15 to 30", text: "The skin settles. Keep it moisturized and out of strong sun." },
-  { range: "After a month", text: "Always use high SPF sunscreen on the tattoo to keep the colors sharp." },
+  { range: "After a month", text: "Always use high SPF sunscreen on the tattoo to keep the colours sharp." },
 ]
 
 export default function Aftercare() {
   usePageTitle("Aftercare", "How to look after a new tattoo, day by day: washing, cream, what to avoid while it heals, and sun care after the first month.")
   return (
     <main>
-      <PageIntro title="Aftercare" painting="seal">
+      <PageIntro title="Aftercare" painting="lantern">
         <p>A simple healing routine protects the line, colour and skin beneath your tattoo.</p>
       </PageIntro>
       <section className="wrap page-body aftercare-layout" aria-label="Healing stages">
@@ -40,6 +41,27 @@ export default function Aftercare() {
           <Link className="button button-primary" to="/#contact">
             Write to the studio
           </Link>
+        </div>
+      </section>
+      <section className="wrap content-section faq-section" id="before-your-first-tattoo" aria-labelledby="faq-title">
+        <div className="section-heading">
+          <div>
+            <h2 id="faq-title">Before your first tattoo</h2>
+          </div>
+          <p>The questions people ask most. Anything else, write to the studio.</p>
+        </div>
+        {/* Two fixed halves, so opening an answer never moves a question to the other column */}
+        <div className="faq-list is-split">
+          {[FAQ.slice(0, Math.ceil(FAQ.length / 2)), FAQ.slice(Math.ceil(FAQ.length / 2))].map((half, i) => (
+            <div className="faq-column" key={i}>
+              {half.map((item) => (
+                <details key={item.q}>
+                  <summary>{item.q}</summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
+            </div>
+          ))}
         </div>
       </section>
     </main>
