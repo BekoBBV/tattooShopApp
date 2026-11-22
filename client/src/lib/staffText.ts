@@ -98,7 +98,7 @@ export const DAY_NAMES: Record<Weekday, string> = {
 }
 export const WEEK: Weekday[] = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
 
-/** "Tuesday to Sunday, 11:00 to 23:00" when the open days share their hours, otherwise day by day. */
+/** "Tuesday to Sunday, 11:00 to 20:00" when the open days share their hours, otherwise day by day. */
 export function hoursSummary(weekly: WorkingHours[]) {
   const open = WEEK.map((day) => weekly.find((h) => h.day === day)).filter((h): h is WorkingHours => !!h)
   if (open.length === 0) return "No weekly hours set yet"

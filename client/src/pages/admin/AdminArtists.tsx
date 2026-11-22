@@ -12,7 +12,7 @@ import { errorText, useLoad } from "../../lib/useLoad"
 import { usePageTitle } from "../../lib/usePageTitle"
 
 /** A new artist starts with the studio's opening hours; they change them under My hours. */
-const STUDIO_HOURS = (["TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const).map((day) => ({ day, start: "11:00", end: "23:00" }))
+const STUDIO_HOURS = (["TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const).map((day) => ({ day, start: "11:00", end: "20:00" }))
 
 /** Artists: profiles, rates, staff logins and who is active. */
 export default function AdminArtists() {
@@ -251,7 +251,7 @@ function ArtistDialog({ artist, onClose, onSaved }: { artist: AdminArtist | null
           {errors.picture ? <p className="field-error">{errors.picture}</p> : <p className="helper">Shown on their hanging scroll.</p>}
         </div>
       </div>
-      {!artist && <p className="dialog-hint">They start with the studio's hours, Tuesday to Sunday 11:00 to 23:00, and change them under My hours.</p>}
+      {!artist && <p className="dialog-hint">They start with the studio's hours, Tuesday to Sunday 11:00 to 20:00, and change them under My hours.</p>}
       <div className="dialog-actions">
         <button className="button button-primary" type="submit" disabled={busy}>
           {busy ? "Saving..." : artist ? "Save artist" : "Add artist"}

@@ -1,7 +1,6 @@
-import { ChevronRight, LogOut, Menu, Phone, X } from "lucide-react"
+import { ChevronRight, Menu, Phone, X } from "lucide-react"
 import { useEffect, useState, type ReactNode } from "react"
-import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useNavigate } from "react-router"
-import { setCustomer, useCustomer } from "../lib/customer"
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from "react-router"
 import { instagramUrl, studio } from "../lib/format"
 import { ScrollArt, type ScrollArtKind } from "./ScrollArt"
 import { WallScroll } from "./Studio"
@@ -21,8 +20,6 @@ const NAV = [
  */
 export function SiteHeader() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const customer = useCustomer()
   // The menu is open for the page it was opened on, so going to another page closes it
   const [openOn, setOpenOn] = useState<string | null>(null)
   const open = openOn === location.pathname
@@ -80,20 +77,6 @@ export function SiteHeader() {
             <ChevronRight className="icon" size={22} aria-hidden="true" />
           </Link>
         ))}
-        {customer && (
-          <button
-            className="phone-menu-sign-out"
-            type="button"
-            onClick={() => {
-              setCustomer(null)
-              setOpenOn(null)
-              navigate("/")
-            }}
-          >
-            Sign out
-            <LogOut className="icon" size={22} aria-hidden="true" />
-          </button>
-        )}
         <div className="phone-menu-art" aria-hidden="true">
           <TattooMachine />
         </div>

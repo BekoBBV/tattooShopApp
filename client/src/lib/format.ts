@@ -5,7 +5,7 @@
 export const studio = {
   name: "Blade & Brush",
   address: "14 Mastilo Street, 1000 Sofia",
-  hours: "Tuesday to Sunday, 11:00 to 23:00",
+  hours: "Tuesday to Sunday, 11:00 to 20:00",
   closed: "Closed on Monday",
   phone: "+359 88 123 4567",
   tel: "tel:+359881234567",

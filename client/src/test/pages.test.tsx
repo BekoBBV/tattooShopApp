@@ -211,7 +211,7 @@ describe("signing in", () => {
     await pageTitle("My account")
   }, 30_000)
 
-  it("lets a customer sign out from My account and from the menu", async () => {
+  it("lets a customer sign out from My account", async () => {
     const { user, router } = open("/account/sign-in")
     await pageTitle("Sign in")
     await user.type(screen.getByLabelText("Email"), "mira@example.com")
@@ -219,13 +219,10 @@ describe("signing in", () => {
     await user.click(screen.getByRole("button", { name: "Sign in" }))
     await pageTitle("My account")
 
-    // The menu offers it while signed in
-    expect(within(document.getElementById("phone-menu")!).getByRole("button", { name: "Sign out", hidden: true })).toBeTruthy()
-
-    // At the bottom of the side column, the only one on the page
+    // The last row of the account menu, the only one on the site (not in the phone menu)
+    expect(within(document.getElementById("phone-menu")!).queryByRole("button", { name: "Sign out", hidden: true })).toBeNull()
     await user.click(screen.getByRole("button", { name: "Sign out" }))
     await waitFor(() => expect(router.state.location.pathname).toBe("/"))
-    expect(within(document.getElementById("phone-menu")!).queryByRole("button", { name: "Sign out", hidden: true })).toBeNull()
 
     // Signed out: My account asks to sign in again
     await router.navigate("/account")

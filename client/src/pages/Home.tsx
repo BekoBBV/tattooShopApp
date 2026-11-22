@@ -240,7 +240,7 @@ function ContactSection() {
           <span>
             Tuesday to Sunday
             <br />
-            11:00 to 23:00
+            11:00 to 20:00
           </span>
         </div>
         <div className="contact-detail">

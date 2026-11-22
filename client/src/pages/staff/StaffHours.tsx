@@ -36,7 +36,7 @@ function HoursForm({ saved }: { saved: Schedule }) {
     Object.fromEntries(
       ORDER.map((day) => {
         const h = saved.weeklyHours.find((w) => w.day === day)
-        return [day, h ? { off: false, start: h.start, end: h.end } : { off: true, start: "11:00", end: "23:00" }]
+        return [day, h ? { off: false, start: h.start, end: h.end } : { off: true, start: "11:00", end: "20:00" }]
       }),
     ) as Record<Weekday, Day>,
   )

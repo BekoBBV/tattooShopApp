@@ -328,9 +328,9 @@ class BookingServiceTest extends ApiTest {
     @Test
     void oneDesignGoesToOneOfManySimultaneousCustomers() throws Exception {
         List<String> outcomes = simultaneously(List.of(
-                () -> bookFlash("Small dragon", "14:00", "0888 700 001"),
-                () -> bookFlash("Small dragon", "18:00", "0888 700 002"),
-                () -> bookFlash("Small dragon", "20:30", "0888 700 003")));
+                () -> bookFlash("Small dragon", "11:00", "0888 700 001"),
+                () -> bookFlash("Small dragon", "14:00", "0888 700 002"),
+                () -> bookFlash("Small dragon", "17:00", "0888 700 003"))); // three hours each, all before closing
         assertThat(outcomes).containsOnlyOnce("booked");
         assertThat(outcomes.stream().filter(o -> !o.equals("booked"))).allMatch(o -> o.equals("FLASH_NOT_AVAILABLE"));
     }

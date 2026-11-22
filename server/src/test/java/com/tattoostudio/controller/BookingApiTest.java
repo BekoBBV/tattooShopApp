@@ -80,7 +80,7 @@ class BookingApiTest extends ApiTest {
         mvc.perform(get("/api/availability").param("artistId", artist("Nika").getId()).param("from", TUESDAY.toString())
                         .param("days", "1"))
                 .andExpect(jsonPath("$.durationMinutes").value(30))
-                .andExpect(jsonPath("$.days[0].slots.length()").value(24));
+                .andExpect(jsonPath("$.days[0].slots.length()").value(18)); // 11:00 to 19:30
         mvc.perform(get("/api/availability")).andExpect(status().isBadRequest());
         mvc.perform(get("/api/availability").param("flashId", "nope")).andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("FLASH_NOT_FOUND"));

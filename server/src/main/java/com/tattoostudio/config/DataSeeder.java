@@ -160,6 +160,8 @@ public class DataSeeder implements ApplicationRunner {
             new SampleReview("Nika", "Kalina", 5, "A fine line peony on my thigh. Nika suggested making it slightly bigger so the lines would age well, and she was right.", 40));
     /** Set once the longer sample reviews were added (raise the number when they change). */
     static final String SAMPLE_REVIEWS_MARKER = "sample-reviews-1";
+    /** Set once the studio's closing time moved from 23:00 to 20:00 in a database seeded before. */
+    static final String STUDIO_HOURS_MARKER = "studio-hours-20";
     /** Start the server with --reset-demo to go back to the original demo data (e.g. before presenting). */
     static final String RESET_OPTION = "reset-demo";
     static final String DEMO_CUSTOMER_EMAIL = "mira@example.com";
@@ -207,6 +209,7 @@ public class DataSeeder implements ApplicationRunner {
         giveArtistsTheirSignaturePiecesOnce();
         addSampleWorksOnce();
         addSampleReviewsOnce();
+        moveClosingTimeOnce();
         ensureAdmin();
         ensureDemoLogins();
     }
@@ -243,7 +246,7 @@ public class DataSeeder implements ApplicationRunner {
             mongo.remove(new Query(), type);
         }
         mongo.remove(Query.query(Criteria.where("_id").in(DEMO_DATA_MARKER, FLASH_PICTURES_MARKER, INSTAGRAM_MARKER,
-                SIGNATURE_PICTURES_MARKER, SAMPLE_WORKS_MARKER, SAMPLE_REVIEWS_MARKER)), META_COLLECTION);
+                SIGNATURE_PICTURES_MARKER, SAMPLE_WORKS_MARKER, SAMPLE_REVIEWS_MARKER, STUDIO_HOURS_MARKER)), META_COLLECTION);
         images.deleteAll(pictures.stream().filter(p -> p != null).toList());
     }
 
@@ -349,14 +352,42 @@ public class DataSeeder implements ApplicationRunner {
         log.info("Added {} sample portfolio photos", added);
     }
 
-    /** The studio's hours: Tuesday to Sunday, 11:00 to 23:00; closed on Monday. */
-    private static final List<WorkingHours> STUDIO_HOURS = List.of(
-            new WorkingHours(TUESDAY, LocalTime.of(11, 0), LocalTime.of(23, 0)),
-            new WorkingHours(WEDNESDAY, LocalTime.of(11, 0), LocalTime.of(23, 0)),
-            new WorkingHours(THURSDAY, LocalTime.of(11, 0), LocalTime.of(23, 0)),
-            new WorkingHours(FRIDAY, LocalTime.of(11, 0), LocalTime.of(23, 0)),
-            new WorkingHours(SATURDAY, LocalTime.of(11, 0), LocalTime.of(23, 0)),
-            new WorkingHours(SUNDAY, LocalTime.of(11, 0), LocalTime.of(23, 0)));
+    /**
+     * Moves the closing time from 23:00 to 20:00, once per database (per STUDIO_HOURS_MARKER): every
+     * day an artist still works the old 11:00 to 23:00 now ends at 20:00. Hours an artist changed stay.
+     * Bookings already made after 20:00 are kept; the artist sees them as outside their hours.
+     */
+    private void moveClosingTimeOnce() {
+        if (mongo.exists(Query.query(Criteria.where("_id").is(STUDIO_HOURS_MARKER)), META_COLLECTION)) {
+            return;
+        }
+        LocalTime oldOpen = LocalTime.of(11, 0);
+        LocalTime oldClose = LocalTime.of(23, 0);
+        LocalTime newClose = LocalTime.of(20, 0);
+        int changed = 0;
+        for (Artist artist : artists.findAll()) {
+            List<WorkingHours> hours = artist.getWeeklyHours();
+            if (hours.stream().noneMatch(h -> h.start().equals(oldOpen) && h.end().equals(oldClose))) {
+                continue;
+            }
+            artist.setWeeklyHours(hours.stream()
+                    .map(h -> h.start().equals(oldOpen) && h.end().equals(oldClose) ? new WorkingHours(h.day(), oldOpen, newClose) : h)
+                    .toList());
+            artists.save(artist);
+            changed++;
+        }
+        mongo.save(new Document("_id", STUDIO_HOURS_MARKER).append("at", new Date()), META_COLLECTION);
+        log.info("Moved the closing time to 20:00 for {} artists", changed);
+    }
+
+    /** The studio's hours: Tuesday to Sunday, 11:00 to 20:00; closed on Monday. */
+    public static final List<WorkingHours> STUDIO_HOURS = List.of(
+            new WorkingHours(TUESDAY, LocalTime.of(11, 0), LocalTime.of(20, 0)),
+            new WorkingHours(WEDNESDAY, LocalTime.of(11, 0), LocalTime.of(20, 0)),
+            new WorkingHours(THURSDAY, LocalTime.of(11, 0), LocalTime.of(20, 0)),
+            new WorkingHours(FRIDAY, LocalTime.of(11, 0), LocalTime.of(20, 0)),
+            new WorkingHours(SATURDAY, LocalTime.of(11, 0), LocalTime.of(20, 0)),
+            new WorkingHours(SUNDAY, LocalTime.of(11, 0), LocalTime.of(20, 0)));
 
     private List<Artist> seedArtists() {
         List<Artist> saved = artists.saveAll(List.of(

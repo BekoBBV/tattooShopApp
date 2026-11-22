@@ -51,7 +51,7 @@ public class AvailabilityService {
         this.clock = clock;
     }
 
-    /** A working period on one date, e.g. 11:00–23:00. */
+    /** A working period on one date, e.g. 11:00–20:00. */
     record Window(LocalTime start, LocalTime end) {
     }
 

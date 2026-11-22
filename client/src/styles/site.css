@@ -618,8 +618,8 @@ a.staff-text-button { display: inline-flex; align-items: center; }
 .on-paper .staff-text-button.message-delete { color: var(--red); }
 
 /* Customer sign-out: the last row of My account's menu, in red, laid out like the section links above
-   it (a row in the list on desktop, the last tab in the scrolling row on phones). The menu also offers
-   it, as a quieter last row (an action, not a page, so smaller than the page links above it). */
+   it (a row in the list on desktop, the last tab in the scrolling row on phones). The phone menu has no
+   Sign out: My account is the one place for it. */
 .account-section-nav .account-sign-out { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0;
   border: 0; border-bottom: 1px solid var(--rule-night); background: none; color: #E5484D; font: inherit; text-align: left; cursor: pointer; }
 /* (#E5484D: the studio red lightened for text on black; --red itself only reaches about 3:1 there) */
@@ -627,10 +627,6 @@ a.staff-text-button { display: inline-flex; align-items: center; }
 @media (max-width: 767px) {
   .account-section-nav .account-sign-out { flex: none; white-space: nowrap; border-bottom: 2px solid transparent; }
 }
-.phone-menu > .phone-menu-sign-out { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 60px; padding: 0;
-  border: 0; border-bottom: 1px solid var(--rule-night); background: none; color: var(--paper-on-sumi-soft);
-  font: 500 18px/1.2 'Zen Kaku Gothic New', sans-serif; text-align: left; cursor: pointer; }
-.phone-menu > .phone-menu-sign-out:hover { color: var(--paper-on-sumi); }
 
 /* Calendar: every day's header in a row is as tall as the tallest one (a long name such as
    "Wednesday 25" wraps on narrower windows), so the headers and the lines under them stay level.

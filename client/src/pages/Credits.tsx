@@ -2,10 +2,10 @@ import { Link } from "react-router"
 import { PageIntro } from "../components/Layout"
 import { usePageTitle } from "../lib/usePageTitle"
 
-/** Where the site's pictures come from. Rows are filled in as the final images are confirmed. */
+/** Where the site's pictures come from */
 const CREDITS = [
-  { file: "Night torii painting (home page)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
-  { file: "Sample flash drawings (all twelve designs on the flash sheet)", author: "To be confirmed", source: "To be confirmed", licence: "To be confirmed" },
+  { file: "Night torii painting (home page)", author: "Unknown", source: "Found online for this concept project", licence: "Not licensed: example only" },
+  { file: "Sample flash drawings (all twelve designs on the flash sheet)", author: "Unknown", source: "Found online for this concept project", licence: "Not licensed: examples only" },
   { file: "Artists' scroll pictures: dragon (Kai), demon mask (Dario), crane (Nika)", author: "Blade & Brush", source: "AI-generated for the site", licence: "Under the image tool's terms" },
   { file: "Photos of finished tattoos (Recent work and the artists' Work)", author: "Other tattoo artists, not credited", source: "Collected from Pinterest for this concept project", licence: "Not licensed: examples only" },
   { file: "Tattoo machine drawing (Flash page, phone menu) and scroll pictures: the studio scroll (Aftercare), pagoda (Not found)", author: "Blade & Brush", source: "Drawn for the site", licence: "All rights reserved" },
@@ -55,8 +55,11 @@ export default function Credits() {
           </li>
           <li>
             <strong>Tattoo photos:</strong> the finished tattoos under Recent work and on the artists' pages are by other tattoo
-            artists. They were collected from Pinterest as examples, and their makers are not known. If one of them is your
-            work and you would like it credited or removed, <Link to="/#contact">write to us</Link>.
+            artists. They were collected from Pinterest as examples, and their makers are not known.
+          </li>
+          <li>
+            <strong>Found online:</strong> the night painting on the home page and the twelve sample flash drawings. They were
+            picked from the internet as examples, and their makers are not known.
           </li>
           <li>
             <strong>AI-generated:</strong> the pictures on the artists' scrolls (the dragon, the demon mask and the crane).
@@ -69,6 +72,10 @@ export default function Credits() {
             Fontsource) and Lucide icons (ISC licence).
           </li>
         </ul>
+        <p>
+          <strong>Is one of these pictures yours?</strong> If you made a photo, painting or drawing used here and would like
+          it credited or taken down, <Link to="/#contact">write to us</Link> and it will be removed.
+        </p>
       </section>
     </main>
   )

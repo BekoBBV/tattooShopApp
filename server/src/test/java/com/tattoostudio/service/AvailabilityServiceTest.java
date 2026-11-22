@@ -28,17 +28,17 @@ class AvailabilityServiceTest extends ApiTest {
 
     @Test
     void halfHourStartsWithinWorkingHours() {
-        List<Instant> free = day("Nika", TUESDAY, CONSULTATION); // 11:00–23:00
+        List<Instant> free = day("Nika", TUESDAY, CONSULTATION); // 11:00–20:00
         assertThat(free.get(0)).isEqualTo(at(TUESDAY, "11:00"));
         assertThat(free.get(1)).isEqualTo(at(TUESDAY, "11:30"));
-        assertThat(free.get(free.size() - 1)).isEqualTo(at(TUESDAY, "22:30")); // ends at closing
-        assertThat(free).hasSize(24);
+        assertThat(free.get(free.size() - 1)).isEqualTo(at(TUESDAY, "19:30")); // ends at closing
+        assertThat(free).hasSize(18);
     }
 
     @Test
     void longerBookingsMustEndByClosingTime() {
         List<Instant> free = day("Kai", TUESDAY, TWO_HOURS);
-        assertThat(free.get(free.size() - 1)).isEqualTo(at(TUESDAY, "21:00"));
+        assertThat(free.get(free.size() - 1)).isEqualTo(at(TUESDAY, "18:00"));
     }
 
     @Test

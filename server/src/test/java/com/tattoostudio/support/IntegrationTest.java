@@ -28,7 +28,7 @@ import com.tattoostudio.repository.WorkRepository;
 /**
  * Base for tests that need the full app and the test database (tattoo_studio_test).
  * Time is frozen at Monday 08:00 studio time in 2030, so "tomorrow" is always a Tuesday.
- * The studio is closed on Mondays; Tuesday to Sunday Kai, Dario and Nika work 11:00–23:00 with a
+ * The studio is closed on Mondays; Tuesday to Sunday Kai, Dario and Nika work 11:00–20:00 with a
  * 30-minute break after each client (see DataSeeder).
  */
 @SpringBootTest
@@ -81,11 +81,13 @@ public abstract class IntegrationTest {
                 flash.save(f);
             }
         });
-        // Undo day exceptions, breaks, deactivations and signature pieces a previous test changed
+        // Undo weekly hours, day exceptions, breaks, deactivations and signature pieces a previous test changed
         artists.findAll().forEach(a -> {
             com.tattoostudio.model.Image piece = com.tattoostudio.config.DataSeeder.shippedSignaturePiece(a.getName());
             if (!a.getExceptions().isEmpty() || a.getBreakMinutes() != 30 || !a.isActive()
-                    || !java.util.Objects.equals(a.getSignaturePiece(), piece)) {
+                    || !java.util.Objects.equals(a.getSignaturePiece(), piece)
+                    || !a.getWeeklyHours().equals(com.tattoostudio.config.DataSeeder.STUDIO_HOURS)) {
+                a.setWeeklyHours(com.tattoostudio.config.DataSeeder.STUDIO_HOURS);
                 a.getExceptions().clear();
                 a.setBreakMinutes(30);
                 a.setActive(true);

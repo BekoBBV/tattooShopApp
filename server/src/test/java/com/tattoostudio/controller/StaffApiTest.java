@@ -326,7 +326,7 @@ class StaffApiTest extends ApiTest {
 
         mvc.perform(put("/api/staff/schedule").header("Authorization", nika).contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"weeklyHours":[{"day":"TUESDAY","start":"11:00","end":"23:00"}],
+                                {"weeklyHours":[{"day":"TUESDAY","start":"11:00","end":"20:00"}],
                                  "exceptions":[{"date":"%s","closed":true}]}
                                 """.formatted(TUESDAY)))
                 .andExpect(jsonPath("$.conflicts.length()").value(2));

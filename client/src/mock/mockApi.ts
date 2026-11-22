@@ -63,7 +63,7 @@ const weekday = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay() // 0
 const hoursWeek = (["TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const).map((day) => ({
   day,
   start: "11:00",
-  end: "23:00",
+  end: "20:00",
 }))
 
 /** A signature piece that ships with the website (client/public/images/artists) */
@@ -215,7 +215,7 @@ function freeStarts(artistId: string, date: string, minutes: number) {
   const busy = taken(artistId)
   const earliest = Date.now() + 120 * MIN
   const out: number[] = []
-  for (let m = 11 * 60; m + minutes <= 23 * 60; m += 30) {
+  for (let m = 11 * 60; m + minutes <= 20 * 60; m += 30) {
     const time = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`
     const start = at(date, time)
     if (start < earliest) continue
