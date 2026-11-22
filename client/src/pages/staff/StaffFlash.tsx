@@ -233,10 +233,17 @@ function UploadDialog({ files, onClose, onDone }: { files: File[]; onClose: () =
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState("")
   const [sent, setSent] = useState(0)
-
+  const [missing, setMissing] = useState<number[]>([])
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    // Every photo needs a caption: it is what screen readers say for it
+    const blank = captions.map((c, i) => (i >= sent && !c.trim() ? i : -1)).filter((i) => i >= 0)
+    setMissing(blank)
+    if (blank.length) {
+      setProblem(blank.length === 1 && files.length === 1 ? "Add a caption that says what the tattoo is." : "Add a caption to every photo.")
+      return
+    }
     setBusy(true)
     setProblem("")
     let done = sent
@@ -244,7 +251,7 @@ function UploadDialog({ files, onClose, onDone }: { files: File[]; onClose: () =
       for (; done < files.length; done++) {
         const form = new FormData()
         form.append("image", files[done])
-        if (captions[done].trim()) form.append("caption", captions[done].trim())
+        form.append("caption", captions[done].trim())
         await staffApi<Work>("/staff/works", { method: "POST", body: form })
         setSent(done + 1)
       }
@@ -263,9 +270,13 @@ function UploadDialog({ files, onClose, onDone }: { files: File[]; onClose: () =
           <label key={f.name + i} className={`field upload-item${i < sent ? " is-sent" : ""}`}>
             <span className="upload-thumb">{previews[i] && <img src={previews[i]} alt="" />}</span>
             <span>
-              Caption (optional)
-              <input value={captions[i]} maxLength={60} disabled={i < sent} placeholder="Tiger back piece"
-                onChange={(e) => setCaptions(captions.map((c, j) => (j === i ? e.target.value : c)))} />
+              Caption: what the tattoo is
+              <input value={captions[i]} maxLength={60} disabled={i < sent} placeholder="Tiger back piece" required
+                aria-invalid={missing.includes(i) ? true : undefined}
+                onChange={(e) => {
+                  setCaptions(captions.map((c, j) => (j === i ? e.target.value : c)))
+                  if (e.target.value.trim()) setMissing(missing.filter((j) => j !== i))
+                }} />
             </span>
           </label>
         ))}

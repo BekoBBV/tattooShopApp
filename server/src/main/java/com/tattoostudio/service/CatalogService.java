@@ -23,6 +23,7 @@ import com.tattoostudio.dto.ArtistDto;
 import com.tattoostudio.dto.FlashDto;
 import com.tattoostudio.dto.ListQuery;
 import com.tattoostudio.dto.PageDto;
+import com.tattoostudio.dto.RecentWorkDto;
 import com.tattoostudio.dto.WorkDto;
 import com.tattoostudio.error.ApiException;
 import com.tattoostudio.error.ErrorCode;
@@ -132,6 +133,20 @@ public class CatalogService {
 
     public List<WorkDto> works(String artistId) {
         return works.findByArtistIdOrderByCreatedAtDesc(artistId).stream().map(WorkDto::from).toList();
+    }
+
+    /** The most photos {@link #recentWorks} returns. */
+    public static final int MAX_RECENT_WORKS = 24;
+
+    /**
+     * The studio's newest portfolio photos across the active artists, newest first: at most {@code limit}
+     * (1 to MAX_RECENT_WORKS).
+     */
+    public List<RecentWorkDto> recentWorks(int limit) {
+        Map<String, Artist> crew = activeArtists().stream().collect(Collectors.toMap(Artist::getId, Function.identity()));
+        int size = Math.max(1, Math.min(limit, MAX_RECENT_WORKS));
+        return works.findByArtistIdInOrderByCreatedAtDesc(crew.keySet(), org.springframework.data.domain.PageRequest.of(0, size))
+                .stream().map(w -> RecentWorkDto.from(w, crew.get(w.getArtistId()))).toList();
     }
 
     // ---- Flash ----

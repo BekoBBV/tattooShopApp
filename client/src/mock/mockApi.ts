@@ -487,6 +487,20 @@ async function handle(method: string, url: URL, headers: Headers, body: BodyInit
     if (!a) return fail(404, "ARTIST_NOT_FOUND", "Artist not found")
     return ok(m[2] ? works.filter((w) => w.artistId === a.id) : withRatings(a))
   }
+  if (method === "GET" && path === "/works") {
+    const active = new Set(artists.filter((a) => artistExtra[a.id]?.active !== false).map((a) => a.id))
+    const limit = Math.max(1, Math.min(Number(q.get("limit") ?? 8) || 8, 24))
+    return ok(
+      works
+        .filter((w) => active.has(w.artistId))
+        .sort((x, y) => y.createdAt.localeCompare(x.createdAt))
+        .slice(0, limit)
+        .map((w) => {
+          const a = artists.find((x) => x.id === w.artistId)!
+          return { id: w.id, image: w.image, caption: w.caption, createdAt: w.createdAt, artistId: a.id, artistName: a.name, artistSlug: a.slug }
+        }),
+    )
+  }
   if (method === "GET" && path === "/flash") {
     return ok(
       flash
@@ -669,17 +683,23 @@ const artistExtra: Record<string, { breakMinutes: number; active: boolean; sortO
   artists.map((a, i) => [a.id, { breakMinutes: 30, active: true, sortOrder: i }]),
 )
 const hiddenFlash: string[] = []
-const paintings = ["hero-portrait", "hero-landscape", "banner-sky", "footer-night"]
 const picture = (name: string, i: number): Image => ({ id: `${name}-${i}`, url: `/images/${name}.jpg`, thumbUrl: `/images/${name}.jpg` })
-const works: Work[] = artists.flatMap((a, ai) =>
-  [0, 1].map((i) => ({
-    id: `work-${a.id}-${i}`,
-    artistId: a.id,
-    image: picture(paintings[(ai + i) % paintings.length], i),
-    caption: i === 0 ? `${a.name}'s sleeve` : "Back piece detail",
-    createdAt: SEEDED,
-  })),
-)
+/** Two portfolio photos per artist. Sample mode has no tattoo photos, so they borrow the flash drawings. */
+const sampleWork: [artistId: string, drawingId: string, caption: string][] = [
+  ["nika", "crane-in-flight", "Crane on the ribs"],
+  ["kai", "koi-and-wave", "Koi and wave forearm"],
+  ["dario", "hannya-mask", "Hannya mask on the shoulder"],
+  ["kai", "tiger-head", "Tiger head on the calf"],
+  ["nika", "peony", "Peony on the thigh"],
+  ["dario", "oni", "Oni on the upper arm"],
+]
+const works: Work[] = sampleWork.map(([artistId, drawingId, caption], i) => ({
+  id: `work-${artistId}-${i}`,
+  artistId,
+  image: drawing(drawingId),
+  caption,
+  createdAt: new Date(Date.parse(SEEDED) - i * 86_400_000).toISOString(),
+}))
 const messages: (Message & { handledAt?: string })[] = [
   {
     id: "message-1",
@@ -1059,6 +1079,7 @@ async function staffRoutes(method: string, path: string, q: URLSearchParams, hea
     if (method === "POST" && path === "/staff/works" && body instanceof FormData) {
       const file = body.get("image")
       if (!(file instanceof File)) return fail(400, "INVALID_FILE", "Choose a photo")
+      if (!String(body.get("caption") ?? "").trim()) return fail(400, "VALIDATION_FAILED", 'Add a caption that says what the tattoo is, e.g. "Koi sleeve"')
       const w: Work = { id: `work-${Date.now()}`, artistId: artist.id, image: await toImage(file), caption: String(body.get("caption") ?? ""), createdAt: new Date().toISOString() }
       works.push(w)
       return ok(w, 201)

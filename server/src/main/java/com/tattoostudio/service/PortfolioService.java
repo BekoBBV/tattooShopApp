@@ -48,6 +48,11 @@ public class PortfolioService {
 
     public WorkDto add(String artistId, MultipartFile file, String caption) {
         String text = caption == null ? "" : caption.trim();
+        // The caption is the photo's description for people who can't see it (its alt text)
+        if (text.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
+                    "Add a caption that says what the tattoo is, e.g. \"Koi sleeve\"");
+        }
         if (text.length() > MAX_CAPTION) {
             throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
                     "The caption can be at most " + MAX_CAPTION + " characters");

@@ -14,6 +14,7 @@ import com.tattoostudio.dto.ArtistDto;
 import com.tattoostudio.dto.FlashDto;
 import com.tattoostudio.dto.ListQuery;
 import com.tattoostudio.dto.PageDto;
+import com.tattoostudio.dto.RecentWorkDto;
 import com.tattoostudio.dto.WorkDto;
 import com.tattoostudio.model.Artist;
 import com.tattoostudio.model.FlashDesign;
@@ -63,6 +64,13 @@ public class CatalogController {
     public List<WorkDto> works(@PathVariable String slugOrId) {
         Artist artist = catalog.activeArtistBySlugOrId(slugOrId);
         return catalog.works(artist.getId());
+    }
+
+    @GetMapping("/works")
+    @Operation(summary = "The studio's newest work: portfolio photos of all active artists, newest first",
+            description = "limit: how many, 1 to 24 (default 8). Each photo names its artist and their page address.")
+    public List<RecentWorkDto> recentWorks(@RequestParam(defaultValue = "8") int limit) {
+        return catalog.recentWorks(limit);
     }
 
     @GetMapping("/flash")

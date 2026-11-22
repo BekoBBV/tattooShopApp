@@ -290,3 +290,18 @@ describe("Instagram and studio details", () => {
     expect(screen.getByText(/the rest you pay in the studio by card or in cash/)).toBeTruthy()
   }, 30_000)
 })
+
+describe("Recent work", () => {
+  it("shows the newest tattoo photos on the home page, each linking to its artist", async () => {
+    const { user, router } = open("/")
+    const strip = await screen.findByRole("region", { name: "Recent work" })
+    const photos = within(strip).getAllByRole("link")
+    expect(photos).toHaveLength(6)
+    // Newest first, described by its caption
+    expect(within(photos[0]).getByRole("img", { name: "Crane on the ribs" })).toBeTruthy()
+    expect(within(photos[0]).getByText("by Nika")).toBeTruthy()
+    await user.click(photos[0])
+    await pageTitle("Nika")
+    expect(router.state.location.pathname).toBe("/artists/nika")
+  }, 30_000)
+})

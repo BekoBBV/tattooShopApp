@@ -91,6 +91,7 @@ The same list lives in `server/.../error/ErrorCode.java` and `client/src/lib/typ
 | `GET /artists/search` *(signed in)* | *page* + `day` (works that weekday, e.g. `SATURDAY`); `q` = name, style, bio; sort `order`, `name` | `Page<Artist>` |
 | `GET /artists/{slugOrId}` | | `Artist`, by page name (`kai`) or id |
 | `GET /artists/{slugOrId}/works` | | `Work[]`, newest first |
+| `GET /works?limit=8` | `limit` 1 to 24 (default 8) | the studio's newest work across the active artists, newest first: `{ id, image, caption, createdAt, artistId, artistName, artistSlug }[]` (the home page's *Recent work*) |
 | `GET /flash` | `artistId`, `size` (`SMALL` up to 8 cm on the longer side, `MEDIUM` up to 12 cm, `LARGE`) | `Flash[]`: the sheet, only designs that can be booked now |
 | `GET /flash/{id}` | | `Flash` (`bookable: false` once booked or off the sheet) |
 | `GET /reviews` | `artistId` (optional), `limit` (1–50, optional: only the newest few) | `{ averageRating, count, reviews: Review[] }`, approved only, newest first; the average and count cover all of them |
@@ -204,7 +205,7 @@ Send the token as `Authorization: Bearer <token>` on every `/staff/**`, `/admin/
 | `PUT /staff/flash/{id}/image` | multipart `image` | `AdminFlash` |
 | `DELETE /staff/flash/{id}` | | `204`; `409` while it is held or booked |
 | `GET /staff/works` | | `Work[]` |
-| `POST /staff/works` | multipart `image` + optional `caption` (max 60) | `201 Work` (up to 60 photos) |
+| `POST /staff/works` | multipart `image` + `caption` (required, max 60: the photo's description for screen readers) | `201 Work` (up to 60 photos) |
 | `DELETE /staff/works/{id}` | | `204` |
 | `PUT /staff/signature` | multipart `image` | `Image`: the signature piece on the scroll |
 | `DELETE /staff/signature` | | `204`: the scroll goes back to the empty frame and the picture is deleted |

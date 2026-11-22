@@ -193,7 +193,7 @@ public class StaffController {
 
     @PostMapping(value = "/works", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Add a photo to my portfolio", description = "Parts: \"image\" and an optional \"caption\" (max 60).")
+    @Operation(summary = "Add a photo to my portfolio", description = "Parts: \"image\" and \"caption\" (required, max 60: it describes the photo for screen readers).")
     public WorkDto addWork(@AuthenticationPrincipal Jwt jwt, @RequestPart("image") MultipartFile image,
             @RequestPart(value = "caption", required = false) String caption) {
         return portfolio.add(artistId(jwt), image, caption);

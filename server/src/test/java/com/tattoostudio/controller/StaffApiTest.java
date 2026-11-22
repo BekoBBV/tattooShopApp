@@ -404,6 +404,40 @@ class StaffApiTest extends ApiTest {
     }
 
     @Test
+    void theStudiosNewestWorkListsEveryArtistsPhotosNewestFirstAndNeedsACaption() throws Exception {
+        mvc.perform(get("/api/works")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        // A photo needs a caption: it is the photo's description for screen readers
+        mvc.perform(multipart("/api/staff/works").file(photo("image", "koi.png")).header("Authorization", nika))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("caption")));
+        mvc.perform(multipart("/api/staff/works").file(photo("image", "koi.png"))
+                        .file(new MockMultipartFile("caption", "", MediaType.TEXT_PLAIN_VALUE, "   ".getBytes()))
+                        .header("Authorization", nika))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(multipart("/api/staff/works").file(photo("image", "koi.png"))
+                        .file(new MockMultipartFile("caption", "", MediaType.TEXT_PLAIN_VALUE, "Koi back piece".getBytes()))
+                        .header("Authorization", artistBearer("Kai")))
+                .andExpect(status().isCreated());
+        clock.advance(Duration.ofMinutes(5));
+        mvc.perform(multipart("/api/staff/works").file(photo("image", "crane.png"))
+                        .file(new MockMultipartFile("caption", "", MediaType.TEXT_PLAIN_VALUE, "Crane in flight".getBytes()))
+                        .header("Authorization", nika))
+                .andExpect(status().isCreated());
+
+        mvc.perform(get("/api/works"))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].caption").value("Crane in flight"))
+                .andExpect(jsonPath("$[0].artistName").value("Nika"))
+                .andExpect(jsonPath("$[0].artistSlug").value("nika"))
+                .andExpect(jsonPath("$[0].image.url").exists())
+                .andExpect(jsonPath("$[1].caption").value("Koi back piece"))
+                .andExpect(jsonPath("$[1].artistName").value("Kai"));
+        mvc.perform(get("/api/works").param("limit", "1")).andExpect(jsonPath("$.length()").value(1));
+        mvc.perform(get("/api/works").param("limit", "500")).andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
     void portfolioPhotosAndTheSignaturePiece() throws Exception {
         String body = mvc.perform(multipart("/api/staff/works").file(photo("image", "sleeve.png"))
                         .file(new MockMultipartFile("caption", "", MediaType.TEXT_PLAIN_VALUE, "Warrior sleeve".getBytes()))

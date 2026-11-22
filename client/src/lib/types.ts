@@ -53,6 +53,9 @@ export type Flash = {
 
 export type Work = { id: string; artistId: string; image: Image; caption: string; createdAt: string }
 
+/** A photo in the studio's newest work (GET /works), with the artist it is by */
+export type RecentWork = { id: string; image: Image; caption: string; createdAt: string; artistId: string; artistName: string; artistSlug: string }
+
 export type Review = { id: string; artistId: string; name: string; rating: number; text: string; createdAt: string }
 export type ReviewSummary = { averageRating: number; count: number; reviews: Review[] }
 

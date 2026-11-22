@@ -49,7 +49,7 @@ public class SecurityConfig {
     static final String PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=()";
 
     /** The public API that anyone may read. */
-    static final String[] PUBLIC_GET = { "/api/artists", "/api/artists/*", "/api/artists/*/works", "/api/flash",
+    static final String[] PUBLIC_GET = { "/api/artists", "/api/artists/*", "/api/artists/*/works", "/api/works", "/api/flash",
             "/api/flash/*", "/api/availability", "/api/reviews", "/api/payments/demo/*", "/api/health" };
 
     /** The public API that anyone may send to: booking, finding, cancelling and paying by booking code, writing. */

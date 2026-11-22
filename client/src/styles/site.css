@@ -589,3 +589,16 @@ html { scroll-padding-top: 80px; }
   .custom-cta.has-scroll .cta-scroll { width: 140px; justify-self: center; }
 }
 .custom-cta.has-scroll h2 { max-width: 22ch; margin: 0 0 16px; }
+
+/* Home: Recent work, the newest photos of finished tattoos (shown once there are any). Four across
+   on desktop, two on phones; each links to its artist's page. */
+.recent-work-section { padding-top: 0; }
+.recent-work-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin: 0; padding: 0; list-style: none; }
+.recent-work-grid a { display: block; color: inherit; text-decoration: none; }
+.recent-work-grid img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border: 1px solid var(--mist); transition: border-color .2s; }
+.recent-work-grid a:hover img, .recent-work-grid a:focus-visible img { border-color: var(--paper-on-sumi); }
+.recent-work-caption { display: block; margin-top: 10px; font-size: 15px; line-height: 1.4; }
+.recent-work-caption > span { display: block; color: var(--paper-on-sumi-soft); font-size: 14px; }
+.recent-work-grid a:hover .recent-work-caption, .recent-work-grid a:focus-visible .recent-work-caption { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 1023px) { .recent-work-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 599px) { .recent-work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }

@@ -8,7 +8,7 @@ import { ArtistSeal, FlashCard, FormError, HangingScroll, ReviewCard, Stars, Wal
 import { api, ApiError } from "../lib/api"
 import { instagramUrl, studio } from "../lib/format"
 import { limits } from "../lib/limits"
-import type { Artist, Flash, ReviewSummary } from "../lib/types"
+import type { Artist, Flash, RecentWork, ReviewSummary } from "../lib/types"
 import { useLoad } from "../lib/useLoad"
 import { usePageTitle } from "../lib/usePageTitle"
 import { checkMessage, useFieldChecks } from "../lib/validation"
@@ -41,6 +41,7 @@ export default function Home() {
   const sheet = useLoad<Flash[]>("/flash")
   const artists = useLoad<Artist[]>("/artists")
   const reviews = useLoad<ReviewSummary>("/reviews?limit=3")
+  const work = useLoad<RecentWork[]>("/works?limit=8")
   const artistName = (id: string) => artists.data?.find((a) => a.id === id)?.name
 
   return (
@@ -99,6 +100,31 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      {/* The newest photos of finished tattoos; hidden until the artists have uploaded some */}
+      {work.data && work.data.length > 0 && (
+        <section className="content-section recent-work-section" aria-labelledby="recent-work-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="recent-work-title">Recent work</h2>
+            </div>
+            <p>Finished tattoos from the studio. Select one to see more by that artist.</p>
+          </div>
+          <ul className="recent-work-grid">
+            {work.data.map((w) => (
+              <li key={w.id}>
+                <Link to={`/artists/${w.artistSlug}`}>
+                  <img src={w.image.thumbUrl} alt={w.caption} loading="lazy" />
+                  <span className="recent-work-caption">
+                    {w.caption}
+                    <span>by {w.artistName}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <KatanaDivider />
 
 
