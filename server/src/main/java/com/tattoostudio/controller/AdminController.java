@@ -83,7 +83,7 @@ public class AdminController {
 
     @GetMapping("/bookings")
     @Operation(summary = "All bookings", description = "Dates are inclusive. Default: the last 7 days and the next 30. "
-            + "Filter by artist, type, status and deposit (depositStatus, depositMethod: ONLINE = paid with Revolut, "
+            + "Filter by artist, type, status and deposit (depositStatus, depositMethod: ONLINE = paid on the payment page, "
             + "CASH = paid in cash). Search by customer, phone, email, code, title, idea or notes; sort by date, title, "
             + "type, customer, price or status. depositOverdue marks deposits still waiting after their due time.")
     public PageDto<StaffBookingDto> bookings(@Valid @ParameterObject ListQuery list,

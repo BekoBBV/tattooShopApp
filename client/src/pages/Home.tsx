@@ -83,7 +83,7 @@ export default function Home() {
           </div>
         </div>
         <div className="flash-how">
-          <p>Pick a design, choose a time and pay a €30 deposit with Revolut. The rest you pay in the studio.</p>
+          <p>Pick a design, choose a time and pay a €30 deposit online. The rest you pay in the studio.</p>
           <Link className="text-link" to="/flash">
             See all flash designs
           </Link>

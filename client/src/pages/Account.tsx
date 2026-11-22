@@ -103,7 +103,7 @@ export default function Account() {
           <div className="account-card-actions">
             {b.canPayDeposit && (
               <button className="button button-primary" type="button" onClick={() => void pay(b)} disabled={paying !== null}>
-                {paying === b.code ? "Taking you to Revolut to pay..." : `Pay ${euros(b.deposit.amount)} deposit`}
+                {paying === b.code ? "Taking you to the payment page..." : `Pay ${euros(b.deposit.amount)} deposit`}
               </button>
             )}
             {b.canReview && (

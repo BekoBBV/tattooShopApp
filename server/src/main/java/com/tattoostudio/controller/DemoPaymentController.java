@@ -25,7 +25,7 @@ import com.tattoostudio.service.BookingService;
 import io.swagger.v3.oas.annotations.Hidden;
 
 /**
- * The test payment page that stands in for Revolut (see DemoPaymentProvider). It shows the deposit
+ * The test payment page that stands in for a real payment provider (see DemoPaymentProvider). It shows the deposit
  * and two buttons; "Pay" confirms the booking and sends the customer back to the site. No money moves.
  */
 @ConditionalOnProperty(name = "app.payments.provider", havingValue = "demo", matchIfMissing = true)

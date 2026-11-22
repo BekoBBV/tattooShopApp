@@ -3,8 +3,8 @@ package com.tattoostudio.payment;
 import java.math.BigDecimal;
 
 /**
- * Takes deposits online. The studio will use Revolut (Revolut Pay, cards, Apple Pay, Google Pay);
- * until that account exists, {@link DemoPaymentProvider} stands in with a test payment page.
+ * Takes deposits online. Blade & Brush is a concept studio, so {@link DemoPaymentProvider} stands in
+ * with a test payment page; a real provider (Stripe's test mode, for example) would implement this.
  *
  * Flow: the server gives the booking a random payment id and sends the customer to
  * {@link #checkoutUrl}. When the provider reports the payment complete, the server calls

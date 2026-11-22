@@ -141,7 +141,7 @@ export default function AdminBookings() {
           Deposit status
           <select value={filters.deposit} onChange={setFilter("deposit")}>
             <option value="">All</option>
-            <option value="online">Paid with Revolut</option>
+            <option value="online">Paid online</option>
             <option value="cash">Paid in cash</option>
             <option value="waiting">Waiting</option>
             <option value="refunded">Refunded</option>

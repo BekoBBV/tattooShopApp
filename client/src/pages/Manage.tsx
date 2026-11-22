@@ -132,7 +132,7 @@ export default function Manage() {
                 <div className="managed-actions">
                   {booking.canPayDeposit && (
                     <button className="button button-primary" type="button" onClick={pay} disabled={busy}>
-                      {busy ? "Taking you to Revolut to pay..." : `Pay ${euros(booking.deposit.amount)} deposit with Revolut`}
+                      {busy ? "Taking you to the payment page..." : `Pay ${euros(booking.deposit.amount)} deposit`}
                     </button>
                   )}
                   {booking.canReview && (

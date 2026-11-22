@@ -27,7 +27,7 @@ export function depositStamp(b: StaffBooking): { label: string; tone: "paid" | "
     case "WAITING":
       return { label: `Waiting, ${euros(d.amount)}`, tone: "waiting", note: late }
     case "PAID":
-      return { label: d.method === "CASH" ? "Paid in cash" : "Paid with Revolut", tone: "paid", note: null }
+      return { label: d.method === "CASH" ? "Paid in cash" : "Paid online", tone: "paid", note: null }
     case "REFUNDED":
       return { label: "Refunded", tone: "muted", note: null }
     case "KEPT":

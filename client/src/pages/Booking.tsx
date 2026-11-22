@@ -824,9 +824,9 @@ export function BookDeposit() {
                     We're holding this time for you for <strong aria-live="off">{left ?? "15:00"}</strong>
                   </p>
                   <button className="button button-primary payment-button" type="button" onClick={pay} disabled={paying}>
-                    {paying ? "Taking you to Revolut to pay..." : `Pay ${euros(booking.deposit.amount)} deposit with Revolut`}
+                    {paying ? "Taking you to the payment page..." : `Pay ${euros(booking.deposit.amount)} deposit`}
                   </button>
-                  <p className="payment-methods">You can pay with Revolut Pay, a card, Apple Pay or Google Pay.</p>
+                  <p className="payment-methods">A test payment page: no card is needed and no money is taken.</p>
                 </>
               )}
             </section>

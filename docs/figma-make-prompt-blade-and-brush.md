@@ -1,5 +1,7 @@
 # Figma Make prompts: Blade & Brush
 
+> **Kept as a record.** This is the first design brief (phase 2). The site has changed a lot since: see [design.md](design.md) for the design as built. Some details below no longer match, for example payments with Revolut and closing at 23:00.
+
 Paste **Prompt 1** into a new Figma Make file first. When the result looks right, send the next prompt in the same chat, one at a time, in order. Small prompts give Figma Make fewer things to get wrong, and you can correct each part before moving on.
 
 At the end there's a checklist to go through before exporting.

@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * A stand-in for Revolut: the "payment page" is the server's own test page
+ * A stand-in for a real payment provider: the "payment page" is the server's own test page
  * (DemoPaymentController), where a button confirms the payment. No money moves.
  *
  * Used while app.payments.provider is "demo" (the default). A real provider sets another value, so this

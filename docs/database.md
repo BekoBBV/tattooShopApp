@@ -1,6 +1,6 @@
 # Blade & Brush database
 
-MongoDB Atlas, database `tattoo_studio` (tests use `tattoo_studio_test`). Eight collections, linked by ids.
+MongoDB Atlas, database `tattoo_studio` (the live site uses `tattoo_studio_live`, tests use `tattoo_studio_test`). Eight collections, linked by ids, plus `app_meta` (see the end).
 The rules below (required fields, maximum lengths, ranges) are checked by the server on every request
 (the request records in `server/.../dto`, Bean Validation). The website's forms use the very same
 numbers from `client/src/lib/limits.ts`, and the server test `LimitsSyncTest` fails if the two ever differ.
@@ -154,7 +154,11 @@ not stored here: the bookings say so (see `claimsFlash`).
 
 ## Pictures
 
-Uploaded pictures are not stored in MongoDB. They go to Cloudinary (folder `blade-and-brush/`, when
+The sample pictures ship with the website (`client/public/images`); their `Image` ids start with `bundled:` and they are never deleted. Uploaded pictures are not stored in MongoDB. They go to Cloudinary (folder `blade-and-brush/`, when
 `app.images.cloudinary-url` is set) or to `server/uploads/` while developing; the documents keep their
 `Image` (`id`, `url`, `thumbUrl`). Deleting a design, a portfolio photo, a message or a booking, or wiping
 a booking's details, deletes its pictures too.
+
+## app_meta
+
+Notes the server leaves for itself: one small document per one-time change to the sample data (for example `demo-data-seeded`, `sample-works-3`, `studio-hours-20`), so each runs once per database. `DataSeeder` writes them; starting with `--reset-demo` deletes them along with the data.

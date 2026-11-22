@@ -21,7 +21,7 @@ The REST API the React app talks to (the data behind it: [database.md](database.
 - **Breaks:** each artist has a break after every client (30 minutes by default). It counts as taken time.
 - **Age:** customers must be 18 or older on the day of the appointment.
 - **Cancelling:** customers can cancel online until the appointment starts. A paid deposit is refunded when that is at least 48 hours ahead, otherwise the studio keeps it. When the studio cancels, the deposit is always refunded.
-- **Payments:** deposits are paid on a payment page (`checkoutUrl`). Until the studio's Revolut account is connected, that page is the server's own test page, which confirms the payment with a button and moves no money.
+- **Payments:** deposits are paid on a payment page (`checkoutUrl`). Blade & Brush is a concept studio, so that page is the server's own test page, which confirms the payment with a button and moves no money. A real provider would implement `payment/PaymentProvider.java`.
 
 ## Lists: paging, sorting, search
 
@@ -236,7 +236,7 @@ type AdminFlash = Omit<Flash, "deposit" | "bookable"> & {
 
 | Method & path | Body / query | Response |
 |---|---|---|
-| `GET /admin/bookings` | *page* + `artistId`, `from`, `to`, `status`, `type`, `depositStatus`, `depositMethod` (`ONLINE` = paid with Revolut, `CASH`); `q` and sort as for `/staff/bookings` | `Page<StaffBooking>` |
+| `GET /admin/bookings` | *page* + `artistId`, `from`, `to`, `status`, `type`, `depositStatus`, `depositMethod` (`ONLINE` = paid on the payment page, `CASH`); `q` and sort as for `/staff/bookings` | `Page<StaffBooking>` |
 | `PATCH /admin/bookings/{id}` | `{ status }` | `StaffBooking` |
 | `POST /admin/bookings/{id}/deposit-cash` | | `StaffBooking`: the waiting deposit is paid in cash (a held flash booking is confirmed) |
 | `PUT /admin/bookings/{id}` | `{ customerName, phone, email \| null, notes \| null }` | `StaffBooking` (`409` once the details were wiped for privacy) |

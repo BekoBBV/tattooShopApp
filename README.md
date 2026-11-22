@@ -2,7 +2,11 @@
 
 A full-stack booking website for Blade & Brush, a fictional traditional Japanese tattoo studio in Sofia: artist portfolios, flash tattoos booked directly, custom pieces planned in a free consultation (idea, placement, size and reference photos) and then tattooed in sessions the artist reserves with a price and deposit, an 18+ check and a consent form, and a staff area for artists and the studio owner.
 
-> **Status: design done, server written, customer website and staff area built; tests, security pass and going live are next.** This project starts from the code of [Fade Street](https://github.com/BekoBBV/berbershopp_app), a barbershop booking site, rebuilt for a tattoo studio. The sign-in, roles, users & rights, lists with search / sorting / paging, security, tests, CI and hosting setup carry over. The name, look and every screen are decided ([docs/design.md](docs/design.md)), the server has the tattoo studio's features ([docs/api.md](docs/api.md)), and the customer pages and the artist and admin area in `client/` follow the design at desktop, tablet and phone widths.
+**Live site: [tattoo-studio-it2n.onrender.com](https://tattoo-studio-it2n.onrender.com)** (free hosting: after about 15 minutes without visitors it sleeps, so the first visit can take a minute).
+
+> **Blade & Brush is a concept project, not a real studio.** The address, phone number, Instagram handles, artists, prices and reviews are made up; bookings are real in the app but no money moves, because deposits go through a built-in test payment page. The tattoo photos, the night painting and the flash drawings were found online as examples, and the artists' scroll pictures are AI-generated (see the site's [Image credits](https://tattoo-studio-it2n.onrender.com/credits) page).
+
+**Status: finished and online.** The project started from the code of [Fade Street](https://github.com/BekoBBV/berbershopp_app), a barbershop booking site, rebuilt for a tattoo studio: the sign-in, roles, users & rights, lists with search / sorting / paging, security, tests, CI and hosting setup carried over. The design is in [docs/design.md](docs/design.md), the server's API in [docs/api.md](docs/api.md) and the database in [docs/database.md](docs/database.md).
 
 ## Plan
 
@@ -13,7 +17,7 @@ A full-stack booking website for Blade & Brush, a fictional traditional Japanese
 | 3 | Server: artists and styles, portfolios, flash designs, consultations, sessions of any length, deposits, consent; images on Cloudinary | Done |
 | 4 | Website: home, artist portfolios, flash gallery, both ways to book, My account | Done; tried with sample data and against the real server |
 | 5 | Artist and admin area: calendar, reserving sessions, deposits, flash and portfolio uploads | Done; every staff page tried against the real server |
-| 6 | Tests, docs, security pass, going live | Tests, docs and the security pass done; the single app was built and tried with the production profile on this computer; going live on Render is next |
+| 6 | Tests, docs, security pass, going live | Done; live on Render |
 
 ## Tech stack
 
@@ -22,8 +26,8 @@ A full-stack booking website for Blade & Brush, a fictional traditional Japanese
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS, React Router (`client/`) |
 | Backend | Java Spring Boot 4.1 (Web MVC, Data MongoDB, Security + JWT, Validation, Mail, Scheduling) (`server/`) |
 | Database | MongoDB Atlas |
-| Images | Cloudinary (from phase 3) |
-| API docs | Swagger UI (springdoc-openapi), [docs/api.md](docs/api.md) and [docs/database.md](docs/database.md) (inherited, rewritten in phase 3) |
+| Images | The sample pictures ship with the website; uploads go to Cloudinary |
+| API docs | Swagger UI (springdoc-openapi, local only), [docs/api.md](docs/api.md) and [docs/database.md](docs/database.md) |
 | Tests & CI | JUnit + Spring Boot Test, Vitest, GitHub Actions |
 | Hosting | Docker image on Render (`Dockerfile`, `render.yaml`) |
 
@@ -77,7 +81,7 @@ npm run dev
 
 Open **http://localhost:5173**. The API runs on http://localhost:8080 (Vite forwards `/api` to it), with interactive docs at **http://localhost:8080/swagger-ui.html**.
 
-On the first start the server fills an empty database with the demo artists (Kai, Dario and Nika), their hours, twelve flash designs and a few reviews, and creates the `admin` login (plus the demo artist logins if `app.demo.artist-password` is set). In Swagger, sign in with `POST /api/auth/login` and paste the token under *Authorize* to try the staff endpoints.
+On the first start the server fills an empty database with the demo artists (Kai, Dario and Nika) and their hours (Tuesday to Sunday, 11:00 to 20:00), twelve flash designs with their drawings, thirteen photos of finished work, the pictures on the artists' scrolls and nine reviews, and creates the `admin` login (plus the demo artist logins if `app.demo.artist-password` is set). In Swagger, sign in with `POST /api/auth/login` and paste the token under *Authorize* to try the staff endpoints.
 
 ### Try the website without the server
 
@@ -113,7 +117,9 @@ Customers sign in at **/account/sign-in** (*Account* in the menu) with their ema
 
 ### Pictures and payments
 
-Uploaded pictures (flash drawings, portfolio photos, reference photos, message photos) are kept on Cloudinary when `app.images.cloudinary-url` is set in `secrets.properties` (or `CLOUDINARY_URL` in production), otherwise in `server/uploads/`. Deposits are paid on a test payment page for now: a button confirms the payment and no money moves. The real Revolut payment page replaces it later (`payment/PaymentProvider.java`).
+The sample pictures (flash drawings, tattoo photos, the artists' scroll pictures, the night painting) ship with the website in `client/public/images`, each with a small WebP copy for lists. Uploaded pictures (flash drawings, portfolio photos, reference photos, message photos) are kept on Cloudinary when `app.images.cloudinary-url` is set in `secrets.properties` (or `CLOUDINARY_URL` in production), otherwise in `server/uploads/`.
+
+Deposits are paid on the server's own test payment page: a button confirms the payment and no money moves. A real payment provider would plug in at `payment/PaymentProvider.java` (Stripe's test mode is the easiest to sign up for; Revolut's sandbox needs a verified business).
 
 ### Or run it as one app
 
@@ -134,7 +140,14 @@ Start with the `prod` profile (`SPRING_PROFILES_ACTIVE=prod`) to turn off Swagge
 
 ### Put it online (Render)
 
-The `Dockerfile` builds the website and the server into one image, and `render.yaml` describes the service. On [Render](https://render.com): *New > Blueprint*, pick this repository, then fill in `MONGODB_URI`, `APP_ADMIN_PASSWORD` and `APP_SHOP_WEBSITE_URL` (the address Render gives, e.g. `https://tattoo-studio.onrender.com`). The token secret is generated by Render. Every push to `main` deploys again. Use the database name `tattoo_studio_live` in `MONGODB_URI` (without a name MongoDB quietly uses `test`), ideally with its own Atlas database user that can only read and write that database. In MongoDB Atlas, *Network Access* must allow Render's servers (Render shows them under *Connect > Outbound*). Render runs behind Cloudflare, so `render.yaml` makes the server read each visitor's address from Cloudflare's `CF-Connecting-IP` header, which visitors can't fake. The free plan sleeps after about 15 minutes without visitors, so the first visit then takes about a minute.
+The site runs at **https://tattoo-studio-it2n.onrender.com**. The `Dockerfile` builds the website and the server into one image, and `render.yaml` describes the service; every push to `main` deploys again. To set it up again:
+
+1. **MongoDB Atlas:** under *Network Access*, allow `0.0.0.0/0` (Render's free plan has no fixed address). Take the connection string from *Connect > Drivers* and put the database name `tattoo_studio_live` before the `?` (without a name MongoDB quietly uses `test`).
+2. **Render:** *New > Blueprint*, pick this repository, and fill in `MONGODB_URI`, `APP_ADMIN_PASSWORD` (the online `admin` login) and `APP_SHOP_WEBSITE_URL` (the address Render gives). The token secret is generated by Render.
+3. **Cloudinary:** add `CLOUDINARY_URL` under the service's *Environment*. Render's disk is wiped every time the free service sleeps or deploys, and uploaded pictures with it.
+4. **Logins:** production creates no demo logins. Sign in as `admin` and create the artists' logins under *Artists*; customers sign up themselves.
+
+Render runs behind Cloudflare, so `render.yaml` makes the server read each visitor's address from Cloudflare's `CF-Connecting-IP` header, which visitors can't fake. The free plan sleeps after about 15 minutes without visitors, so the first visit then takes about a minute.
 
 ### Reset the demo data
 
@@ -176,19 +189,23 @@ client/src/             React app: pages/ (the customer site), pages/staff/ and 
                         the only place that calls the server; staff.ts; the booking draft; form checks),
                         styles/ (the design's Night ink and staff CSS, plus site.css),
                         mock/ (the sample data for npm run dev:mock)
+client/public/images/   the pictures that ship with the site (flash, work photos, artists' scrolls, paintings)
 server/
   config/               app setup, booking rules, demo data seeder, security + login tokens, Mongo settings
   controller/           REST endpoints: public (/api/...), artist (/api/staff/...), admin (/api/admin/...)
   service/              booking logic: availability, bookings, emails, privacy jobs, staff login, schedules, stats
   model/ repository/    MongoDB documents and data access
+docs/design.md          the design: colours, type, rules, screens, and every change made after it
 docs/api.md             the API reference (every endpoint, type and error code)
 docs/database.md        the collections, their fields and rules
+docs/figma-make-prompt… the first design brief (kept as a record; the site has moved on since)
 start.bat               Windows: build the site, start the app, open the browser
 reset-demo.bat          Windows: the same with fresh demo data
 Dockerfile, render.yaml hosting: one image with site + server, and the Render setup
 ```
 
 ## Credits
+- Pictures: listed on the site's Image credits page (`/credits`)
 - Fonts: Zen Old Mincho and Zen Kaku Gothic New (SIL Open Font License), bundled via Fontsource
 - Icons: Lucide (ISC License)
 - Built on the code of Fade Street (same author)

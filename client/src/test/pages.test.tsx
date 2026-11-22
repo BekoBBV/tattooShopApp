@@ -117,7 +117,7 @@ describe("booking", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }))
 
     await pageTitle("Pay the deposit")
-    await screen.findByRole("button", { name: "Pay €30 deposit with Revolut" })
+    await screen.findByRole("button", { name: "Pay €30 deposit" })
     screen.getByText("Koi and wave")
     screen.getByText(/holding this time for you/)
   }, 30_000)
