@@ -716,3 +716,14 @@ h1, h2, h3 { text-wrap: balance; }
 .attached-photos span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .attached-photos button { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: inherit; cursor: pointer; }
 .attached-photos button:hover { color: #E5484D; }
+
+/* Smoother scrolling on phones and tablets. The design's paper grain (body::before in night-ink.css) is
+   a screen-sized layer fixed over the page and blended into it, so a phone redraws that blend over the
+   whole screen on every frame while scrolling; at 4% on the black page it is not visible there anyway.
+   Touch screens drop it; desktops keep it. The flash drawings keep their multiply blend (white paper
+   disappears into the cream frame), but each frame is its own blending group, so only the small frame
+   is blended instead of everything behind it. */
+@media (pointer: coarse) {
+  body::before { display: none; }
+}
+.flash-frame, .flash-choice-thumb { isolation: isolate; }
